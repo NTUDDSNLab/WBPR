@@ -26,6 +26,9 @@ To clean, run :
 make clean
 ```
 
+## Notices
+1. The vertex ID in the `edgelist.txt` should start from 0 not 1.
+
 ## Contents
 1. Makefile
 2. include - 

@@ -3,8 +3,6 @@
 
 int main(int argc, char **argv)
 {
-    printf("Parallel Implementation\n");
-    printf("111");
     // checking if sufficient number of arguments (4) are passed in CLI
     if(argc != 6)
     {
