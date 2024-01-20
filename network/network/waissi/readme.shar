@@ -1,0 +1,9 @@
+ 
+
+The file waissi.sh  is a shar file containing all the programs 
+in this directory.   You can get the file and type
+
+mkdir waissi
+/bin/sh waissi.sh 
+
+To create a subdirectory waissi containting all the files.

@@ -1,0 +1,6 @@
+c This makes the fractal broccoli
+points 1000
+trans   .05    0     0   0   .5   0   0  
+trans   .15   .1     0   0   .1   0  .2
+trans   .4    .42 -.42  .42  .42  0  .2
+trans   .4    .42  .42 -.42  .42  0  .2

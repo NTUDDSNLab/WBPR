@@ -1,0 +1,48 @@
+c     ---------------------------------------------------------------
+c     program ggraph
+c
+c     generator: max-flow min-cost directed grid graph
+c
+c     Author: Mauricio G.C. Resende
+c             AT&T Bell Laboratories
+c             mgcr@research.att.com
+c
+c     Date: 23 Sep 91
+c 
+c     standard input: h, w, MAXCAP, MAXCOST, SEED
+c
+c     graph has h * w + 2 nodes: source s, sink t and a grid of
+c     h by w nodes.
+c
+c     arcs go from s to h nodes of first grid column
+c             from h nodes of last grid column to t
+c             from (i,j) to (i+1,j) and (j+1,i) except
+c             for last row that go from (i,h) to (i+1,h) and last
+c             column that go from (w,j) to t
+c
+c     arc capacities for grid arcs uniformly distributed [0,MAXCAP]
+c                    for s - (1,j) = INFINITY
+c                    for (w,j) - t = INFINITY
+c
+c     arc costs for grid arcs uniformly distributed [0,MAXCOST]
+c               for s - (1,j) = 0
+c               for (w,j) - t = 0
+c     
+c     Supply at node s = MAXFLO(s-t)
+c     Demand at node t = MAXFLO(s-t)
+c     Supply and demands for all other nodes = 0
+c
+c     Output: DIMACS min format
+c
+c     Uses subroutines: dnfwd and dnsub to compute max-flow.
+c                       Reference: D. Goldbarb, M.D. Grigoriadis,
+c                       "A computational comparison of the dinic 
+c                       and network simplex methods for maximum flow",
+c                       Annals of Operations Research 7, 1988.
+c                       
+c                       rand - portable pseudo-random number generator.
+c                       Reference: L. Schrage, "A More Portable FORTRAN
+c                       Random Number Generator", ACM Transactions on
+c                       Mathematical Software, June, 1979.
+c     
+c     ---------------------------------------------------------------

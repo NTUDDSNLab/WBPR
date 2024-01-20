@@ -1,0 +1,58 @@
+
+f77 -O capt.f -lc -o capt
+capt.f:
+ MAIN:
+"capt.f", line 62: Warning: local variable "itot" never used
+"capt.f", line 69: Warning: local variable "dfloor" never used
+"capt.f", line 69: Warning: local variable "dceil" never used
+"capt.f", line 69: Warning: local variable "floor" never used
+"capt.f", line 69: Warning: local variable "ceil" never used
+"capt.f", line 107: Warning: RETURN statement in main or block data
+        captrn:
+"capt.f", line 151: Warning: local variable "dfloor" never used
+"capt.f", line 152: Warning: local variable "rhold" never used
+        creatw:
+"capt.f", line 403: Warning: local variable "j" never used
+        creaty:
+"capt.f", line 426: Warning: local variable "j" never used
+        creatu:
+"capt.f", line 450: Warning: local variable "nsrce" never used
+"capt.f", line 450: Warning: local variable "nsink" never used
+"capt.f", line 450: Warning: local variable "itot" never used
+"capt.f", line 459: Warning: incompatible lengths for common block parms
+        order1:
+"capt.f", line 509: Warning: local variable "itot" never used
+"capt.f", line 516: Warning: incompatible lengths for common block parms
+        order5:
+"capt.f", line 547: Warning: local variable "nsrce" never used
+"capt.f", line 547: Warning: local variable "nsink" never used
+"capt.f", line 547: Warning: local variable "itot" never used
+"capt.f", line 552: Warning: local variable "ii" never used
+"capt.f", line 553: Warning: incompatible lengths for common block parms
+        putarc:
+"capt.f", line 576: Warning: local variable "nsrce" never used
+"capt.f", line 576: Warning: local variable "nsink" never used
+"capt.f", line 576: Warning: local variable "itot" never used
+"capt.f", line 579: Warning: incompatible lengths for common block parms
+        creatv:
+"capt.f", line 605: Warning: local variable "nsrce" never used
+"capt.f", line 605: Warning: local variable "nsink" never used
+"capt.f", line 605: Warning: local variable "itot" never used
+"capt.f", line 613: Warning: incompatible lengths for common block parms
+        titl:
+        puta:
+        sort:
+"capt.f", line 776: Warning: local variable "j" never used
+"capt.f", line 776: Warning: local variable "l1" never used
+"capt.f", line 776: Warning: local variable "l2" never used
+        load1:
+        dump1:
+        order2:
+        random:
+        floor:
+"capt.f", line 932: Warning: local variable "rum" never used
+        dfloor:
+        dceil:
+        ceil:
+        rand_local:
+

@@ -1,0 +1,5 @@
+c  This gives a sideways serpenski triangle. 
+points 1000
+trans  .33  0.45	0	0	0.45	0	0	
+trans  .33  0.45	0	0	0.45	0.45	0	
+trans  .33  0.45	0	0	0.45	0	0.45	

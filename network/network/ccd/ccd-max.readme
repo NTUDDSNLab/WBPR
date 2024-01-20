@@ -1,0 +1,22 @@
+
+ The shell script "ccd-max" (create core data ) generates all the DIMACS 
+ core test data files for max-flow problem in the current directory.
+ It is invoked with one argument as follows:
+			 																 
+ ccd $1 			 												 		 
+			 																 
+ where n=2^($1),  is the size of the input which must be a power of two.
+ It assumes that all the generator programs have been compiled in their
+ respective directories in the dimacs directory structure. That is 
+ there is a directory netflow/generators/network and the sub-directories
+ for the various generators. Set the variable GENDIR in ccd-max to point
+ to the root of the dimacs tree.
+
+ For the Network-Width Family Genrmf-Long needs x to be a multiple of 4.
+ If x is not a multiple of 4 then ccd-max chooses the next higher multiple 
+ of 4. Similarly for Genrmf-Wide ccd-max chooses the next higher multiple
+ of 5 as x. Here the input size is 2^x.
+ 
+ The data files have appropriate names like  Genrmf-Long.max etc.
+
+ Amit Jain

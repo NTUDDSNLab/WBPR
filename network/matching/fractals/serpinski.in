@@ -1,0 +1,6 @@
+c Transformations for Serpinski triangle
+points 1000
+seed 1919129223
+trans  .33  .5  0  0  .5  0  0 
+trans  .33  .5  0  0  .5  1  0
+trans  .34  .5  0  0  .5  .5 .5

@@ -1,0 +1,7 @@
+c  This input generates the fractal fern
+points 5000
+seed 19129381273
+trans   .01   0.0   0.0   0.0  0.16 0.0 0.0 
+trans 	.07   0.2  -0.26  0.23 0.22 0.0 1.6 
+trans	.07  -0.15  0.28  0.26 0.24 0.0 0.44
+trans   .85   0.85  0.04 -0.04 0.85 0.0 1.6 

@@ -1,0 +1,6 @@
+
+The ccd shell file generates the test instances for the DIMACS 
+standard tests.  It is slightly obsolete---directory structure
+has changed a little bit, and a new set of standard tests has been
+adopted. 
+

@@ -1,0 +1,16 @@
+
+
+This directory contains a generator of grid-like graphs written by 
+Mauricio Resende. 
+
+
+ggraph.bnd  is a Unix bundle containing a collection of related files.
+            See the front of the file for instructions
+
+ggraph1.f   is a Fortran file which is a modified version of ggraph.f
+            in the bundle.  This version generates networks with 
+            capacities and costs in [1, MAXCAP].  (The original version
+            generates capacities in [0, MAXCAP] -- the netflo solver
+            doesn't work with zero capacities.) 
+
+ 

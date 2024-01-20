@@ -1,0 +1,18 @@
+This program produces a capacitated transportation problem in .min
+format, laid out on a grid-on-torus.  Contributed by A. Goldberg
+ango@Theory.Stanford.EDU 
+
+
+goto.c should be compiled with the math library, e.g.
+"cc -O goto.c -lm" in UNIX.
+
+The GOTO generator expects 5 (integer) inputs. The inputs are as follows.
+
+No. |	DESCRIPTION			| RESTRICTIONS
+-----------------------------------------------------------------------------
+ 1  | number of nodes, N		| N >= 15
+ 2  | number of arcs, M			| 6*N <= M <= N^(5/3)
+ 3  | max. capacity, MAXCAP		| MAXCAP >= 8
+ 4  | max. arc cost, MAXCOST		| MAXCOST >= 8
+ 5  | seed (for random number generator)|
+ ----------------------------------------------------------------------------

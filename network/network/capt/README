@@ -1,0 +1,96 @@
+
+To compile the generator "capt" on SUN machines, type
+	f77 -O capt.f -lc -o capt
+
+The current source file gives rise to some warning messages;
+these are given in the file "compiler_warnings".
+Carry on regardless; these warnings are harmless.
+
+To run the generator, the input parameters have to be given in the file "fort.8";
+these parameters are documented at the start of the source file "capt.f".
+The output (ASCII in DIMACS format) will be written to file "fort.11".
+An example "fort.8" is given below.
+
+To execute the generator, simply type
+	capt
+
+"capt" is somewhat slower than generators like NETGEN because its
+internal algorithm uses order statistics (i.e., sorting).
+
+When "capt" finishes, three output files "fort.9", "fort.10" and "fort.11"
+will be produced. Only file "fort.11" is useful for the DIMACS experiments.
+The contents of these files are:
+	fort.9		the network in unformatted FORTRAN form (NOT ASCII !)
+	fort.10		diagnostic output
+	fort.11		the network in DIMACS format (ASCII)
+
+=======================================================
+=======================================================
+
+Here is a sample input file for the generator;
+only the first line is read by the generator, the other
+lines are for documentation.
+CCCCCCCCCCCCCCCCCCC file: fort.8 CCCCCCCCCCCCCCCCCCCCCC
+
+0.123456785 500   500   3162 1      1      1000   14   0.5   5     0.0632455532
+seed        nsrce nsink flow ipsrce ipsink intlen cost  D  distrbn density
+CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC
+
+For this network, here are the first 5 lines from "fort.11"
+c 0.123456785NS -       500 ND -       500
+c FLOW -      3162 IPSRCE - 1 IPSINK - 1
+c INTLEN - 1000 COST -   14 D - 0.50 IDIST -    5
+c Density - 0.06
+p min            1002     16312
+
+The value of the min cost flow in this network is:
+         Minimum cost flow value= 2059212544
+
+Some statistics about the network:
+Number of vertices   : 1002          Number of edges      : 16312     
+Maximum vertex degree: 501           Minimum vertex degree: 1         
+Maximum edge cost    : 16383         Minimum edge cost    : 0         
+Maximum edge capacity: 1573118       Minimum edge capacity: 0
+
+=======================================================
+=======================================================
+
+The maximum number of nodes and arcs that can be handled by "capt"
+are given in the file "NETPARM". This file is "included" into "capt.f"
+during compilation, so it must be present in the directory where "capt.f"
+is compiled.
+
+CCCCCCCCCCCCCCCCCCC file: NETPARM CCCCCCCCCCCCCCCCCCCCCC
+      PARAMETER (NARCS =  131072, NODES = 16384)
+      PARAMETER (Nedges = narcs)
+
+CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC
+
+Please note that if you CHANGE the parameter "Nedges" in the file "NETPARM",
+then the source file "capt.f" would need the following modification:
+
+The variable "ihprime" in subroutine "CAPTRN" (in file "capt.f")
+would have to be set to a prime number slightly less than "Nedges".
+The lines from subroutine "CAPTRN" in file "capt.f" where variable
+"ihprime" is introduced are reproduced below:
+
+CCCCCCCCCCCCCCCCCCC extracted from file: capt.f CCCCCCCCCCCCCCCCCCCCCC
+C	set "hashing prime" ihprime to a prime number less than nedges
+C	here is a table of useful primes
+C	nedges = 1024 2048 4096 8192 16,384 32,768 65,536 131,072
+C	ihprime= 1021 2039 4093 8191 16,381 32,749 65,521 131,071
+C
+C	nedges = 262,144 524,288 550,000 1,048,576 1,200,000
+C	ihprime= 262,139 524,287 549,979 1,048,573 1,199,999
+		ihprime= 131071
+		ihpretry= 0
+		if (ihprime .ge. nedges)
+     c	WRITE(0,*)'	ERROR: nedges = ',nedges,' too small'
+CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC
+
+For further documentation, see the starting part of "capt.f".
+
+For further clarifications contact
+Dave Jensen at djensen@ibm.com (Phone: (914) 945-2471),
+or Bob Bland at bland@orie.cornell.edu (Phone: (607) 255-9144).
+

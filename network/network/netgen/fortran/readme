@@ -1,0 +1,16 @@
+
+netgen.f    :  NETGEN is described in Klingman, Napier, and Stutz, 
+             ``NETGEN: A program for generating large scale capacitated
+              assignment, transportation, and minimum-cost flow network
+              problems,'' Management Science 20, 814-820 (1974).
+
+              This the NETGEN program, written in Fortran.  The input 
+              and output formats are standard NETGEN, not the DIMACS 
+              format.  Contributed by Mike Grigoriadis
+    
+              To compile on Sun Unix, type 
+                   f77  netgen.f 
+
+
+net.in	      : Sample input and output files.  
+net.out

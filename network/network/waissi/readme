@@ -1,0 +1,27 @@
+-----------------------------------------------------------
+NETWORK PROBLEM GENERATORS
+
+          readme_next describes five network generators which generate
+          networks for maximum-flow problems in the DIMACS standard format:
+		
+           ac-max.p(as)    Acyclic network generator
+           bi-max.p(as)    Bipartite network generator
+           tr1-max.p(as)   Transit grid network generator, one-way
+           tr2-max.p(as)   Transit grid network generator, two-way
+           ra-max.p(as)    Random network generator
+
+         (C) Gary R. Waissi, University of Michigan-Dearborn
+         School of Management, Room 113FOB, Dearborn, MI 48128
+         Tel: (313) 593-5012
+         E-mail: gary_waissi@um.cc.umich.edu
+
+-----------------------------------------------------------
+DIMACS NOTE: 
+     1) All file names in the directory are  in lower-case.
+     2) Files with the suffix .pas will compile under Standard Pascal
+     3) Files with the suffix .p   have been modified to compile
+              under Sun Pascal.  You must use the -L option
+              when compiling:  for example  pc -L random.p
+     4) Files in the tp55 directory will compile under Turbo-Pascal 5.5	
+
+

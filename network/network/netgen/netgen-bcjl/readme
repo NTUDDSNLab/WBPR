@@ -1,0 +1,117 @@
+(*** See the end of this file for a description of some fixes to standard 
+  NETGEN bugs in c and in Fortran versions)
+
+netgen.shell:  NETGEN is described in Klingman, Napier, and Stutz, 
+             ``NETGEN: A program for generating large scale capacitated
+              assignment, transportation, and minimum-cost flow network
+              problems,'' Management Science 20, 814-820 (1974).
+
+               This is a Unix shell containing a version of NETGEN written
+               in C.  Contributed by Norbert Schlenker.  Some copywrite
+               restrictions apply---read the in-file comments.  
+
+               To use, you just need to obtain and execute netgen.shell 
+               (using /bin/sh (not csh)).  This  will create a Makefile 
+               and other necessary files.  The compiler switches are 
+               set for the DIMACS input/output format. 
+
+problems      Input commands for the 40 NETGEN benchmark problems. 
+
+
+
+netgen: example format of input data
+1	seed>0
+1	problem > 0
+400	nodes
+200	sources
+200	sinks
+5000	density
+-1000	mincost
++1000	maxcost
+100000	supply
+150	tsources
+150	tsinks
+20	hicost%
+100	capacitated%
+-1000	mincap
++1000	maxcap
+
+Date: Fri, 13 Mar 92 18:44:59 PST
+From: Michael Kharitonov <misha@Jinn.Stanford.EDU>
+To: cheriyan@cs.cornell.edu
+Subject: Netgen problems
+Status: RO
+
+Hi. I was wondering if you managed to generate instances with
+netgen that have 2^17 nodes or more. Even after I changed the
+corresponding parameters, both C and Fortran versions of 
+netgen do not terminate or produce any output when given the
+following input:
+
+13502460 17161 131072 8192 8192 1048576 0 4096 67108864 0 0 100 100 1 16384 
+
+I would really appreciate any light you can shed on this problem.
+
+Thanks,
+Michael
+
+
+From cheriyan Wed Mar 18 16:00:21 1992
+To: misha@Jinn.Stanford.EDU
+Subject: Re:  Netgen problems
+Cc: cheriyan
+Status: R
+
+Michael,
+
+The "bug" in the C version of NETGEN is as follows:
+At some statements, the program multiplies two values that
+may be as big as n, the no. of nodes. So, if you have
+n > 2^{15} there is danger of overflow, assuming 32-bit integers.
+In the instance you sent, there is indeed an integer overflow,
+causing the program to loop endlessly.
+
+Here is a quick fix.
+
+In line 265 of the "netgen.c" file (in procedure "netgen")
+replace
+sinks_per_source = 2*sort_count*SINKS/(NODES-SOURCES-SINKS);
+
+by
+sinks_per_source = ((double) 2*sort_count*SINKS) / ((double) NODES-SOURCES-SINKS);
+
+
+and also in line 433 in the same file (in procedure "pick_head")
+replace
+
+     } while (nodes_left * (non_sources - 1) < remaining_arcs - limit);
+by
+
+     } while ( ((double) nodes_left * (non_sources - 1)) < ((double) remaining_arcs - limit));
+
+
+This fix makes your instance go through NETGEN (C version).
+Without the fix, there is overflow at line 433,
+and the program gets stuck forever in a "while" loop
+in procedure "pick_head".
+Here is the timing data for the revised NETGEN on a sparc-2:
+
+time gnetgen < misha >! misha.min
+
+192.8u 15.2s 10:00 34% 0+10704k 3+3413io 2844pf+0w
+
+Probably, this fix will work fine for all your networks.
+Unfortunately, the fact is that NETGEN was not intended for such big instances.
+In order to guarantee that the program will always
+work fine for "big instances", the only way seems to be
+to go carefully through the entire program,
+and mark all potential overflows and then rectify them,
+eg., by using (double).
+
+Also, the FORTRAN version has exactly the same "bugs" --
+so it won't work unless a similar fix is used.
+
+
+Best wishes,
+-Joseph
+

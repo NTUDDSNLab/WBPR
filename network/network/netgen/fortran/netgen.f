@@ -1,0 +1,870 @@
+c
+c let's keep this line here so that we know what's the netgen that
+c this file represents.
+c                               MDG  9/6/90
+
+
+      integer from(35000),to(35000),c(35000),u(35000),b(8500)
+      common /arrays/from/arraye/to/arrayu/u/arrayc/c/arrayb/b
+      character*24 inpfn,outfn
+      integer int13(13)
+
+      NPROB=0
+      write(*,*)' enter netgen input data filename'
+      read(5,12121)inpfn
+12121 format(a24)
+      write(*,*)' enter output filename'
+      read(5,12121)outfn
+      open(1,file=inpfn,status='old')
+      open(6,file=outfn,status='new')
+c      open(7,file='netgen.stats',status='old')
+c------------------------------------------------------
+c new problem
+ 50   read(1,*)iISEED
+      IF(iISEED.EQ.0)stop
+       read(1,10100)(INT13(kk),kk=1,13)
+c       read(1,10100)NODES,NSORC,NSINK,DENS,MINCST,MAXCST,ITSUP,NTSORC,
+c     1NTSINK,IPHIC,IPCAP,MINCAP,MAXCAP
+10100 FORMAT(6I5,I10,4I5,2I10)
+      call netgen(iiseed,int13,nodes,narcs)
+      NPROB=NPROB+1
+      write(0,*)' problem',nprob, '; nodes and arcs=',nodes,narcs
+c
+c
+      write(6,*)nodes,narcs
+      do 300 i=1,narcs
+ 300     write(6,*)from(i),to(i),c(i),u(i)
+         do 400 i=1,nodes
+ 400        if(b(i).ne.0)write(6,*)i,b(i)
+c
+c
+            goto50
+c
+ 9000       stop
+            end
+c
+c     PROGRAM NETGEN(INPUT,OUTPUT,TAPE5=INPUT,TAPE7=OUTPUT,TAPE3)
+      subroutine netgen(iiseed,int13,nnodes,nnarcs)
+      integer int13(13)
+
+C***********************************************************************
+C***********************************************************************
+C
+C        NETGEN IS A GENERAL PURPOSE CODE FOR THE GENERATION OF NETWORK
+C        PROBLEMS. THE CODE CAN CREATE CAPACITATED AND UNCAPACITATED
+C        MINIMUM COST FLOW PURE NETWORKS AND TRANSPORTATION PROBLEMS
+C        AS WELL AS ASSIGNMENT PROBLEMS.
+C
+C             ///////////////////////////////////////////////////
+C
+C        THE FOLLOWING ARE THE INPUT REQUIREMENTS FOR EACH PROBLEM
+C
+C       COLUMNS                  CONTENTS                       VARIABLE
+C       -------                  -------                        --------
+C
+C   CARD 1.
+C         1-8      8 DIGIT POSITIVE INTEGER TO INITIALIZE        ISEED
+C                  THE RANDOM NUMBER GENERATOR. (MUST HAVE
+C                  AT LEAST ONE NON-ZERO DIGIT IN COLUMNS
+C                  1-8
+ 
+C   CARD 2.
+C
+C         1-5      TOTAL NUMBER OF NODES....................    NODES
+C         6-10     TOTAL NUMBER OF SOURCE NODES (INCLUDING
+C                  TRANSHIPMENT SOURCES)....................    NSORC
+C        11-15     TOTAL NUMBER OF SINK NODES (INCLUDING
+C                  TRANSHIPMENT SINKS)......................    NSINK
+C        16-20     NUMBER OF ARCS...........................    DENS
+C        21-25     MINIMUM COST FOR ARCS....................    MINCST
+C        26-30     MAXIMUM COST FOR ARCS....................    MAXCST
+C        31-40     TOTAL SUPPLY.............................    ITSUP
+C        41-45     NUMBER OF TRANSHIPMENT SOURCE NODES......    NTSORC
+C        46-50     NUMBER OF TRANSHIPMENT SINK NODES........    NTSINK
+C        51-55     PERCENTAGE OF SKELETON ARCS TO BE GIVEN
+C                  THE MAXIMUM COST.........................    IPHIC
+C        56-60     PERCENTAGE OF ARCS TO BE CAPACITATED.....    IPCAP
+C        61-70     MINIMUM UPPER BOUND FOR CAPACITATED ARCS.    MINCAP
+C        71-80     MAXIMUM UPPER BOUND FOR CAPACITATED ARCS.    MAXCAP
+C
+C        ALL INPUT VALUES ON CARD 2 ARE INTEGER AND MUST BE RIGHT-
+C        JUSTIFIED IN THEIR FIELD.
+C
+C        THE DATA (INPUT) DECK MUST CONTAIN 2 CARDS (PUNCHED ACCORDING
+C        TO THE ABOVE FORMAT) FOR EACH PROBLEM DESIRED. THE PROGRAM
+C        WILL GENERATE A SEPARATE NETWORK PROBLEM FOR EACH PAIR OF
+C        CARDS IN THE DATA DECK.
+C
+C ***IMPORTANT***IMPORTANT***IMPORTANT***IMPORTANT***IMPORTANT***
+C        THE LAST CARD IN THE DATA DECK MUST BE A BLANK CARD.
+C       THAT IS, ALL PROBLEM DEFINITION CARDS ARE FOLLOWED BY
+C       A BLANK TRAILER CARD.
+C
+C             //////////////////////////////////////////////////
+C
+C            THE PROGRAM WILL GENERATE A TRANSPORTATION PROBLEM IF
+C                            NSORC+NSINK=NODES
+C                                     AND
+C                            NTSORC=NTSINK=0
+C
+C
+C        THE PROGRAM WILL GENERATE AN ASSIGNMENT PROBLEM IF THE
+C        REQUIREMENTS FOR A TRANSPORTATION PROBLEM ARE MET AND IN
+C        ADDITION
+C                               NSORC=NSINK
+C                                   AND
+C                                ITSUP=NSORC
+C
+C             ///////////////////////////////////////////////////
+C
+C        THE FOLLOWING ARRAYS AND VARIBLES SHOULD BE ADJUSTED, AS
+C        INDICATED, ACCORDING TO THE LARGEST PROBLEM IT IS DESIRED TO
+C        GENERATE IN A GIVEN RUN.
+C
+C                  ARRAY                   SIZE
+C                  -----                   ----
+C                  IPRED          TOTAL NUMBER OF NODES
+C                  IHEAD          TOTAL NUMBER OF NODES
+C                  ITAIL          TOTAL NUMBER OF NODES
+C                  IFLAG          TOTAL NUMBER OF NODES
+C                  ISUP           TOTAL NUMBER OF SOURCES
+C                  LSINKS         TOTAL NUMBER OF SINKS
+C
+C
+C                 VARIABLE                 VALUE
+C                 --------                 -----
+C                  MXNODE         TOTAL NUMBER OF NODES
+C                  MXSORC         TOTAL NUMBER OF SOURCES
+C                  MXSINK         TOTAL NUMBER OF SINKS
+C
+C        NOTE...... IT IS ONLY NECESSARY TO CHANGE THE SIZE OF THE
+C        ARRAYS IN THE DIMENSION STATEMENT OF THE MAIN SUBPROGRAM
+C        (NETGEN).  THE 3 VARIABLES TO BE CHANGED ARE ALSO SET IN THE
+C        MAIN SUBPROGRAM (THEY ARE THE FIRST 3 EXECUTABLE STATEMENTS)
+C
+C             ///////////////////////////////////////////////////
+C
+C        THE PROGRAM USES THE FOLLOWING 3 EXTERNAL FILES.
+C                  (1)  THE INPUT FILE (FILE 5), WHICH CONTAINS THE
+C                       DATA DECK (NORMALLY PUNCH CARDS)
+C                  (2)  THE OUTPUT FILE (FILE 7), WHERE A SUMMARY OF
+C                       THE INPUT SPECIFICATIONS, THE NUMBER OF ARCS
+C                       CREATED, AND ANY ERROR MESSAGES ARE OUTPUT FOR
+C                       EACH PROBLEM (NORMALLY ASSIGNED TO THE PRINTER)
+C                  (3)  THE PROBLEM FILE (FILE 3), WHERE THE ACTUAL
+C                       NETWORK PROBLEMS ARE WRITTEN IN SHARE INPUT
+C                       FORMAT (NORMALLY MAGNETIC TAPE OR DISK FOR
+C                       FUTURE INPUT TO A NETWORK CODE)
+C
+C***********************************************************************
+C***********************************************************************
+      COMMON/VAR/NODES,DENS,MINCST,MAXCST,ITSUP,NSORC,NTSORC,NSINK,
+     1NTSINK,NONSOR,NUPBND,NFSINK,NARCS,NLTR,NTRANS,NTRAVL,
+     2NTRREM,NFTR,ISSORC,ISSINK,NSINKZ,NSORT,NSKSR,NFTSOR,IPHIC,
+     3IPCAP,MINCAP,MAXCAP,KTL,NODLFT,NPSORC,NPSINK,LTSINK,nacnt
+      COMMON/ARRAY1/IST,IPRED
+      COMMON/ARRAY2/IHEAD
+      COMMON/ARRAY3/ITAIL
+      COMMON/ARRAY4/ISEED
+      COMMON/ARRAY5/IFLAG
+      COMMON/ARRAY6/ISUP
+      COMMON/ARRAY7/LSINKS
+      integer from(35000),to(35000),c(35000),u(35000),b(8500)
+      common /arrays/from/arraye/to/arrayu/u/arrayc/c/arrayb/b
+      INTEGER DENS
+C   *****
+C   THE FOLLOWING DIMENSION STATEMENT IS THE ONLY ONE IN THE PROGRAM TAH
+C   BE CHANGED IN ORDER TO CHANGE THE MAXIMUM SIZE PROBLEM THAT CAN BE G
+C   IT IS SET AS DETAILED ABOVE
+C   *****
+C                  IPRED          TOTAL NUMBER OF NODES
+C                  IHEAD          TOTAL NUMBER OF NODES
+C                  ITAIL          TOTAL NUMBER OF NODES
+C                  IFLAG          TOTAL NUMBER OF NODES
+C                  ISUP           TOTAL NUMBER OF SOURCES
+C                  LSINKS         TOTAL NUMBER OF SINKS
+      DIMENSION IPRED(8500),IHEAD(8500),ITAIL(8500),IFLAG(8500),
+     1ISUP(8500),LSINKS(8500)
+C   *****
+C   THE FOLLOWING 3 VARIABLES DETERMINE THE MAXIMUM PROBLEM AND ARE SET
+C   DETAILED ABOVE.
+C   *****
+      MXNODE=8500
+      MXSORC=1100
+      MXSINK=1100
+C   *****
+C   READ THE INPUT CARDS FOR THE NEXT PROBLEM AND INITIALIZE THE RANDOM
+C   GENERATOR.
+C   *****
+       nacnt=0
+       iseed=iiseed
+       NODES=int13(1)
+       NSORC=int13(2)
+       NSINK=int13(3)
+       DENS=int13(4)
+       MINCST=int13(5)
+       MAXCST=int13(6)
+       ITSUP=int13(7)
+       NTSORC=int13(8)
+       NTSINK=int13(9)
+       IPHIC=int13(10)
+       IPCAP=int13(11)
+       MINCAP=int13(12)
+       MAXCAP=int13(13)
+   50 continue
+c      read(1,10000,end=9000)ISEED
+10000 FORMAT(I8)
+c      IF(ISEED.EQ.0)GO TO 9000
+       IF(ISEED.EQ.0)STOP 9000
+75     continue
+c75 IF(NPROB-NPROB/3*3.EQ.0)WRITE(7,10010)
+10010 FORMAT(1H1)
+c      NPROB=NPROB+1
+      CALL SETRAN(ISEED)
+c      read(1,*)NODES,NSORC,NSINK,DENS,MINCST,MAXCST,ITSUP,NTSORC,
+c      read(1,10100)NODES,NSORC,NSINK,DENS,MINCST,MAXCST,ITSUP,NTSORC,
+c     1NTSINK,IPHIC,IPCAP,MINCAP,MAXCAP
+c10100 FORMAT(6I5,I10,4I5,2I10)
+
+C    ******
+C   SET VARIOUS CONSTANTS USED IN THE PROGRAM
+C    ******
+      NARCS=0
+      NSKEL=0
+      NLTR=NODES-NSINK
+      LTSINK=NLTR+NTSINK
+      NTRANS=NLTR-NSORC
+      NFSINK=NLTR+1
+      ISSORC=NODES+1
+      ISSINK=NODES+2
+      NONSOR=NODES-NSORC+NTSORC
+      NPSINK=NSINK-NTSINK
+      NODLFT=NODES-NSINK+NTSINK
+      NFTR=NSORC+1
+      NFTSOR=NSORC-NTSORC+1
+      NPSORC=NSORC-NTSORC
+C   *****
+C   WRITE OUT THE INPUT SPECIFICATIONS ON THE OUTPUT (PRINT) FILE
+C   *****
+c      WRITE(7,10150)NPROB,NODES,NSORC,NSINK,DENS,MINCST,MAXCST,ITSUP,
+c     1NTSORC,NTSINK,IPHIC,IPCAP,MINCAP,MAXCAP,ISEED
+10150 FORMAT(/////52X,8HPROBLEM ,I3,5X,14HSPECIFICATIONS//1X,124(1H*)
+     1/ 2H *         ,5X,1H*,7X,1H*,2(5X,1H*),23HCOST RANGE *  TOTAL   *
+     2,2(13HTRANSHIPMENT*),48HPERCENT*PERCENT*  UPPER BOUND RANGE  *RAND
+     3OM NO*/     1X,124H*NODES*SOURCES*SINKS* ARCS* MIN * MAX *  SUPPLY
+     4  *  SOURCES   *   SINKS    *HI COST* CAPAC.*   MIN    *   MAX
+     5*  SEED   */1X,124(1H*)/     1X,1H*,5X,1H*,7X,1H*,4(5X,1H*),10X,
+     61H*,2(12X,1H*),2(7X,1H*),2(10X,1H*),9X,1H*/2H *          ,I5,2H* ,
+     7I5,2H *,4(I5,1H*),I10,1H*,2(1X,I10,2H *),2(I7,1H*),2(I10,1H*),
+     81X,I8,1H*/     1X,1H*,5X,1H*,7X,1H*,4(5X,1H*),10X,1H*,2(12X,1H*
+     9),2(7X,1H*),2(10X,1H*),9X,1H*/1X,124(1H*)/)
+      IF(NODES.LE.MXNODE.AND.NSORC.LE.MXSORC.AND.NSINK.LE.MXSINK)GOTO150
+  100 continue
+c      WRITE(7,10170)
+10170 FORMAT(1X,30(1H/),70H THE NUMBER OF NODES, SOURCES, OR SINKS EXCEE
+     1DS CURRENT ARRAY CAPACITY  ,33(1H/))
+      GO TO 50
+C    ******
+C   RANDOMLY DISTRIBUTE THE SUPPLY AMONG THE SOURCE NODES
+C    ******
+  150 IF(NPSORC+NPSINK.NE.NODES)GO TO 25
+      IF(NPSORC.NE.NPSINK) GO TO 25
+      IF(ITSUP.NE.NSORC) GO TO 25
+      CALL ASSIGN
+      NSKEL=NSORC
+      GO TO 1450
+25    CALL CRESUP
+C    ******
+C   WRITE OUT THE HEADER AND THE ARCS FROM THE SUPER SOURCE TO THE SOURC
+C    ******
+      CALL WHEAD
+C    ******
+C    MAKE THE SOURCES POINT TO THEMSELVES IN IPRED ARRAY
+C   *****
+      DO 200 I=1,NSORC
+  200 IPRED(I)=I
+      IF(NTRANS.EQ.0)GO TO 600
+C    ******
+C   CHAIN THE TRANSHIPMENT NODES TOGETHER IN THE IPRED ARRAY
+C   *****
+250   IST=NFTR
+      IPRED(NLTR)=0
+      K=NLTR-1
+      DO 300 I=NFTR,K
+  300 IPRED(I)=I+1
+C    ******
+C    FORM EVEN LENGTH CHAINS FOR 60 PERCENT OF THE TRANSHIPMENTS
+C    ******
+      NTRAVL=6*NTRANS/10
+      NTRREM=NTRANS-NTRAVL
+  340 LSORC=1
+  350 IF(NTRAVL.EQ.0)GO TO 500
+      LPICK=IRAN(1,NTRAVL+NTRREM)
+      NTRAVL=NTRAVL-1
+      CALL CHAIN(LPICK,LSORC)
+      IF(LSORC.EQ.NSORC)GO TO 340
+      LSORC=LSORC+1
+      GO TO 350
+C    ******
+C    ADD THE REMAINING TRANSHIPMENTS TO THE CHAINS
+C    ******
+  500 IF(NTRREM.EQ.0)GO TO 600
+      LPICK=IRAN(1,NTRREM)
+      NTRREM=NTRREM-1
+      LSORC=IRAN(1,NSORC)
+      CALL CHAIN(LPICK,LSORC)
+      GO TO 500
+C    ******
+C    SET ALL DEMANDS EQUAL TO ZERO
+C    ******
+600   DO 700 I=NFSINK,NODES
+  700 IPRED(I)=0
+C   *****
+C   THE FOLLOWING DO LOOP (TO STATEMENT 3000) TAKES ONE CHAIN AT A TIME
+C   THROUGH THE USE OF CODE CONTAINED IN THE LOOP AND CALLS TO OTHER SUB
+C   COMPLETES THE NETWORK
+C   *****
+      DO 3000 LSORC=1,NSORC
+      CALL CHNARC(LSORC)
+      DO 705 I=NFSINK,NODES
+  705 IFLAG(I)=0
+C   *****
+C   CHOOSE THE NUMBER OF SINKS TO BE HOOKED UP TO THE CURRENT CHAIN (NSK
+C   *****
+      IF(NTRANS.EQ.0) GO TO 711
+      NSKSR=(NSORT*2*NSINK)/NTRANS
+      GO TO 710
+711   NSKSR=NSINK/NSORC+1
+710   IF(NSKSR.LT.2) NSKSR=2
+      IF(NSKSR.GT.NSINK)NSKSR=NSINK
+      NSRCHN=NSORT
+C    ******
+C    RANDOMLY PICK NSKSR SINKS AND PUT THEIR NAMES IN LSINKS
+C    ******
+      KTL=NSINK
+      DO 800 J=1,NSKSR
+      ITEM=IRAN(1,KTL)
+      KTL=KTL-1
+      DO 750 L=NFSINK,NODES
+      IF(IFLAG(L).EQ.1)GO TO 750
+      ITEM=ITEM-1
+      IF(ITEM.EQ.0)GO TO 775
+  750 CONTINUE
+      GO TO 825
+  775 LSINKS(J)=L
+      IFLAG(L)=1
+  800 CONTINUE
+C    ******
+C    IF LAST SOURCE CHAIN, ADD ALL SINKS WITH ZERO DEMAND TO LSINKS LIST
+C    ******
+  825 IF(LSORC.NE.NSORC)GO TO 850
+      DO 910 J=NFSINK,NODES
+      IF(IPRED(J).NE.0)GO TO 910
+      IF(IFLAG(J).EQ.1)GO TO 910
+  905 NSKSR=NSKSR+1
+      LSINKS(NSKSR)=J
+      IFLAG(J)=1
+  910 CONTINUE
+C    ******
+C    CREATE DEMANDS FOR GROUP OF SINKS IN LSINKS
+C    ******
+  850 KS=ISUP(LSORC)/NSKSR
+  925 K=IPRED(LSORC)
+      DO 1000 I=1,NSKSR
+      NSORT=NSORT+1
+      KSP=IRAN(1,KS)
+      J=IRAN(1,NSKSR)
+      ITAIL(NSORT)=K
+      LI=LSINKS(I)
+      IHEAD(NSORT)=LI
+      IPRED(LI)=IPRED(LI)+KSP
+      LI=LSINKS(J)
+      IPRED(LI)=IPRED(LI)+KS-KSP
+      N=IRAN(1,NSRCHN)
+      K=LSORC
+      DO 950 II=1,N
+  950 K=IPRED(K)
+ 1000 CONTINUE
+      LI=LSINKS(1)
+      IPRED(LI)=IPRED(LI)+ISUP(LSORC)-(KS*NSKSR)
+      NSKEL=NSKEL+NSORT
+C    ******
+c    sort the arcs in the chain from source lsorc using itail as sort ke
+c    ******
+      call srt
+c    ******
+c    write out this part of skeleton and create density arcs for these n
+c    ******
+       i=1
+       itail(nsort+1)=0
+ 1050  do 1100 j=nftsor,nodes
+ 1100  iflag(j)=0
+       ktl=nonsor-1
+ 1125  it=itail(i)
+       iflag(it)=1
+ 1150  ih=ihead(i)
+       iflag(ih)=1
+       narcs=narcs+1
+       ktl=ktl-1
+c    ******
+c    determine if this skeleton arc should be capacitated
+c    ******
+       icap=itsup
+      JCAP=IRAN(1,100)
+      IF(JCAP.GT.IPCAP) GO TO 1160
+      ICAP=ISUP(LSORC)
+      IF(MINCAP.GT.ICAP)ICAP=MINCAP
+C    ******
+C    DETERMINE IF THIS SKELETON ARC SHOULD HAVE THE MAXIMUM COST
+C    ******
+ 1160 ICOST=MAXCST
+      JCOST=IRAN(1,100)
+      IF(JCOST.LE.IPHIC) GO TO 1175
+      ICOST=IRAN(MINCST,MAXCST)
+ 1175 continue
+c      write(6,10300)IT,IH,ICOST,ICAP
+                                 call putarc(IT,IH,ICOST,ICAP)
+10300 FORMAT(6X,2I6,2X,2I10)
+      I=I+1
+      IF(ITAIL(I).EQ.IT)GO TO 1150
+      CALL PKHD(IT)
+      IF(I.LE.NSORT)GO TO 1050
+ 3000 CONTINUE
+C    ******
+C    CREATE ARCS FROM THE TRANSHIPMENT SINKS
+C    ******
+      IF(NTSINK.EQ.0)GO TO 1450
+      NZ=0
+      DO 1400 I=NFSINK,LTSINK
+c      write(6,10300)I,ISSINK,NZ,IPRED(I)
+                                 call putarc(I,issink,nz,ipred(i))
+      DO 1350 J=NFTSOR,NODES
+ 1350 IFLAG(J)=0
+      KTL=NONSOR-1
+      IFLAG(I)=1
+      CALL PKHD(I)
+ 1400 CONTINUE
+C    ******
+C   PRINT THE NUMBER OF ARCS IN THE SKELETON ON THE OUTPUT FILE
+C    ******
+ 1450 NODESC=NODES+2
+      NARSCS=NARCS+NSORC+NSINK+1
+c      WRITE(7,10400)NARCS,NODESC,NARSCS
+10400 FORMAT(20X,21HTHE NETWORK CONTAINS ,I5,5H ARCS,26H  (CIRCULATION N
+     1ETWORK HAS ,I5,11H NODES AND ,I5,6H ARCS))
+C    ******
+C    WRITE OUT THE ARCS FROM THE SINKS TO THE SUPER SINK WITH DEMANDS,
+C   AND PUT OUT THE END MESSAGES FOR SHARE FORMAT
+C    ******
+      CALL WEND
+                                 nnodes=nodes
+                                 nnarcs=narcs
+c      GO TO 50
+                                 return
+ 9000 continue
+c     write(6,10500)
+10500 FORMAT(4HQUIT)
+c      ENDFILE 3
+c      REWIND 3
+      END
+      subroutine putarc(i1,i2,i3,i4)
+      integer from(1),to(1),c(1),u(1),b(1)
+      common /arrays/from/arraye/to/arrayu/u/arrayc/c/arrayb/b
+      INTEGER DENS
+      COMMON/VAR/NODES,DENS,MINCST,MAXCST,ITSUP,NSORC,NTSORC,NSINK,
+     1NTSINK,NONSOR,NUPBND,NFSINK,NARCS,NLTR,NTRANS,NTRAVL,
+     2NTRREM,NFTR,ISSORC,ISSINK,NSINKZ,NSORT,NSKSR,NFTSOR,IPHIC,
+     3IPCAP,MINCAP,MAXCAP,KTL,NODLFT,NPSORC,NPSINK,LTSINK,nacnt
+                             nacnt=nacnt+1
+                             from(nacnt)=i1
+                             to(nacnt)=i2
+                             c(nacnt)=i3
+                             u(nacnt)=i4
+                             return
+                             end
+
+      SUBROUTINE WHEAD
+C***********************************************************************
+C        WHEAD WRITES OUT THE HEADER CARDS FOR SHARE FORMAT ON THE
+C        PROBLEM FILE.  THIS CONSISTS OF THE BEGIN, TITLE, AND ARCS
+C        CARDS. THIS SUBROUTINE ALSO WRITES OUT THE ARCS FROM THE
+C        SUPER SOURCE TO THE SOURCE NODES ON THE PROBLEM FILE.
+C***********************************************************************
+      COMMON/VAR/NODES,DENS,MINCST,MAXCST,ITSUP,NSORC,NTSORC,NSINK,
+     1NTSINK,NONSOR,NUPBND,NFSINK,NARCS,NLTR,NTRANS,NTRAVL,
+     2NTRREM,NFTR,ISSORC,ISSINK,NSINKZ,NSORT,NSKSR,NFTSOR,IPHIC,
+     3IPCAP,MINCAP,MAXCAP,KTL,NODLFT,NPSORC,NPSINK,LTSINK,nacnt
+      COMMON/ARRAY1/IST,IPRED
+      COMMON/ARRAY2/IHEAD
+      COMMON/ARRAY3/ITAIL
+      COMMON/ARRAY4/ISEED
+      COMMON/ARRAY5/IFLAG
+      COMMON/ARRAY6/ISUP
+      COMMON/ARRAY7/LSINKS
+      DIMENSION IPRED(1),IHEAD(1),ITAIL(1),IFLAG(1),ISUP(1),LSINKS(1)
+      integer from(35000),to(35000),c(35000),u(35000),b(8500)
+      common /arrays/from/arraye/to/arrayu/u/arrayc/c/arrayb/b
+      INTEGER DENS
+c
+cc      write(6,10000)ISEED,IPHIC
+10000 FORMAT(5HBEGIN,5X,29HRANDOM NUMBER GENERATOR SEED=,I8,   16H,PERCE
+     1NT HI CST=,I5)
+cc      write(6,10100)NODES,NSORC,NSINK,DENS,MINCST,MAXCST,ITSUP
+10100 FORMAT(1X,6HNODES=,I5,7H,SORCE=,I5,6H,SINK=,I5,6H,ARCS=,I5,6H,COST
+     1=,I5,1H-,I5,7H,SUPLY=,I10)
+cc      write(6,10200)NTSORC,NTSINK,MINCAP,MAXCAP,IPCAP
+10200 FORMAT(4HARCS,6X,7HTSORCE=,I5,7H,TSINK=,I5,5H,CAP=,I10,1H-,I10,
+     113H,PERCENT CAP=,I5)
+      do 10202 i=1,nodes
+10202    b(i)=0
+c         write(6,*)nodes,dens
+      NZ=0
+      DO 100 I=1,NSORC
+c         write(6,10300) ISSORC,I,NZ,ISUP(I)
+         b(i)=isup(i)
+100   continue
+10300 FORMAT(6X,2I6,2X,2I10)
+      RETURN
+      END
+      SUBROUTINE CRESUP
+C***********************************************************************
+C        CRESUP DISTRIBUTES THE TOTAL SUPPLY AMONG THE SOURCE  NODES
+C***********************************************************************
+      COMMON/VAR/NODES,DENS,MINCST,MAXCST,ITSUP,NSORC,NTSORC,NSINK,
+     1NTSINK,NONSOR,NUPBND,NFSINK,NARCS,NLTR,NTRANS,NTRAVL,
+     2NTRREM,NFTR,ISSORC,ISSINK,NSINKZ,NSORT,NSKSR,NFTSOR,IPHIC,
+     3IPCAP,MINCAP,MAXCAP,KTL,NODLFT,NPSORC,NPSINK,LTSINK,nacnt
+      COMMON/ARRAY1/IST,IPRED
+      COMMON/ARRAY2/IHEAD
+      COMMON/ARRAY3/ITAIL
+      COMMON/ARRAY4/ISEED
+      COMMON/ARRAY5/IFLAG
+      COMMON/ARRAY6/ISUP
+      COMMON/ARRAY7/LSINKS
+      DIMENSION IPRED(1),IHEAD(1),ITAIL(1),IFLAG(1),ISUP(1),LSINKS(1)
+      integer from(35000),to(35000),c(35000),u(35000),b(8500)
+      common /arrays/from/arraye/to/arrayu/u/arrayc/c/arrayb/b
+      INTEGER DENS
+
+      IF(ITSUP.LE.NSORC)STOP 66
+      KS=ITSUP/NSORC
+      DO 100 I=1,NSORC
+  100 ISUP(I)=0
+      DO 500 I=1,NSORC
+      KSP=IRAN(1,KS)
+      J=IRAN(1,NSORC)
+      ISUP(I)=ISUP(I)+KSP
+  500 ISUP(J)=ISUP(J)+KS-KSP
+      J=IRAN(1,NSORC)
+      ISUP(J)=ISUP(J)+ITSUP-(KS*NSORC)
+      RETURN
+      END
+      SUBROUTINE CHAIN(LPICK,LSORC)
+C***********************************************************************
+C        CHAIN HAS 2 INPUT PARAMETERS (LPICK AND LSORC). THE SUBROUTINE
+C        ADDS NODE LPICK TO THE END OF THE CHAIN WITH SOURCE NODE LSORC
+C***********************************************************************
+      COMMON/VAR/NODES,DENS,MINCST,MAXCST,ITSUP,NSORC,NTSORC,NSINK,
+     1NTSINK,NONSOR,NUPBND,NFSINK,NARCS,NLTR,NTRANS,NTRAVL,
+     2NTRREM,NFTR,ISSORC,ISSINK,NSINKZ,NSORT,NSKSR,NFTSOR,IPHIC,
+     3IPCAP,MINCAP,MAXCAP,KTL,NODLFT,NPSORC,NPSINK,LTSINK,nacnt
+      COMMON/ARRAY1/IST,IPRED
+      COMMON/ARRAY2/IHEAD
+      COMMON/ARRAY3/ITAIL
+      COMMON/ARRAY4/ISEED
+      COMMON/ARRAY5/IFLAG
+      COMMON/ARRAY6/ISUP
+      COMMON/ARRAY7/LSINKS
+      DIMENSION IPRED(1),IHEAD(1),ITAIL(1),IFLAG(1),ISUP(1),LSINKS(1)
+      integer from(35000),to(35000),c(35000),u(35000),b(8500)
+      common /arrays/from/arraye/to/arrayu/u/arrayc/c/arrayb/b
+      INTEGER DENS
+
+      K=0
+      M=IST
+      DO 100 I=1,LPICK
+      L=K
+      K=M
+  100 M=IPRED(K)
+      IPRED(L)=M
+      J=IPRED(LSORC)
+      IPRED(K)=J
+      IPRED(LSORC)=K
+      RETURN
+      END
+      SUBROUTINE CHNARC(LSORC)
+C***********************************************************************
+C    THIS ROUTINE PUTS THE ARCS IN THE CHAIN FROM SOURCE LSORC, IN
+C    IHEAD AND ITAIL FOR SORTING
+C***********************************************************************
+      COMMON/VAR/NODES,DENS,MINCST,MAXCST,ITSUP,NSORC,NTSORC,NSINK,
+     1NTSINK,NONSOR,NUPBND,NFSINK,NARCS,NLTR,NTRANS,NTRAVL,
+     2NTRREM,NFTR,ISSORC,ISSINK,NSINKZ,NSORT,NSKSR,NFTSOR,IPHIC,
+     3IPCAP,MINCAP,MAXCAP,KTL,NODLFT,NPSORC,NPSINK,LTSINK,nacnt
+      COMMON/ARRAY1/IST,IPRED
+      COMMON/ARRAY2/IHEAD
+      COMMON/ARRAY3/ITAIL
+      COMMON/ARRAY4/ISEED
+      COMMON/ARRAY5/IFLAG
+      COMMON/ARRAY6/ISUP
+      COMMON/ARRAY7/LSINKS
+      DIMENSION IPRED(1),IHEAD(1),ITAIL(1),IFLAG(1),ISUP(1),LSINKS(1)
+      integer from(35000),to(35000),c(35000),u(35000),b(8500)
+      common /arrays/from/arraye/to/arrayu/u/arrayc/c/arrayb/b
+      INTEGER DENS
+
+      NSORT=0
+      ITO=IPRED(LSORC)
+      GO TO 150
+  100 NSORT=NSORT+1
+      IFROM=IPRED(ITO)
+      IHEAD(NSORT)=ITO
+      ITAIL(NSORT)=IFROM
+      ITO=IFROM
+150   IF(ITO.NE.LSORC) GO TO 100
+      RETURN
+      END
+      SUBROUTINE SRT
+C***********************************************************************
+C        SRT SORTS THE ARCS IN ITAIL AND IHEAD USING ITAIL AS THE
+C        SORT KEY.  VARIABLE NSORT INDICATES HOW MANY ARCS ARE TO BE
+C        SORTED.
+C***********************************************************************
+      COMMON/VAR/NODES,DENS,MINCST,MAXCST,ITSUP,NSORC,NTSORC,NSINK,
+     1NTSINK,NONSOR,NUPBND,NFSINK,NARCS,NLTR,NTRANS,NTRAVL,
+     2NTRREM,NFTR,ISSORC,ISSINK,NSINKZ,NSORT,NSKSR,NFTSOR,IPHIC,
+     3IPCAP,MINCAP,MAXCAP,KTL,NODLFT,NPSORC,NPSINK,LTSINK,nacnt
+      COMMON/ARRAY1/IST,IPRED
+      COMMON/ARRAY2/IHEAD
+      COMMON/ARRAY3/ITAIL
+      COMMON/ARRAY4/ISEED
+      COMMON/ARRAY5/IFLAG
+      COMMON/ARRAY6/ISUP
+      COMMON/ARRAY7/LSINKS
+      DIMENSION IPRED(1),IHEAD(1),ITAIL(1),IFLAG(1),ISUP(1),LSINKS(1)
+      integer from(35000),to(35000),c(35000),u(35000),b(8500)
+      common /arrays/from/arraye/to/arrayu/u/arrayc/c/arrayb/b
+      INTEGER DENS
+
+   10 N=NSORT
+      M=N
+   20 M=M/2
+      IF(M)30,65,30
+   30 K=N-M
+      J=1
+   41 I=J
+   49 L=I+M
+      IF(ITAIL(I)-ITAIL(L))60,60,50
+   50 IT=ITAIL(I)
+      ITAIL(I)=ITAIL(L)
+      ITAIL(L)=IT
+      IT=IHEAD(I)
+      IHEAD(I)=IHEAD(L)
+      IHEAD(L)=IT
+      I=I-M
+      IF(I-1)60,49,49
+   60 J=J+1
+      IF(J-K)41,41,20
+   65 CONTINUE
+      RETURN
+      END
+      SUBROUTINE WEND
+C***********************************************************************
+C        WEND WRITES OUT THE ARCS FROM THE SINKS TO THE SUPER SINK,
+C        THE ARC FROM THE SUPER SINK TO THE SUPER SOURCE, AND THE
+C        END CARDS FOR SHARE FORMAT.  THESE ARE ALL WRITTEN ON THE
+C        PROBLEM FILE.
+C***********************************************************************
+      COMMON/VAR/NODES,DENS,MINCST,MAXCST,ITSUP,NSORC,NTSORC,NSINK,
+     1NTSINK,NONSOR,NUPBND,NFSINK,NARCS,NLTR,NTRANS,NTRAVL,
+     2NTRREM,NFTR,ISSORC,ISSINK,NSINKZ,NSORT,NSKSR,NFTSOR,IPHIC,
+     3IPCAP,MINCAP,MAXCAP,KTL,NODLFT,NPSORC,NPSINK,LTSINK,nacnt
+      COMMON/ARRAY1/IST,IPRED
+      COMMON/ARRAY2/IHEAD
+      COMMON/ARRAY3/ITAIL
+      COMMON/ARRAY4/ISEED
+      COMMON/ARRAY5/IFLAG
+      COMMON/ARRAY6/ISUP
+      COMMON/ARRAY7/LSINKS
+      DIMENSION IPRED(1),IHEAD(1),ITAIL(1),IFLAG(1),ISUP(1),LSINKS(1)
+      integer from(35000),to(35000),c(35000),u(35000),b(8500)
+      common /arrays/from/arraye/to/arrayu/u/arrayc/c/arrayb/b
+      INTEGER DENS
+
+      NZ=0
+      NFPSNK=LTSINK+1
+      IF(NFPSNK.GT.NODES)GO TO 150
+      DO 100 I=NFPSNK,NODES
+c         write(6,10100) I,ISSINK,NZ,IPRED(I)
+         kkkk=-ipred(i)
+c         write(6,*)i,kkkk,'    at 100ENDSOLVE'
+         b(i)=kkkk
+ 100     continue
+c         do 101 i=1,nodes
+c 101        if(b(i).ne.0)write(6,*)i,b(i)
+10100 FORMAT(6X,2I6,2X,3I10)
+ 150  continue
+c  150 write(6,10100) ISSINK,ISSORC,NZ,ITSUP,ITSUP
+c      write(6,10200)
+10200 FORMAT(3HEND/5HSOLVE)
+      RETURN
+      END
+      SUBROUTINE PKHD(IT)
+C***********************************************************************
+C        PKHD HAS ONE FORMAL PARAMETER (IT).  THE SUBROUTINE CREATES
+C        AND WRITES ON THE PROBLEM FILE A RANDOM MUNBER OF ARCS
+C        FROM NODE IT TO RANDOMLY SELECTED NODES.  THE SUBROUTINE
+C        DYNAMICALLY ADJUSTS VARIOUS PARAMETERS IN ORDER TO INSURE
+C        THAT THE RESULTING NETWORK HAS THE RIGHT NUMBER OF ARCS.
+C***********************************************************************
+      COMMON/VAR/NODES,DENS,MINCST,MAXCST,ITSUP,NSORC,NTSORC,NSINK,
+     1NTSINK,NONSOR,NUPBND,NFSINK,NARCS,NLTR,NTRANS,NTRAVL,
+     2NTRREM,NFTR,ISSORC,ISSINK,NSINKZ,NSORT,NSKSR,NFTSOR,IPHIC,
+     3IPCAP,MINCAP,MAXCAP,KTL,NODLFT,NPSORC,NPSINK,LTSINK,nacnt
+      COMMON/ARRAY1/IST,IPRED
+      COMMON/ARRAY2/IHEAD
+      COMMON/ARRAY3/ITAIL
+      COMMON/ARRAY4/ISEED
+      COMMON/ARRAY5/IFLAG
+      COMMON/ARRAY6/ISUP
+      COMMON/ARRAY7/LSINKS
+      DIMENSION IPRED(1),IHEAD(1),ITAIL(1),IFLAG(1),ISUP(1),LSINKS(1)
+      integer from(35000),to(35000),c(35000),u(35000),b(8500)
+      common /arrays/from/arraye/to/arrayu/u/arrayc/c/arrayb/b
+      INTEGER DENS
+
+      IF((NODLFT-1)*2.LE.DENS-NARCS-1)GO TO 5
+      NODLFT=NODLFT-1
+      RETURN
+    5 IF((DENS-NARCS+NONSOR-KTL-1)/NODLFT-NONSOR+1) 12,10,10
+   10 K=NONSOR
+      GO TO 15
+12    NUPBND=(DENS-NARCS-NODLFT)/NODLFT*2
+14    K=IRAN(1,NUPBND)
+      IF(NODLFT.EQ.1) K=DENS-NARCS
+      IF((NODLFT-1)*(NONSOR-1).LT.DENS-NARCS-K)GO TO 14
+15    NODLFT=NODLFT-1
+      DO 100 J=1,K
+      NN=IRAN(1,KTL)
+      KTL=KTL-1
+      DO 25 L=NFTSOR,NODES
+      IF(IFLAG(L).EQ.1) GO TO 25
+      NN=NN-1
+      IF(NN.EQ.0) GO TO 35
+25    CONTINUE
+      RETURN
+35    IFLAG(L)=1
+      ICAP=ITSUP
+      JCAP=IRAN(1,100)
+      IF(JCAP.GT.IPCAP) GO TO 40
+      ICAP=IRAN(MINCAP,MAXCAP)
+40    ICOST=IRAN(MINCST,MAXCST)
+c      write(6,10100) IT,L,ICOST,ICAP
+                             call putarc(IT,L,ICOST,ICAP)
+10100 FORMAT(6X,2I6,2X,2I10)
+      NARCS=NARCS+1
+100   CONTINUE
+      RETURN
+      END
+      SUBROUTINE ASSIGN
+C***********************************************************************
+C        ASSIGN HANDLES THE GENERATION OF ASSIGNMENT PROBLEMS.  THE
+C        SUBROUTINE CREATES THE SUPPLIES, GENERATES THE SKELETON,
+C        AND CALLS PKHD TO GENERATE THE REMAINING ARCS.
+C***********************************************************************
+      COMMON/VAR/NODES,DENS,MINCST,MAXCST,ITSUP,NSORC,NTSORC,NSINK,
+     1NTSINK,NONSOR,NUPBND,NFSINK,NARCS,NLTR,NTRANS,NTRAVL,
+     2NTRREM,NFTR,ISSORC,ISSINK,NSINKZ,NSORT,NSKSR,NFTSOR,IPHIC,
+     3IPCAP,MINCAP,MAXCAP,KTL,NODLFT,NPSORC,NPSINK,LTSINK,nacnt
+      COMMON/ARRAY1/IST,IPRED
+      COMMON/ARRAY2/IHEAD
+      COMMON/ARRAY3/ITAIL
+      COMMON/ARRAY4/ISEED
+      COMMON/ARRAY5/IFLAG
+      COMMON/ARRAY6/ISUP
+      COMMON/ARRAY7/LSINKS
+      DIMENSION IPRED(1),IHEAD(1),ITAIL(1),IFLAG(1),ISUP(1),LSINKS(1)
+      integer from(35000),to(35000),c(35000),u(35000),b(8500)
+      common /arrays/from/arraye/to/arrayu/u/arrayc/c/arrayb/b
+      INTEGER DENS
+
+      DO 30 I=1,NSORC
+30    ISUP(I)=1
+      CALL WHEAD
+      DO 40 I=NFSINK,NODES
+40    IPRED(I)=1
+      DO 45 I=1,NSORC
+45    IFLAG(I)=0
+      DO 100 IT=1,NSORC
+      DO 48 I=NFSINK,NODES
+48    IFLAG(I)=0
+      KTL=NSINK-1
+      NN=IRAN(1,NSINK-IT+1)
+      DO 50 L=1,NSORC
+      IF(IFLAG(L).EQ.1) GO TO 50
+      NN=NN-1
+      IF(NN.EQ.0) GO TO 75
+50    CONTINUE
+   75 NARCS=NARCS+1
+      LL=NSORC+L
+      ICOST=IRAN(MINCST,MAXCST)
+c      write(6,10100) IT,LL,ICOST,ISUP(1)
+                             call putarc(IT,LL,ICOST,ISUP(1))
+10100 FORMAT(6X,2I6,2X,2I10)
+      IFLAG(L)=1
+      IFLAG(LL)=1
+      CALL PKHD(IT)
+100   CONTINUE
+      RETURN
+      END
+      SUBROUTINE SETRAN(ISEED)
+C
+C   PORTABLE RANDOM NUMBER GENERATOR
+C
+C   THIS GENERATOR CONSISTS OF TWO ROUTINES
+C     1) SETRAN - INITIALIZES CONSTANTS AND SEED
+C     2) IRAN - GENERATES A RANDOM INTEGER IN A SPECIFIED RANGE
+C
+C   ALL INTEGER VARIABLES IN SETRAN AND IRAN MUST HAVE AT
+C   LEAST 31 BITS OF PRECISION EXCLUSIVE OF SIGN
+C
+C   THE GENERATOR IS THE CONGRUENTIAL GENERATOR
+C     I = 7**5 * I  MOD(2**31 - 1)
+C
+C   INITIALIZE CONSTANTS AND SEED
+C   ISEED IS ASSUMED IN THE RANGE 0 .LT. ISEED .LT. 2**31 - 1
+      COMMON/RAN/MULT,MODUL,I15,I16,JRAN
+      MULT=16807
+      MODUL=2147483647
+      I15=2**15
+      I16=2**16
+      JRAN=ISEED
+      RETURN
+      END
+      FUNCTION IRAN(IA,IB)
+C   GENERATE A RANDOM INTEGER IN THE RANGE IA TO IB
+C   IF IA .GT. IB THEN RETURN IRAN = IB
+      COMMON/RAN/MULT,MODUL,I15,I16,JRAN
+      IXHI=JRAN/I16
+      IXLO=JRAN-IXHI*I16
+      IXALO=IXLO*MULT
+      LEFTLO=IXALO/I16
+      IXAHI=IXHI*MULT
+      IFULHI=IXAHI+LEFTLO
+      IRTLO=IXALO-LEFTLO*I16
+      IOVER=IFULHI/I15
+      IRTHI=IFULHI-IOVER*I15
+      JRAN=((IRTLO-MODUL) + IRTHI*I16) + IOVER
+      IF(JRAN) 100,110,110
+100   JRAN=JRAN+MODUL
+110   CONTINUE
+      J=IB-IA+1
+      IF(J.LE.0) GO TO 120
+      IRAN=MOD(JRAN,J)+IA
+      GO TO 130
+120   IRAN=IB
+130   CONTINUE
+      RETURN
+      END
+
+

@@ -1,0 +1,166 @@
+#!/bin/sh 
+##############################################################################
+# create core data (ccd) generates all the DIMACS core test files 			 #
+# for max-flow problem in the current directory.			 			     #
+#			 																 #
+# ccd $1 			 												 		 #
+#			 																 #
+#  n=2^($1),  is the size of the input which must be a power of two.		 #
+#																			 #
+#	amit@cs.ucf.edu															 #
+##############################################################################
+
+if test "$1"=""
+then
+	echo "Usage: ccd <number>  " 
+	echo "       if number of nodes is n=2^x, the input number is x"
+	exit 1
+fi
+
+# Set the following variable to the location of the generator directory
+# in the dimacs tree. It assumes the programs are all in their
+# respective subpdirectories under the directory netflow/generators/network.
+GENDIR=/usr1/grad/amit/dimacs/netflow/generators/network
+
+# size of the network 
+n=`echo "2^($1)"| bc`
+
+#******************************************************************************
+# NETWORK-WIDTH family
+# -------------------
+# All the networks have capacities in the range [0..10000]
+# 
+#******************************************************************************
+
+# n=2^x; arg1=2^(x-6) 
+arg1=`echo "2^($1-6)" | bc`
+$GENDIR/washington/washington 2 $arg1 64 10000 Washington-RLG-Wide.max
+echo "Washington-RLG-Wide.max done"
+
+# n=2^x; arg1=2^(x-6) 
+$GENDIR/washington/washington 2 64 $arg1 10000 Washington-RLG-Long.max
+echo "Washington-RLG-Long.max done"
+
+rem=`echo "$1 % 4" | bc`
+case "$rem" in
+0)
+    a=`echo "2^($1/4)"|bc`;
+    b=`echo "2^(2*($1/4))"|bc`;;
+*)
+    y=`echo "($1+4-$rem)/4"|bc`;
+    echo "input argument not a multiple of 4; using $y instead";
+    a=`echo "2^($y)"|bc`;
+    b=`echo "2^(2*$y)"|bc`;;
+esac
+$GENDIR/genrmf/genrmf -out Genrmf-Long.max -a $a -b $b -c1 1 -c2 10000
+echo "Genrmf-Long.max done"
+
+
+rem=`echo "$1 % 5" | bc`
+case "$rem" in
+0)
+    a=`echo "2^($1/5)"|bc`;
+    b=`echo "2^(2*($1/5))"|bc`;;
+*)
+    y=`echo "($1+5-$rem)/5"|bc`;
+    echo "input argument not a multiple of 5; using $y instead";
+    b=`echo "2^($y)"|bc`;
+    a=`echo "2^(2*$y)"|bc`;;
+esac
+$GENDIR/genrmf/genrmf -out Genrmf-Wide.max -a $a -b $b -c1 1 -c2 10000
+echo "Genrmf-Wide.max done"
+
+echo
+echo "NETWORK WIDTH Family done"
+echo
+#******************************************************************************
+
+
+#******************************************************************************
+# NETWORK-DENSITY family
+# -------------------
+# All the networks have capacities in the range [0..1000000]
+# 
+
+
+arg1=`echo "2^($1/2)" | bc `
+$GENDIR/washington/washington 5 $arg1 4 1000000 Washington-Square-Sparse.max
+echo "Washington-Square-Sparse.max done"
+
+arg2=`echo "$arg1/4" | bc`
+$GENDIR/washington/washington 5 $arg1 $arg2 1000000 Washington-Square-Moderate.max
+echo "Washington-Square-Moderate.max done"
+
+arg1=`echo "2^($1-2)" | bc`
+$GENDIR/washington/washington 6 $arg1 4 4 Washington-Line-Sparse.max
+echo "Washington-Line-Sparse.max done"
+
+arg3=`echo "2^($1/2-2)" | bc`
+$GENDIR/washington/washington 6 $arg1 4 $arg3 Washington-Line-Moderate.max
+echo "Washington-Line-Moderate.max done"
+
+#-----------------------------------------------------------------------------
+$GENDIR/waissi/ac-max  <<End >/dev/null
+y
+Acyclic-Dense.max
+$n
+
+
+
+f
+n
+1000000
+
+
+
+End
+#-----------------------------------------------------------------------------
+echo "Acyclic-Dense.max done"
+
+echo 
+echo "NETWORK  DENSITY Family done"
+echo
+#******************************************************************************
+
+
+#******************************************************************************
+# CAPACITY-SCALE family
+# -------------------
+# 
+
+#-----------------------------------------------------------------------------
+$GENDIR/waissi/tr2-max <<End >/dev/null
+y
+Transit2-Lo-Cap.max
+$n
+100
+
+
+End
+#-----------------------------------------------------------------------------
+echo "Transit2-Lo-Cap.max done"
+
+#-----------------------------------------------------------------------------
+$GENDIR/waissi/tr2-max <<End >/dev/null
+y
+Transit2-Hi-Cap.max
+$n
+100000000
+
+
+End
+#-----------------------------------------------------------------------------
+echo "Transit2-Hi-Cap.max done"
+
+
+arg=`echo "2^($1/2)" | bc`
+$GENDIR/washington/washington 3 $arg $arg 100 Washington-RLG2-Lo-Cap.max
+echo "Washington-RLG2-Lo-Cap.max done"
+
+$GENDIR/washington/washington 3 $arg $arg 100000000 Washington-RLG2-Hi-Cap.max
+echo "Washington-RLG2-Hi-Cap.max done"
+
+echo
+echo "CAPACITY SCALE Family done"
+echo
+#******************************************************************************
