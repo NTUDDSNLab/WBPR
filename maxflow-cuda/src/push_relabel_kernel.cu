@@ -3,29 +3,28 @@
 __global__ void push_relabel_kernel(int V, int source, int sink, int *gpu_height, int *gpu_excess_flow, int *gpu_adjmtx,int *gpu_rflowmtx)
 {
     // u'th node is operated on by the u'th thread
-    unsigned int u = (blockIdx.x*blockDim.x) + threadIdx.x;
+    unsigned int idx = (blockIdx.x*blockDim.x) + threadIdx.x;
 
-    //printf("u : %d\nV : %d\n",u,V);
+    // cycle value is set to KERNEL_CYCLES as required 
+    int cycle = KERNEL_CYCLES;  
 
-    if(u < V)
-    {
-        //printf("Thread id : %d\n",u);
-        // cycle value is set to KERNEL_CYCLES as required 
-        int cycle = KERNEL_CYCLES;
+    while (cycle > 0) {
 
-        /* Variables declared to be used inside the kernel :
-        * e_dash - initial excess flow of node u
-        * h_dash - height of lowest neighbor of node u
-        * h_double_dash - used to iterate among height values to find h_dash
-        * v - used to iterate among nodes to find v_dash
-        * v_dash - lowest neighbor of node u 
-        * d - flow to be pushed from node u
-        */
+        for (unsigned int u = idx; u < V; u += blockDim.x * gridDim.x) {
 
-        int e_dash,h_dash,h_double_dash,v,v_dash,d;
+            // if (threadIdx.x == 0)  printf("u : %d\n",u);
 
-        while(cycle > 0)
-        {
+            /* Variables declared to be used inside the kernel :
+            * e_dash - initial excess flow of node u
+            * h_dash - height of lowest neighbor of node u
+            * h_double_dash - used to iterate among height values to find h_dash
+            * v - used to iterate among nodes to find v_dash
+            * v_dash - lowest neighbor of node u 
+            * d - flow to be pushed from node u
+            */
+
+            int e_dash,h_dash,h_double_dash,v,v_dash,d;
+
             if( (gpu_excess_flow[u] > 0) && (gpu_height[u] < V) )
             {
                 e_dash = gpu_excess_flow[u];
@@ -86,9 +85,9 @@ __global__ void push_relabel_kernel(int V, int source, int sink, int *gpu_height
 
             }
 
-            // cycle value is decreased
-            cycle = cycle - 1;
-
         }
+
+        // cycle value is decreased
+        cycle = cycle - 1;
     }
 }
