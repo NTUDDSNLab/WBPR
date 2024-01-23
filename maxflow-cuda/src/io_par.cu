@@ -39,17 +39,20 @@ void print(int V,int *cpu_height, int *cpu_excess_flow, int *cpu_rflowmtx, int *
 void readgraph(char* filename, int V, int E, int source, int sink, int *cpu_height, int *cpu_excess_flow, int *cpu_adjmtx, int *cpu_rflowmtx)
 {
     // initialising all adjacent matrix values to 0 before input 
-    for(int i = 0; i < (number_of_nodes)*(number_of_nodes); i++)
+    for(unsigned long long i = 0; i < (number_of_nodes)*(number_of_nodes); i++)
     {
         cpu_adjmtx[i] = 0;
         cpu_rflowmtx[i] = 0;
     }
     // declaring file pointer to read edgelist
     FILE *fp = fopen(filename,"r");
+    printf("Reading graph from file %s\n",filename);
+    printf("number of nodes : %d\n",V);
+    printf("Array size : %llu\n", number_of_nodes*number_of_nodes);
 
     // declaring variables to read and store data from file
     char buf1[10],buf2[10],buf3[10];
-    int e1,e2,cp;
+    unsigned long long e1,e2,cp;
 
     // getting edgelist input from file "edgelist.txt"
     for(int i = 0; i < E; i++)
@@ -64,14 +67,16 @@ void readgraph(char* filename, int V, int E, int source, int sink, int *cpu_heig
         e2 = atoi(buf2);
         cp = atoi(buf3);
 
+        printf("edge %llu %llu %llu, idx: %llu \n",e1,e2,cp, IDX(e1,e2));
+
         /* Adding edges to the graph 
          * rflow - residual flow is also updated simultaneously
          * So the graph when prepared already has updated residual flow values
          * This is why residual flow is not initialised during preflow
          */
 
-            cpu_adjmtx[IDX(e1,e2)] = cp;
-            cpu_rflowmtx[IDX(e1,e2)] = cp;    
+        cpu_adjmtx[IDX(e1,e2)] = cp;
+        cpu_rflowmtx[IDX(e1,e2)] = cp;    
         
 
     }
