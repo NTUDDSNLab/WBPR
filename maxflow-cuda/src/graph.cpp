@@ -267,16 +267,19 @@ void ResidualGraph::buildFromCSRGraph(const CSRGraph &graph) {
   num_nodes = graph.num_nodes;
 
   // Initialize offset vectors
-  backward_offsets.resize(num_nodes + 1, 0);
-  forward_offsets.resize(num_nodes + 1, 0);
+  roffsets.resize(num_nodes + 1, 0);
+  offsets.resize(num_nodes + 1, 0);
+  flows.resize(graph.offsets[num_nodes], 0); // The initial residual flow of forward edges are all 0
+  rflows.resize(graph.offsets[num_nodes], 0); // The initial residual flow of backward edges are all 0
 
   // Allocate space for destinations and capacities
-  forward_destinations.resize(graph.offsets[num_nodes]);
-  forward_capacities.resize(graph.offsets[num_nodes]);
+  destinations.resize(graph.offsets[num_nodes]);
+  capacities.resize(graph.offsets[num_nodes]);
 
-  forward_offsets.assign(graph.offsets.begin(), graph.offsets.end());
-  forward_destinations.assign(graph.destinations.begin(), graph.destinations.end());
-  forward_capacities.assign(graph.capacities.begin(), graph.capacities.end());
+  // Forward edges are the same as CSR graph
+  offsets.assign(graph.offsets.begin(), graph.offsets.end());
+  destinations.assign(graph.destinations.begin(), graph.destinations.end());
+  capacities.assign(graph.capacities.begin(), graph.capacities.end());
   
 
   std::vector<int> backward_counts(num_nodes, 0);
@@ -290,15 +293,14 @@ void ResidualGraph::buildFromCSRGraph(const CSRGraph &graph) {
   
   // Convert counts to actual offsets
   for (int i = 1; i <= num_nodes; ++i) {
-      backward_offsets[i] = backward_offsets[i - 1] + backward_counts[i - 1];
+      roffsets[i] = roffsets[i - 1] + backward_counts[i - 1];
   }
 
   // Initialize backward count vector
   backward_counts.clear();
   backward_counts.resize(num_nodes + 1, 0);
 
-  backward_destinations.resize(backward_offsets[num_nodes]);
-  backward_capacities.resize(backward_offsets[num_nodes]);
+  rdestinations.resize(roffsets[num_nodes]);
 
   // Fill forward and backward edges
   for (int i = 0; i < num_nodes; ++i) {
@@ -307,10 +309,50 @@ void ResidualGraph::buildFromCSRGraph(const CSRGraph &graph) {
           int cap = graph.capacities[j];
 
           // Corresponding backward edge
-          int backward_index = backward_offsets[dest] + backward_counts[dest];
-          backward_destinations[backward_index] = i;
-          backward_capacities[backward_index] = 0;
+          int backward_index = roffsets[dest] + backward_counts[dest];
+          rdestinations[backward_index] = i;
+          rflows[backward_index] = 0;
           backward_counts[dest]++;
       }
   }
+}
+
+void ResidualGraph::print() const
+{
+  printf("Residual graph:\n");
+  printf("Offsets: ");
+  for (int i=0; i < offsets.size(); i++) {
+      printf("%d ", offsets[i]);
+  }
+  printf("\n");
+  printf("Destinations: ");
+  for (int i=0; i < destinations.size(); i++) {
+      printf("%d ", destinations[i]);
+  }
+  printf("\n");
+  printf("Capacities: ");
+  for (int i=0; i < capacities.size(); i++) {
+      printf("%d ", capacities[i]);
+  }
+  printf("\n");
+  printf("Flow: ");
+  for (int i=0; i < flows.size(); i++) {
+      printf("%d ", flows[i]);
+  }
+  printf("\n");
+  printf("Roffsets: ");
+  for (int i=0; i < roffsets.size(); i++) {
+      printf("%d ", roffsets[i]);
+  }
+  printf("\n");
+  printf("Rdestinations: ");
+  for (int i=0; i < rdestinations.size(); i++) {
+      printf("%d ", rdestinations[i]);
+  }
+  printf("\n");
+  printf("RFlows: ");
+  for (int i=0; i < rflows.size(); i++) {
+      printf("%d ", rflows[i]);
+  }
+  printf("\n");
 }

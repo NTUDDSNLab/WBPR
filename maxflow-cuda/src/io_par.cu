@@ -48,7 +48,7 @@ void readgraph(char* filename, int V, int E, int source, int sink, int *cpu_heig
     FILE *fp = fopen(filename,"r");
     printf("Reading graph from file %s\n",filename);
     printf("number of nodes : %d\n",V);
-    printf("Array size : %llu\n", number_of_nodes*number_of_nodes);
+    //printf("Array size : %llu\n", number_of_nodes*number_of_nodes);
 
     // declaring variables to read and store data from file
     char buf1[10],buf2[10],buf3[10];

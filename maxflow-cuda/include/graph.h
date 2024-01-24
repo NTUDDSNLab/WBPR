@@ -48,20 +48,24 @@ public:
 // Residual graph representation
 class ResidualGraph {
 public:
+    ResidualGraph() {}
     ResidualGraph(const CSRGraph &graph) {
         buildFromCSRGraph(graph);
     }
 
     void buildFromCSRGraph(const CSRGraph &graph);
 
+    void print() const;
+
     // Other methods and members...
 
     int num_nodes;
-    std::vector<int> forward_offsets;
-    std::vector<int> forward_destinations;
-    std::vector<int> forward_capacities;
+    std::vector<int> offsets;
+    std::vector<int> destinations;
+    std::vector<int> capacities; 
+    std::vector<int> flows; // cf(u, v)
 
-    std::vector<int> backward_offsets;
-    std::vector<int> backward_destinations;
-    std::vector<int> backward_capacities;
+    std::vector<int> roffsets;
+    std::vector<int> rdestinations;
+    std::vector<int> rflows; // cf(v, u)
 };

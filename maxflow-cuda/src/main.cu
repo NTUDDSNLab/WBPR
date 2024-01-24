@@ -21,41 +21,30 @@ int main(int argc, char **argv)
     CSRGraph csr_graph;
     csr_graph.buildFromTxtFile(filename);
 
-    printf("Reading graph from file %s\n",filename);
+    ResidualGraph res_graph;
+    res_graph.buildFromCSRGraph(csr_graph);
 
-    if (csr_graph.checkIfContinuous()) {
-        printf("Graph is continuous\n");
-    } else {
-        printf("Graph is not continuous, terminate!\n");
-        exit(1);
-    }
+    printf("Reading graph from file %s\n",filename);
     
     int V = csr_graph.num_nodes;
     int E = csr_graph.num_edges;
+
+    // Print res_graph
+    res_graph.print();
 
 
     // declaring variables to store graph data on host as well as on CUDA device global memory 
     int *cpu_height,*gpu_height;
     int *cpu_excess_flow,*gpu_excess_flow;
     int *Excess_total;
-    int *cpu_destination,*gpu_destination;
-    int *cpu_offsets,*gpu_offsets;
-    int *cpu_capcities, *gpu_capcities;
-    int *cpu_rflow, *gpu_rflow;
+    int *gpu_destinations, *gpu_rdestinations;
+    int *gpu_offsets, *gpu_roffsets;
+    int *gpu_capcities, *gpu_rcapacities;
 
     
     // allocating host memory
     cpu_height = (int*)malloc(V*sizeof(int));
     cpu_excess_flow = (int*)malloc(V*sizeof(int));
-    cpu_destination = (int*)malloc(V*sizeof(int));
-    cpu_offsets = (int*)malloc(E*sizeof(int));
-    cpu_capcities = (int*)malloc(E*sizeof(int));
-    // TODO: Construct the residual graph with CSR format
-    cpu_rdestination = (int*)malloc(V*sizeof(int));
-    cpu_roffsets = (int*)malloc(E*sizeof(int));
-    cpu_rflow = (int*)malloc(E*sizeof(int));
-    
-    
     Excess_total = (int*)malloc(sizeof(int));
 
 
@@ -64,10 +53,12 @@ int main(int argc, char **argv)
     // allocating CUDA device global memory
     cudaMalloc((void**)&gpu_height,V*sizeof(int));
     cudaMalloc((void**)&gpu_excess_flow,V*sizeof(int));
-    cudaMalloc((void**)&gpu_destination,V*sizeof(int));
+    cudaMalloc((void**)&gpu_destinations,V*sizeof(int));
     cudaMalloc((void**)&gpu_offsets,E*sizeof(int));
     cudaMalloc((void**)&gpu_capcities,E*sizeof(int));
-    cudaMalloc((void**)&gpu_rflow,E*sizeof(int));
+    cudaMalloc((void**)&gpu_rdestinations,V*sizeof(int));
+    cudaMalloc((void**)&gpu_roffsets,E*sizeof(int));
+    cudaMalloc((void**)&gpu_rcapacities,E*sizeof(int));
 
 
     // readgraph
@@ -75,20 +66,40 @@ int main(int argc, char **argv)
     
 
     // time start
+    printf("Starting preflow\n");
 
     // invoking the preflow function to initialise values in host
-    preflow(V,source,sink,cpu_height,cpu_excess_flow,cpu_destination,cpu_offsets,cpu_capcities, Excess_total);
+    preflow(V,source,sink,cpu_height,cpu_excess_flow, 
+            &(res_graph.offsets), &(res_graph.destinations), &(res_graph.capacities), &(res_graph.flows),
+            &(res_graph.roffsets), &(res_graph.rdestinations), &(res_graph.rflows), Excess_total);
+    
     printf("Excess_total: %d\n",*Excess_total);
+
+    // Print the result of preflow,
+    printf("Preflow result:\n");
+    printf("Flow: ");
+    for (int i=0; i < res_graph.flows.size(); i++) {
+        printf("%d ", res_graph.flows[i]);
+    }
+    printf("\n");
+    printf("Rflow: ");
+    for (int i=0; i < res_graph.rflows.size(); i++) {
+        printf("%d ", res_graph.rflows[i]);
+    }
+    printf("\n");
+    
+
+
     //print(V,cpu_height,cpu_excess_flow,cpu_rflowmtx,cpu_adjmtx);
 
     // copying host data to CUDA device global memory
     cudaMemcpy(gpu_height,cpu_height,V*sizeof(int),cudaMemcpyHostToDevice);
     cudaMemcpy(gpu_excess_flow,cpu_excess_flow,V*sizeof(int),cudaMemcpyHostToDevice);
-    cudaMemcpy(gpu_adjmtx,cpu_adjmtx,V*V*sizeof(int),cudaMemcpyHostToDevice);
-    cudaMemcpy(gpu_rflowmtx,cpu_rflowmtx,V*V*sizeof(int),cudaMemcpyHostToDevice);
+    //cudaMemcpy(gpu_adjmtx,cpu_adjmtx,V*V*sizeof(int),cudaMemcpyHostToDevice);
+    // cudaMemcpy(gpu_rflowmtx,cpu_rflowmtx,V*V*sizeof(int),cudaMemcpyHostToDevice);
 
     // push_relabel()
-    push_relabel(V,source,sink,cpu_height,cpu_excess_flow,cpu_adjmtx,cpu_rflowmtx,Excess_total,gpu_height,gpu_excess_flow,gpu_adjmtx,gpu_rflowmtx);
+    // push_relabel(V,source,sink,cpu_height,cpu_excess_flow,cpu_adjmtx,cpu_rflowmtx,Excess_total,gpu_height,gpu_excess_flow,gpu_adjmtx,gpu_rflowmtx);
     
     // store value from serial implementation
     int serial_check = check(V,E,source,sink);
@@ -110,14 +121,14 @@ int main(int argc, char **argv)
     // free device memory
     cudaFree(gpu_height);
     cudaFree(gpu_excess_flow);
-    cudaFree(gpu_adjmtx);
-    cudaFree(gpu_rflowmtx);
+    //cudaFree(gpu_adjmtx);
+    //cudaFree(gpu_rflowmtx);
     
     // free host memory
     free(cpu_height);
     free(cpu_excess_flow);
-    free(cpu_adjmtx);
-    free(cpu_rflowmtx);
+    //free(cpu_adjmtx);
+    //free(cpu_rflowmtx);
     free(Excess_total);
     
     // return 0 and end program
