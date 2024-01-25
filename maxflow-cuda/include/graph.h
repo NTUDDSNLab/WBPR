@@ -60,12 +60,24 @@ public:
     // Other methods and members...
 
     int num_nodes;
-    std::vector<int> offsets;
-    std::vector<int> destinations;
-    std::vector<int> capacities; 
-    std::vector<int> flows; // cf(u, v)
+    int num_edges;
 
-    std::vector<int> roffsets;
-    std::vector<int> rdestinations;
-    std::vector<int> rflows; // cf(v, u)
+    int* offsets;
+    int* destinations;
+    int* capacities;
+    int* flows; // cf(u, v)
+
+    int* roffsets;
+    int* rdestinations;
+    int* rflows; // cf(v, u)
+
+
+    // std::vector<int> offsets;
+    // std::vector<int> destinations;
+    // std::vector<int> capacities; 
+    // std::vector<int> flows; // cf(u, v)
+
+    // std::vector<int> roffsets;
+    // std::vector<int> rdestinations;
+    // std::vector<int> rflows; // cf(v, u)
 };

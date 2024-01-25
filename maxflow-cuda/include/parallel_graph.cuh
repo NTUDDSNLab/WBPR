@@ -4,6 +4,7 @@
 #include<cuda.h>
 #include<bits/stdc++.h>
 #include<vector>
+#include "utils.cuh"
 
 // macros declared
 
@@ -18,14 +19,24 @@
 
 // function prototypes for parallel implementation
 
-void preflow(int V, int source, int sink, int *cpu_height, int *cpu_excess_flow, std::vector<int> *forward_offsets, std::vector<int> *forward_destinations, std::vector<int>* forward_capacities, std::vector<int>* forward_flows, std::vector<int>* backward_offsets, std::vector<int>* backward_destinations, std::vector<int>* backward_flows, int *Excess_total);
-void push_relabel(int V, int source, int sink, int *cpu_height, int *cpu_excess_flow, int *cpu_adjmtx, int *cpu_rflowmtx, int *Excess_total, int *gpu_height, int *gpu_excess_flow, int *gpu_adjmtx, int *gpu_rflowmtx);
-void global_relabel(int V, int source, int sink, int *cpu_height, int *cpu_excess_flow, int *cpu_adjmtx, int *cpu_rflowmtx, int *Excess_total, bool *mark, bool *scanned);
+void preflow(int V, int source, int sink, int *cpu_height, int *cpu_excess_flow, int *forward_offsets, int *forward_destinations, int* forward_capacities, int* forward_flows, int* backward_offsets, int* backward_destinations, int* backward_flows, int *Excess_total);
+void push_relabel(int V, int E, int source, int sink, int *cpu_height, int *cpu_excess_flow, 
+                int *cpu_offsets, int *cpu_destinations, int* cpu_capacities, int* cpu_flows, int* cpu_roffsets, int* cpu_rdestinations, int* cpu_rflows,
+                int *Excess_total, 
+                int *gpu_height, int *gpu_excess_flow, 
+                int *gpu_offsets, int* gpu_destinations, int* gpu_capacities, int* gpu_flows,
+                int* gpu_roffsets, int* gpu_rdestinations, int* gpu_rflows);
+void global_relabel(int V, int E, int source, int sink, int *cpu_height, int *cpu_excess_flow, 
+                int *cpu_offsets, int *cpu_destinations, int* cpu_capacities, int* cpu_flows, int* cpu_roffsets, int* cpu_rdestinations, int* cpu_rflows,
+                int *Excess_total,
+                bool *mark, bool *scanned);
 void readgraph(char* filename, int V, int E, int source, int sink, int *cpu_height, int *cpu_excess_flow, int *cpu_adjmtx, int *cpu_rflowmtx);
 void print(int V,int *cpu_height, int *cpu_excess_flow, int *cpu_rflowmtx, int *cpu_adjmtx);
 
 // prototype for the push relabel kernel
 
-__global__ void push_relabel_kernel(int V, int source, int sink, int *gpu_height, int *gpu_excess_flow, int *gpu_adjmtx,int *gpu_rflowmtx);
+__global__ void push_relabel_kernel(int V, int source, int sink, int *gpu_height, int *gpu_excess_flow, 
+                                    int *gpu_offsets,int *gpu_destinations, int *gpu_capacities, int *gpu_flows,
+                                    int *gpu_roffsets, int *gpu_rdestinations, int *gpu_rflows);
 
 #endif
