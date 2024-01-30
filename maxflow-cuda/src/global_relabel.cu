@@ -87,12 +87,22 @@ void global_relabel(int V, int E, int source, int sink, int *cpu_height, int *cp
         current = current + 1;
 
         // For all (y,x) belonging to E_f
-        // Scan reversed CSR
+        // Scan reversed CSR but use the flow in the forward direction 
         for(int i = cpu_roffsets[x]; i < cpu_roffsets[x + 1]; i++)
         {
             y = cpu_rdestinations[i];
-            printf("Global relabel: %d's neighbor: %d (cpu_rflows: %d) \n",x, y, cpu_rflows[i]);
-            if (cpu_rflows[i] > 0) {
+
+            /* Find (y, x) flow */
+            int flow_index = -1;
+            for (int j = cpu_offsets[y]; j < cpu_offsets[y + 1]; j++) {
+                if (cpu_destinations[j] == x) {
+                    flow_index = j;
+                    break;
+                }
+            }
+
+            printf("(y, x): (%d, %d), flow[%d]: %d\n", y, x, flow_index, cpu_flows[flow_index]);
+            if (cpu_flows[flow_index] > 0) {
                 // if y is not scanned
                 printf("Global relabel: (%d, %d)'s flow > 0\n",x, y);
                 if(scanned[y] == false)

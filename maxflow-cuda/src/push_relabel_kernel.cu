@@ -80,7 +80,7 @@ __global__ void push_relabel_kernel(int V, int source, int sink, int *gpu_height
                             return;
                         }
 
-                        printf("[PUSH] u: %d, v_dash: %d, d: %d\n", u, v_dash, d);
+                        //printf("[PUSH] u: %d, v_dash: %d, d: %d\n", u, v_dash, d);
 
 
                         /* Push flow to residual graph */
@@ -133,7 +133,7 @@ __global__ void push_relabel_kernel(int V, int source, int sink, int *gpu_height
                     /* Relabel operation */
                     gpu_height[u] = h_dash + 1;
 
-                    printf("[RELABEL] u: %d, h_dash: %d\n", u, h_dash);
+                    //printf("[RELABEL] u: %d, h_dash: %d\n", u, h_dash);
                 } 
             
             

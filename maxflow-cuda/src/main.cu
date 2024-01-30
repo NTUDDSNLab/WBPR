@@ -30,7 +30,7 @@ int main(int argc, char **argv)
     int E = csr_graph.num_edges;
 
     // Print res_graph
-    //res_graph.print();
+    res_graph.print();
 
 
     // declaring variables to store graph data on host as well as on CUDA device global memory 
