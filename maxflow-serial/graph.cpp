@@ -147,6 +147,74 @@ void CSRGraph::buildFromMmioFile(const std::string &filename) {
   free(val);
 }
 
+void CSRGraph::buildFromDIMACSFile(const std::string &filename) {
+  std::ifstream file(filename);
+  if (!file.is_open()) {
+      std::cerr << "Error opening file: " << filename << std::endl;
+      return;
+  }
+
+  std::string line;
+  std::unordered_map<int, std::vector<std::pair<int, int>>> adjacency_list;
+
+  while (getline(file, line)) {
+      if (line[0] == 'c') {
+          // Comment line, ignore
+          continue;
+      } else if (line[0] == 'p') {
+          // Problem line
+          std::istringstream iss(line);
+          char p;
+          std::string format;
+          iss >> p >> format >> num_nodes >> num_edges;
+          destinations.reserve(num_edges);
+          capacities.reserve(num_edges);
+          offsets.resize(num_nodes + 1, 0);
+      } 
+        else if (line[0] == 'n') {
+          // Node designation line (source or sink)
+          std::istringstream iss(line);
+          char n;
+          int node_id;
+          char node_type;
+          iss >> n >> node_id >> node_type;
+          if (node_type == 's') {
+              source_node = node_id - 1;  // Convert to 0-based index
+          } else if (node_type == 't') {
+              sink_node = node_id - 1;    // Convert to 0-based index
+          } 
+      }      
+        else if (line[0] == 'a') {
+          // Edge descriptor line
+          std::istringstream iss(line);
+          char a;
+          int u, v, capacity;
+          iss >> a >> u >> v >> capacity;
+
+          // Note: DIMACS format uses 1-based indexing, while C++ uses 0-based indexing
+          adjacency_list[u - 1].push_back({v - 1, capacity});
+      }
+  }
+
+  // Convert adjacency list to CSR format
+  int edge_count = 0;
+  for (int i = 0; i < num_nodes; ++i) {
+      offsets[i] = edge_count;
+      for (const auto& edge : adjacency_list[i]) {
+          destinations.push_back(edge.first);
+          capacities.push_back(edge.second);
+          edge_count++;
+      }
+  }
+  offsets[num_nodes] = edge_count;
+
+  file.close();
+
+}
+
+
+
+
 void CSRGraph::saveToBinary(const std::string &filename) {
   std::ofstream file(filename, std::ios::binary);
   if (!file) {
@@ -405,6 +473,7 @@ ResidualGraph::preflow(int source)
     excesses[dest] = cap;
     forward_flows[i] = 0; // residualFlow[(source, dest)] = 0
     backward_flows[i] = cap; // residualFlow[(dest, source)] = cap
+    PRINTF("Source: %d's neighbor: %d\n", source, dest);
   }
 }
 
@@ -417,10 +486,12 @@ ResidualGraph::push(int v)
     if (heights[v] == heights[w] + 1) {
       // Push flow
       int flow = std::min(excesses[v], forward_flows[i]);
+      if (flow == 0) continue;
       forward_flows[i] -= flow;
       backward_flows[i] += flow;
       excesses[v] -= flow;
       excesses[w] += flow;
+      PRINTF("Pushing flow %d from %d(%d) to %d(%d)\n", flow, v, excesses[v], w, excesses[w]);
       return true;
     }
   }
@@ -432,10 +503,12 @@ ResidualGraph::push(int v)
       // Push flow
       int push_index = flow_index[i];
       int flow = std::min(excesses[v], backward_flows[push_index]);
+      if (flow == 0) continue;
       backward_flows[push_index] -= flow;
       forward_flows[push_index] += flow;
       excesses[v] -= flow;
       excesses[w] += flow;
+      PRINTF("Pushing flow %d from %d(%d) to %d(%d)\n", flow, v, excesses[v], w, excesses[w]);
       return true;
     }
   }
@@ -465,6 +538,17 @@ ResidualGraph::findActiveNode(void)
   return return_node;
 }
 
+int
+ResidualGraph::countActiveNodes(void)
+{
+  int count = 0;
+  for (int i = 0; i < num_nodes; ++i) {
+    if (excesses[i] > 0 && i != source && i != sink) {
+      count++;
+    }
+  }
+  return count;
+}
 
 void
 ResidualGraph::maxflow(int source, int sink)
@@ -472,15 +556,21 @@ ResidualGraph::maxflow(int source, int sink)
   this->source = source;
   this->sink = sink;
 
+  if (!checkPath()) {
+    printf("No path from source to sink\n");
+    return;
+  }
+
   preflow(source);
 
-  printf("After preflow\n");
 
   int active_node = findActiveNode();
 
   while(active_node != -1) {
     /* If there is an outgoing edge (v, w) of v in Gf with h(v) = h(w) + 1 */
+    //printf("#active nodes: %d\n", countActiveNodes());
     if (!push(active_node)) {
+      PRINTF("Relabeling %d\n", active_node);
       relabel(active_node);
     }
     active_node = findActiveNode();
@@ -491,4 +581,34 @@ ResidualGraph::maxflow(int source, int sink)
   /* Sum all all rflow(u, sink)*/
   printf("Max flow: %d\n", excesses[sink]);
 
+}
+
+
+bool 
+ResidualGraph::checkPath(void)
+{
+  /* Use BFS to check if there is path from source to sink */
+  std::vector<int> q;
+  std::vector<bool> visited(num_nodes, false);
+
+  q.push_back(source);
+  visited[source] = true;
+
+  while (!q.empty()) {
+    int u = q.back();
+    q.pop_back();
+
+    for (int i = offsets[u]; i < offsets[u + 1]; ++i) {
+      int v = destinations[i];
+      if (!visited[v]) {
+        if (v == sink) {
+          return true;
+        }
+        q.push_back(v);
+        visited[v] = true;
+      }
+    }
+  }
+
+  return visited[sink];
 }

@@ -7,6 +7,7 @@
 #include <mutex>
 #include <thread>
 
+
 #define CHECK(x)                                                               \
   do {                                                                         \
     cudaError_t err = (x);                                                     \

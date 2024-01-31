@@ -1,4 +1,7 @@
 maxflow-cuda/obj/*.o
 maxflow-cuda/maxflow
+maxflow-serial/maxflow-serial
+maxflow-serial/*.o
+*.o
 network/network/washington/gengraph
 .vscode

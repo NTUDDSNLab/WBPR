@@ -4,7 +4,8 @@ PROG=maxflow-serial
 SRCS=main.cpp graph.cpp mmio.cpp
 OBJS=$(SRCS:.cpp=.o)
 
-CXXFLAGS=-O0 -g -Wall -Wextra -std=c++11 -fopenmp -march=native -mtune=native -DNDEBUG
+CXXFLAGS=-O3 -Wall -Wextra -std=c++11 -fopenmp -march=native -mtune=native
+#CXXFLAGS+=-DDEBUG
 
 all: $(PROG)
 
