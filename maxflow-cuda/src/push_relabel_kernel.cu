@@ -1,8 +1,8 @@
 #include"../include/parallel_graph.cuh"
 
 __global__ void push_relabel_kernel(int V, int source, int sink, int *gpu_height, int *gpu_excess_flow, 
-                                    int *gpu_offsets,int *gpu_destinations, int *gpu_capacities, int *gpu_flows,
-                                    int *gpu_roffsets, int *gpu_rdestinations, int *gpu_rflows)
+                                    int *gpu_offsets,int *gpu_destinations, int *gpu_capacities, int *gpu_fflows, int *gpu_bflows,
+                                    int *gpu_roffsets, int *gpu_rdestinations, int *gpu_flow_idx)
 {
     // u'th node is operated on by the u'th thread
     unsigned int idx = (blockIdx.x*blockDim.x) + threadIdx.x;
@@ -16,11 +16,10 @@ __global__ void push_relabel_kernel(int V, int source, int sink, int *gpu_height
             
             int e_dash, h_dash, h_double_dash, v, v_dash, d;
             int v_index = -1; // The index of the edge of u to v_dash
-            int rv_index = -1; // The index of the reversed edge of v_dash to u
             bool vinReverse = false;
 
             // Find the activate nodes
-            if (gpu_excess_flow[u] > 0 && gpu_height[u] < V) {
+            if (gpu_excess_flow[u] > 0 && gpu_height[u] < V && u != source && u != sink) {
                 
                 e_dash = gpu_excess_flow[u];
                 h_dash = INF;
@@ -30,7 +29,7 @@ __global__ void push_relabel_kernel(int V, int source, int sink, int *gpu_height
                 // Find (u, v) in both CSR format and revesred CSR format
                 for (int i = gpu_offsets[u]; i < gpu_offsets[u + 1]; i++) {
                     v = gpu_destinations[i];
-                    if (gpu_rflows[i] > 0) {
+                    if (gpu_fflows[i] > 0) {
                         h_double_dash = gpu_height[v];
                         if (h_double_dash < h_dash) {
                             v_dash = v;
@@ -42,7 +41,8 @@ __global__ void push_relabel_kernel(int V, int source, int sink, int *gpu_height
                 // Find (u, v) in reversed CSR format
                 for (int i = gpu_roffsets[u]; i < gpu_roffsets[u + 1]; i++) {
                     v = gpu_rdestinations[i];
-                    if (gpu_rflows[i] > 0) {
+                    int flow_idx = gpu_flow_idx[i];
+                    if (gpu_bflows[flow_idx] > 0) {
                         h_double_dash = gpu_height[v];
                         if (h_double_dash < h_dash) {
                             v_dash = v;
@@ -60,32 +60,18 @@ __global__ void push_relabel_kernel(int V, int source, int sink, int *gpu_height
 
                     /* Find flow[(u,v_dash)] in CSR */
                     if (!vinReverse) {
-                        if (e_dash > gpu_flows[v_index]) {
-                            d = gpu_flows[v_index];
+                        if (e_dash > gpu_fflows[v_index]) {
+                            d = gpu_fflows[v_index];
                         } else {
                             d = e_dash;
-                        }
-
-                        /* Find the backward path of (v_dash, u) in reversed CSR */
-                        for (int i = gpu_roffsets[v_dash]; i < gpu_roffsets[v_dash + 1]; i++) {
-                            if (gpu_rdestinations[i] == u) {
-                                rv_index = i;
-                                break;
-                            }
-                        }
-
-                        /* Debugging part */
-                        if (rv_index == -1) {
-                            printf("Error: No backward path found\n");
-                            return;
                         }
 
                         //printf("[PUSH] u: %d, v_dash: %d, d: %d\n", u, v_dash, d);
 
 
                         /* Push flow to residual graph */
-                        atomicAdd(&gpu_rflows[rv_index], d);
-                        atomicSub(&gpu_flows[v_index], d);
+                        atomicAdd(&gpu_bflows[v_index], d);
+                        atomicSub(&gpu_fflows[v_index], d);
 
                         /* Update Excess Flow */
                         atomicAdd(&gpu_excess_flow[v_dash], d);
@@ -94,33 +80,17 @@ __global__ void push_relabel_kernel(int V, int source, int sink, int *gpu_height
 
                     } else {
                         /* Find rflow[(u,v)] in reversed CSR */
-                        if (e_dash > gpu_rflows[v_index]) {
-                            d = gpu_rflows[v_index];
+                        if (e_dash > gpu_bflows[v_index]) {
+                            d = gpu_bflows[v_index];
                         } else {
                             d = e_dash;
                         }
 
                         /* Push flow to residual graph */
 
-                        /* Find the backward path of (v_dash, u) in CSR */
-                        for (int i = gpu_offsets[v_dash]; i < gpu_offsets[v_dash + 1]; i++) {
-                            if (gpu_destinations[i] == u) {
-                                rv_index = i;
-                                break;
-                            }
-                        }
-
-                        /* Debugging part */
-                        if (rv_index == -1) {
-                            printf("Error: No backward path found\n");
-                            return;
-                        }
-
-                        printf("[PUSH] u: %d, v_dash: %d, d: %d\n", u, v_dash, d);
-
                         /* Push flow to residual graph */
-                        atomicAdd(&gpu_flows[rv_index], d);
-                        atomicSub(&gpu_rflows[v_index], d);
+                        atomicAdd(&gpu_fflows[v_index], d);
+                        atomicSub(&gpu_bflows[v_index], d);
 
                         /* Update Excess Flow */
                         atomicAdd(&gpu_excess_flow[v_dash], d);

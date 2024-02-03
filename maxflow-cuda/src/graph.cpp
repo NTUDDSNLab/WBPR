@@ -56,7 +56,6 @@ void CSRGraph::buildFromTxtFile(const std::string &filename) {
     }
     sort(adjacency_list[i].begin(), adjacency_list[i].end());
     for (int neighbor : adjacency_list[i]) {
-      std::cout << neighbor << " ";
       destinations.push_back(neighbor);
       capacities.push_back(1);
     }
@@ -64,25 +63,6 @@ void CSRGraph::buildFromTxtFile(const std::string &filename) {
   }
 
   num_edges_processed = cnt;
-  std::cout << "nodes: " << num_nodes << std::endl;
-  std::cout << "edges: " << num_edges << std::endl;
-  std::cout << "edges processed: " << num_edges_processed << std::endl;
-  std::cout << "offset size: " << offsets.size() << std::endl;
-  std::cout << "destinations size: " << destinations.size() << std::endl;
-  std::cout << "capacities size: " << capacities.size() << std::endl;
-  // assert(num_nodes == offsets.size() - 1);
-  // assert(num_edges == destinations.size());
-
-  // for (auto x : destinations) std::cout << x << ' '; std::cout <<
-  // std::endl; for (auto x : offsets) std::cout << x << ' '; std::cout <<
-  // std::endl;
-
-  // for (int u = 0; u < num_nodes; ++u) {
-  //     cout << u << ": ";
-  //     for (int v = offsets[u]; v < offsets[u+1]; ++v)
-  //         cout << v << ' ';
-  //     cout << '\n';
-  // }
 }
 
 void CSRGraph::buildFromMmioFile(const std::string &filename) {
@@ -166,6 +146,74 @@ void CSRGraph::buildFromMmioFile(const std::string &filename) {
   free(J);
   free(val);
 }
+
+void CSRGraph::buildFromDIMACSFile(const std::string &filename) {
+  std::ifstream file(filename);
+  if (!file.is_open()) {
+      std::cerr << "Error opening file: " << filename << std::endl;
+      return;
+  }
+
+  std::string line;
+  std::unordered_map<int, std::vector<std::pair<int, int>>> adjacency_list;
+
+  while (getline(file, line)) {
+      if (line[0] == 'c') {
+          // Comment line, ignore
+          continue;
+      } else if (line[0] == 'p') {
+          // Problem line
+          std::istringstream iss(line);
+          char p;
+          std::string format;
+          iss >> p >> format >> num_nodes >> num_edges;
+          destinations.reserve(num_edges);
+          capacities.reserve(num_edges);
+          offsets.resize(num_nodes + 1, 0);
+      } 
+        else if (line[0] == 'n') {
+          // Node designation line (source or sink)
+          std::istringstream iss(line);
+          char n;
+          int node_id;
+          char node_type;
+          iss >> n >> node_id >> node_type;
+          if (node_type == 's') {
+              source_node = node_id - 1;  // Convert to 0-based index
+          } else if (node_type == 't') {
+              sink_node = node_id - 1;    // Convert to 0-based index
+          } 
+      }      
+        else if (line[0] == 'a') {
+          // Edge descriptor line
+          std::istringstream iss(line);
+          char a;
+          int u, v, capacity;
+          iss >> a >> u >> v >> capacity;
+
+          // Note: DIMACS format uses 1-based indexing, while C++ uses 0-based indexing
+          adjacency_list[u - 1].push_back({v - 1, capacity});
+      }
+  }
+
+  // Convert adjacency list to CSR format
+  int edge_count = 0;
+  for (int i = 0; i < num_nodes; ++i) {
+      offsets[i] = edge_count;
+      for (const auto& edge : adjacency_list[i]) {
+          destinations.push_back(edge.first);
+          capacities.push_back(edge.second);
+          edge_count++;
+      }
+  }
+  offsets[num_nodes] = edge_count;
+
+  file.close();
+
+}
+
+
+
 
 void CSRGraph::saveToBinary(const std::string &filename) {
   std::ofstream file(filename, std::ios::binary);
@@ -256,6 +304,8 @@ bool CSRGraph::loadFromBinary(const std::string &filename) {
             destinations.size() * sizeof(int));
   file.read(reinterpret_cast<char *>(offsets.data()),
             offsets.size() * sizeof(int));
+  // Initialize capacities
+  capacities.resize(num_edges_processed, 1);
   std::cout << "nodes: " << num_nodes << std::endl;
   std::cout << "edges: " << num_edges << std::endl;
   std::cout << "num_edges_processed: " << num_edges_processed << std::endl;
@@ -271,11 +321,19 @@ void ResidualGraph::buildFromCSRGraph(const CSRGraph &graph) {
   offsets = (int *)malloc(sizeof(int) * (num_nodes + 1));
   destinations = (int *)malloc(sizeof(int) * num_edges);
   capacities = (int *)malloc(sizeof(int) * num_edges);
-  flows = (int *)malloc(sizeof(int) * num_edges);
+  forward_flows = (int *)malloc(sizeof(int) * num_edges);
   roffsets = (int *)malloc(sizeof(int) * (num_nodes + 1));
   rdestinations = (int *)malloc(sizeof(int) * num_edges);
-  rflows = (int *)malloc(sizeof(int) * num_edges);
+  backward_flows = (int *)malloc(sizeof(int) * num_edges);
+  flow_index = (int *)malloc(sizeof(int) * num_edges);
 
+  heights = (int *)malloc(sizeof(int) * num_nodes);
+  excesses = (int *)malloc(sizeof(int) * num_nodes);
+
+  for (int i = 0; i < num_nodes; i++) {
+    heights[i] = 0;
+    excesses[i] = 0;
+  }
 
   // Initialize offset vectors
   for (int i = 0; i < num_nodes + 1; ++i) {
@@ -285,24 +343,10 @@ void ResidualGraph::buildFromCSRGraph(const CSRGraph &graph) {
   for (int i = 0; i < num_edges; ++i) {
     destinations[i] = graph.destinations[i];
     capacities[i] = graph.capacities[i];
-    flows[i] = graph.capacities[i]; // The initial residual flow is the same as capacity, not 0
-    rflows[i] = 0;
+    forward_flows[i] = graph.capacities[i]; // The initial residual flow is the same as capacity, not 0
+    backward_flows[i] = 0;
   }
 
-
-  // roffsets.resize(num_nodes + 1, 0);
-  // offsets.resize(num_nodes + 1, 0);
-  // flows.resize(graph.offsets[num_nodes], 0); // The initial residual flow of forward edges are all 0
-  // rflows.resize(graph.offsets[num_nodes], 0); // The initial residual flow of backward edges are all 0
-
-  // // Allocate space for destinations and capacities
-  // destinations.resize(graph.offsets[num_nodes]);
-  // capacities.resize(graph.offsets[num_nodes]);
-
-  // // Forward edges are the same as CSR graph
-  // offsets.assign(graph.offsets.begin(), graph.offsets.end());
-  // destinations.assign(graph.destinations.begin(), graph.destinations.end());
-  // capacities.assign(graph.capacities.begin(), graph.capacities.end());
   
 
   std::vector<int> backward_counts(num_nodes, 0);
@@ -321,22 +365,39 @@ void ResidualGraph::buildFromCSRGraph(const CSRGraph &graph) {
 
   // Initialize backward count vector
   backward_counts.clear();
-  backward_counts.resize(num_nodes + 1, 0);
+  for (int i = 0; i < num_nodes; ++i) {
+      backward_counts[i] = 0;
+  }
 
 
   // Fill forward and backward edges
   for (int i = 0; i < num_nodes; ++i) {
       for (int j = graph.offsets[i]; j < graph.offsets[i + 1]; ++j) {
           int dest = graph.destinations[j];
-          int cap = graph.capacities[j];
 
           // Corresponding backward edge
           int backward_index = roffsets[dest] + backward_counts[dest];
           rdestinations[backward_index] = i;
-          rflows[backward_index] = 0;
           backward_counts[dest]++;
       }
   }
+
+  // Initialize flow index
+  for (int u = 0; u < num_nodes; u++) {
+    for (int i = roffsets[u]; i < roffsets[u + 1]; i++) {
+      int v = rdestinations[i];
+
+      // Find the forward edge index
+      for (int j = offsets[v]; j < offsets[v + 1]; j++) {
+        if (destinations[j] == u) {
+          flow_index[i] = j;
+          break;
+        }
+      }
+    }
+  }
+
+
 }
 
 void ResidualGraph::print() const
@@ -357,10 +418,17 @@ void ResidualGraph::print() const
       printf("%d ", capacities[i]);
   }
   printf("\n");
-  printf("Flow: ");
+  printf("Forward Flow: ");
   for (int i=0; i < num_edges; i++) {
-      printf("%d ", flows[i]);
+      printf("%d ", forward_flows[i]);
   }
+
+  printf("\n");
+  printf("Backward Flows: ");
+  for (int i=0; i < num_edges; i++) {
+      printf("%d ", backward_flows[i]);
+  }
+
   printf("\n");
   printf("Roffsets: ");
   for (int i=0; i < num_nodes + 1; i++) {
@@ -372,9 +440,175 @@ void ResidualGraph::print() const
       printf("%d ", rdestinations[i]);
   }
   printf("\n");
-  printf("RFlows: ");
+  printf("Flow Index: ");
   for (int i=0; i < num_edges; i++) {
-      printf("%d ", rflows[i]);
+      printf("%d ", flow_index[i]);
   }
   printf("\n");
+
+  printf("Heights: ");
+  for (int i=0; i < num_nodes; i++) {
+      printf("%d ", heights[i]);
+  }
+  printf("\n");
+  printf("Excesses: ");
+  for (int i=0; i < num_nodes; i++) {
+      printf("%d ", excesses[i]);
+  }
+  printf("\n");
+}
+
+
+void
+ResidualGraph::preflow(int source)
+{
+  heights[source] = num_nodes; // Make the height of source equal to number of vertices
+  Excess_total = 0;
+
+  // Initialize preflow
+  for (int i = offsets[source]; i < offsets[source + 1]; ++i) {
+    int dest = destinations[i];
+    int cap = capacities[i];
+
+    excesses[dest] = cap;
+    forward_flows[i] = 0; // residualFlow[(source, dest)] = 0
+    backward_flows[i] = cap; // residualFlow[(dest, source)] = cap
+    PRINTF("Source: %d's neighbor: %d\n", source, dest);
+  }
+}
+
+bool
+ResidualGraph::push(int v)
+{
+  // Find the outgoing edge (v, w) in foward edge with h(v) = h(w) + 1
+  for (int i = offsets[v]; i < offsets[v + 1]; ++i) {
+    int w = destinations[i];
+    if (heights[v] == heights[w] + 1) {
+      // Push flow
+      int flow = std::min(excesses[v], forward_flows[i]);
+      if (flow == 0) continue;
+      forward_flows[i] -= flow;
+      backward_flows[i] += flow;
+      excesses[v] -= flow;
+      excesses[w] += flow;
+      PRINTF("Pushing flow %d from %d(%d) to %d(%d)\n", flow, v, excesses[v], w, excesses[w]);
+      return true;
+    }
+  }
+
+  // Find the outgoing edge (v, w) in backward edge with h(v) = h(w) + 1
+  for (int i = roffsets[v]; i < roffsets[v+1]; ++i) {
+    int w = rdestinations[i];
+    if (heights[v] == heights[w] + 1) {
+      // Push flow
+      int push_index = flow_index[i];
+      int flow = std::min(excesses[v], backward_flows[push_index]);
+      if (flow == 0) continue;
+      backward_flows[push_index] -= flow;
+      forward_flows[push_index] += flow;
+      excesses[v] -= flow;
+      excesses[w] += flow;
+      PRINTF("Pushing flow %d from %d(%d) to %d(%d)\n", flow, v, excesses[v], w, excesses[w]);
+      return true;
+    }
+  }
+
+  return false;
+}
+
+void
+ResidualGraph::relabel(int u)
+{
+  heights[u]+=1;
+}
+
+int
+ResidualGraph::findActiveNode(void)
+{
+  int max_height = num_nodes;
+  int return_node = -1;
+  for (int i = 0; i < num_nodes; ++i) {
+    if (excesses[i] > 0 && i != source && i != sink) {
+      if (heights[i] < max_height) {
+        max_height = heights[i];
+        return_node = i;
+      }
+    }
+  }
+  return return_node;
+}
+
+int
+ResidualGraph::countActiveNodes(void)
+{
+  int count = 0;
+  for (int i = 0; i < num_nodes; ++i) {
+    if (excesses[i] > 0 && i != source && i != sink) {
+      count++;
+    }
+  }
+  return count;
+}
+
+void
+ResidualGraph::maxflow(int source, int sink)
+{
+  this->source = source;
+  this->sink = sink;
+
+  if (!checkPath()) {
+    printf("No path from source to sink\n");
+    return;
+  }
+
+  preflow(source);
+
+
+  int active_node = findActiveNode();
+
+  while(active_node != -1) {
+    /* If there is an outgoing edge (v, w) of v in Gf with h(v) = h(w) + 1 */
+    //printf("#active nodes: %d\n", countActiveNodes());
+    if (!push(active_node)) {
+      PRINTF("Relabeling %d\n", active_node);
+      relabel(active_node);
+    }
+    active_node = findActiveNode();
+  }
+
+
+  /* Calculate Max flow */
+  /* Sum all all rflow(u, sink)*/
+  printf("Max flow: %d\n", excesses[sink]);
+
+}
+
+
+bool 
+ResidualGraph::checkPath(void)
+{
+  /* Use BFS to check if there is path from source to sink */
+  std::vector<int> q;
+  std::vector<bool> visited(num_nodes, false);
+
+  q.push_back(source);
+  visited[source] = true;
+
+  while (!q.empty()) {
+    int u = q.back();
+    q.pop_back();
+
+    for (int i = offsets[u]; i < offsets[u + 1]; ++i) {
+      int v = destinations[i];
+      if (!visited[v]) {
+        if (v == sink) {
+          return true;
+        }
+        q.push_back(v);
+        visited[v] = true;
+      }
+    }
+  }
+
+  return visited[sink];
 }

@@ -1,0 +1,1282 @@
+#! /bin/sh
+# This is a shell archive, meaning:
+# 1. Remove everything above the #! /bin/sh line.
+# 2. Save the resulting text in a file.
+# 3. Execute the file with /bin/sh (not csh) to create:
+#   flow.c
+#   glib.c
+#   graphtypes.h
+#   input.form
+#   main.c
+#   makefile
+#   matfl.c
+#   matmain.c
+#   matrix.h
+#   output.form
+#   readme
+#   test.in
+#   test.mat
+# This archive created: Fri Mar 22 14:05:30 EST 1991
+export PATH; PATH=/bin:/usr/bin:/usr/ucb:/usr/bin:/etc:/usr/etc:/usr/local/X11R4/bin:/usr/local/bin:/dimacs/u2/badics/bin:/dimacs/u2/badics/out:/usr/lib/news:.
+if test -f 'flow.c'
+then
+	echo shar: "will not over-write existing file 'flow.c'"
+else
+cat << \SHAR_EOF > 'flow.c'
+/* Implementation of "A New Max-Flow Algorithm" by Andrew Goldberg */
+/* Implementation suggested by R. Tarjan */
+/* Max-Flow in undirected graphs only. */
+/* Program written by Edward Rothberg  12/85 */
+
+/* Associated with each vertex is a lower bound on the distance to the sink */
+/* and a flow excess. Start with infinite excess at source.  */
+
+/* Stage 1: Do a breadth first search in toward the sink to initalize the
+	distance labels.  For each vertex with positive excess and non-infinite 	distance label, push flow excess to adjacent vertices with smaller
+	distance labels along edges with remaining capacity.  Do an occasional
+	search to keep distance labels current.  Stop when all flow excess is at
+	vertices with infinite distance labels. */
+
+/* Stage 2: Push excess flow back to source. */
+
+
+#include "graphtypes.h"
+
+#define cap(edge) ELabel(edge)		 /* edge capacity */
+#define flow(edge) ELabel2(edge)	 /* edge flow */
+#define res(edge) (cap(edge)-flow(edge)) /* edge residual capacity */
+
+static int *distance;		/* lower bound on distance to sink */
+static int *excess;		/* node's flow excess */
+static int source,sink;
+
+
+struct queue {
+    int front, back, size;
+    int *list;
+    };
+
+static struct queue nodeQ; /* queue for flow algorithm */
+			/* used to hold vertices with positive flow excess */
+			/* and distance labels less than infinity */
+
+static struct queue searchQ;	/* queue for breadth-first search */
+
+
+static Graph fgraph;	/* graph we're working with */
+static int gsize;
+
+
+/* Given undirected graph, find the maximum flow from source s to sink t */
+/* Returns the graph with the label2 edge field set to the flow in that edge */
+/* Note: in this algorithm, label = edge capacity    label2 = edge flow */
+/*	a positive flow represents outgoing flow */
+/*	a negative flow represents incoming flow */
+
+
+MaxFlow(graph,s,t,quantity)
+Graph graph;
+int s,t,*quantity;
+
+{   int i;
+    Edge edge;
+
+    source = s;  sink = t;
+    fgraph = graph;
+    gsize = Degree(graph,0);
+    for (i=1; i<=gsize; i++)
+	for (edge=FirstEdge(fgraph,i); edge!=NULL; edge=NextEdge(edge))
+	    flow(edge) = 0;
+
+    distance = (int *) malloc((gsize+1)*sizeof(int));
+    excess = (int *) malloc((gsize+1)*sizeof(int));
+    nodeQ.list = (int *) malloc((gsize+1)*sizeof(int));
+    searchQ.list = (int *) malloc((gsize+1)*sizeof(int));
+
+    Search(sink);	/* do breadth-first search to get */
+			/* initial distances labels */
+
+    for (i=1; i<=gsize; i++)
+	excess[i] = 0;
+    excess[source] = INF;
+
+    /* initially only source has excess */
+    Initqueue(&nodeQ);
+    Enqueue(&nodeQ,source);
+
+    Stage1();	/* do Stage 1.  Push excess towards sink */
+
+    *quantity = excess[sink];	/* amount of flow which reaches sink */
+
+/*  do a search to find the min-cut */
+/*  Search(sink);
+    printf("cut capacity %d\n",excess[sink]);
+    printf("cut: ");
+    for (i=1; i<=gsize; i++)
+	if (distance[i]==INF) printf("%d ",i);
+    printf("\n\n");
+*/
+
+    Search(source);	/* initialize distance labels for stage 2 */
+
+    excess[source] = 0;
+    excess[sink] = 0;
+    Initqueue(&nodeQ);
+    for (i=1; i<=gsize; i++)
+	if (excess[i]>0)
+	    Enqueue(&nodeQ,i);	/* put all vertices with positive excess on */
+				/* the queue */
+
+    Stage2();	/* do Stage 2.  Push excess back to source */
+}
+
+
+Stage1()
+{
+    int node;
+
+    while ((node=Dequeue(&nodeQ))!=-1) {
+	Pulse(node);
+	}
+}
+
+
+/* try to send excess from 'node' out to adjacent vertices. */
+/* Note: when sending flow to 'lower' labelled vertices, the distance */
+/* of 'node' is never actually consulted.  The minimum distance label */
+/* of a reachable adjacent vertex is found, and the distance of 'node' */
+/* is necessarily one greater. */
+
+Pulse(node)
+int node;
+{   int extra,quantity,epoint,level,dosearch;
+    Edge edge;
+
+
+    /* no need to get rid of excess from sink and infinite distance vertices */
+    if (node==sink || distance[node]==INF) return;
+
+
+    extra = excess[node];
+    dosearch = 0;
+
+    while (extra > 0) {
+
+	level = Min(node);	/* push to adjacent vertex with smallest */
+				/* distance label */
+	if (level == INF) break;
+
+	edge = FirstEdge(fgraph,node);
+	while (edge != NULL && extra > 0) {
+
+	    /* if flow can be sent down the edge */
+	    if (res(edge)>0 && distance[EndPoint(edge)] == level) {
+
+		quantity = res(edge);			/* send as much as */
+		if (quantity > extra) quantity = extra; /* can be sent */
+
+		Push(edge,quantity);
+
+		epoint = EndPoint(edge);
+
+		/* put adjacent vertex on the queue if it isn't there already */
+		if (excess[epoint] == 0) Enqueue(&nodeQ,epoint);
+
+		/* if we sent flow to the sink, redo distance labels */
+		if (epoint==sink) dosearch = 1;
+
+		excess[epoint] += quantity;
+		extra -= quantity;
+		}
+	    edge = NextEdge(edge);
+	    }
+	}
+
+    if (dosearch) Search(sink);    /* redo all distance labels */
+
+    else {
+	if (extra == 0) level = Min(node);    /* update 'node' distance label */
+
+	if (level >= gsize-1) distance[node]=INF;
+
+	else distance[node] = level+1;
+	}
+
+    excess[node]=extra;
+
+    /* if we didn't get rid of all the excess, put vertex back on the queue */
+    if (extra>0 && distance[node]!=INF) Enqueue(&nodeQ,node);
+}
+
+
+/* find minimum distance label of a vertex which is adjacent to and */
+/* reachable from 'i'. */
+
+int Min(i)
+int i;
+{   Edge edge;
+    int min,epoint;
+
+    /* find the smallest distance label of a reachable adjacent vertex */
+    edge = FirstEdge(fgraph,i);
+    min = INF;
+    while (edge!=NULL) {
+	if (res(edge)>0) {
+	    epoint = EndPoint(edge);
+	    if (distance[epoint] < min) min = distance[epoint];
+	    }
+	edge = NextEdge(edge);
+	}
+    if (min < gsize) return(min);
+    else return(INF);
+}
+
+
+/* push 'quantity' down 'edge' */
+
+Push(edge,quantity)
+Edge edge;
+int quantity;
+{
+    flow(edge) += quantity;
+    flow(Other(edge)) -= quantity;
+}
+
+
+
+
+/* Stage 2: Push excess back to source. */
+/* Since we are pushing flow back, we only need to consider edges which */
+/* already have flow.  Thus, a vertex is reachable from another only if */
+/* it is possible to push existing flow back to it. */
+
+
+Stage2()
+{
+    int node;
+
+    while ((node=Dequeue(&nodeQ))!=-1) {
+	Pulse2(node);
+	}
+}
+
+/* same as Pulse 1, except only existing flow can be pushed back */
+
+Pulse2(node)
+int node;
+{   int extra,quantity,epoint,level,dosearch;
+    Edge edge;
+
+    if (node==source || distance[node]==INF) return;
+
+    extra = excess[node];
+
+    dosearch = 0;
+
+    while (extra > 0) {
+
+	level = Min2(node);
+	if (level == INF) break;
+
+	edge = FirstEdge(fgraph,node);
+	while (edge != NULL && extra > 0) {
+	    if (flow(edge)<0 && distance[EndPoint(edge)] == level) {
+
+		quantity = -flow(edge);
+		if (quantity > extra) quantity = extra;
+		Push(edge,quantity);
+
+		epoint = EndPoint(edge);
+
+		if (excess[epoint] == 0) Enqueue(&nodeQ,epoint);
+		if (epoint==source) dosearch = 1;
+
+		excess[epoint] += quantity;
+		extra -= quantity;
+		}
+	    edge = NextEdge(edge);
+	    }
+	}
+
+    if (dosearch) Search(source);
+    else {
+	if (extra == 0) level = Min2(node);
+
+	if (level >= gsize-1) distance[node]=INF;
+
+	else distance[node] = level+1;
+	}
+
+    excess[node]=extra;
+}
+
+
+int Min2(i)
+int i;
+{   Edge edge;
+    int min,epoint;
+
+    edge = FirstEdge(fgraph,i);
+    min = INF;
+    while (edge!=NULL) {
+	if (flow(edge)<0) {
+	    epoint = EndPoint(edge);
+	    if (distance[epoint] < min) min = distance[epoint];
+	    }
+	edge = NextEdge(edge);
+	}
+    if (min < gsize) return(min);
+    else return(INF);
+}
+
+
+
+/* do a breadth-first search into 'start'.  (i.e. Search(source) starts       */
+/* at the source finds the shortest distances from all other vertices into    */
+/* the source through edges with residual capacity. */
+
+Search(start)
+int start;
+
+{   int i,node,level,epoint;
+    Edge edge;
+
+    /* distance is -INF if node has not yet been reached, -1 if it  */
+    /* is currently in the queue, and positive if it has been set   */
+    /* An INF is placed in the queue to indicate a move to a higher */
+    /* search depth. */
+
+    Initqueue(&searchQ);
+
+    for (i=1; i<=gsize; i++)
+	distance[i]=-INF;
+
+    Enqueue(&searchQ,start);
+    distance[start] = -1;
+
+    Enqueue(&searchQ,INF);
+    level=0;
+
+    while (level < gsize) {
+	node = Dequeue(&searchQ);
+	if (node==INF) {
+	    level++;
+	    Enqueue(&searchQ,INF);
+	    }
+	else {
+	    distance[node] = level;
+
+	    /* enqueue each vertex adjacent to 'node' which is reachable */
+
+	    for (edge=FirstEdge(fgraph,node); edge!=NULL; edge=NextEdge(edge)) {
+
+		/* if flow = -cap, the incoming edge is saturated, skip it */
+		if (flow(edge)==-cap(edge))
+			continue;
+
+		epoint = EndPoint(edge);
+		if (distance[epoint]==-INF) {
+		    distance[epoint] = -1;
+		    Enqueue(&searchQ,epoint);
+		    }
+		}
+	    }
+	}
+
+    /* any vertex with negative distance label is unreachable from 'start */
+    for (i=1; i<=gsize; i++)
+	if (distance[i]<0) distance[i]=INF;
+
+}
+
+
+
+/* Operations on queue data type */
+
+Initqueue(Q)
+struct queue *Q;
+{
+    Q->size  = gsize;
+    Q->front = 0;
+    Q->back  = gsize;
+}
+
+
+Enqueue(Q,node)
+struct queue *Q;
+int node;
+{
+    if (Q->front==Q->back) { printf("Error: queue full\n"); exit(0); }
+    Q->list[Q->front++] = node;
+    if (Q->front > Q->size) Q->front = 0;
+}
+
+
+int Dequeue(Q)
+struct queue *Q;
+{
+    Q->back++;
+    if (Q->back > Q->size) Q->back = 0;
+    if (Q->back == Q->front) {
+	return(-1);
+	}
+    return(Q->list[Q->back]);
+}
+
+
+SHAR_EOF
+fi
+if test -f 'glib.c'
+then
+	echo shar: "will not over-write existing file 'glib.c'"
+else
+cat << \SHAR_EOF > 'glib.c'
+#include "graphtypes.h"
+#include <stdio.h>
+#include <math.h>
+
+/* Graph library routines.  Commented code marked ccm was modified */
+/* to remove a system-dependent test that crashes when standard */ 
+/* input is used. C. McGeoch 1/91 */
+
+AddEdge (g,n,m,label)
+Graph g;
+int n,m,label;
+
+{	Edge edge1,edge2;
+
+	edge1 = (Edge) malloc(2*sizeof(struct edge_ent));
+	edge2 = edge1 + 1;
+
+	edge1->label = label;
+	edge1->endpoint = m;
+	edge1->otheredge = edge2;
+	edge1->prevedge = NULL;
+	edge1->nextedge = g[n].adj_list;
+	if (edge1->nextedge != NULL)
+		edge1->nextedge->prevedge = edge1;
+	g[n].adj_list = edge1;
+	g[n].degree++;
+
+	edge2->label = label;
+	edge2->endpoint = n;
+	edge2->otheredge = edge1;
+	edge2->prevedge = NULL;
+	edge2->nextedge = g[m].adj_list;
+	if (edge2->nextedge != NULL)
+		edge2->nextedge->prevedge = edge2;
+	g[m].adj_list = edge2;
+	g[m].degree++;
+}
+
+Edge FindEdge(graph,i,j)
+Graph graph;
+int i,j;
+
+{	Edge edge;
+
+	edge = graph[i].adj_list;
+	while (edge!=NULL && edge->endpoint!=j)
+		edge = edge->nextedge;
+	if (edge==NULL) return(NULL);
+	else return(edge);
+}
+
+int RemoveEdge(graph,edge)
+Graph graph;
+Edge edge;
+
+{	Edge other;
+	int i,j;
+
+	if (edge==NULL) return(0);
+	other = edge->otheredge;
+	i = other->endpoint;
+	j = edge->endpoint;
+	graph[i].degree--; graph[j].degree--;
+	if (edge->prevedge == NULL) {
+		graph[i].adj_list = edge->nextedge;
+		if (edge->nextedge != NULL)
+			edge->nextedge->prevedge = NULL;
+		}
+	else if (edge->nextedge == NULL)
+        	(edge->prevedge)->nextedge = NULL;
+	else {
+		(edge->nextedge)->prevedge = edge->prevedge;
+		(edge->prevedge)->nextedge = edge->nextedge;
+		}
+	if (other->prevedge == NULL) {
+		graph[j].adj_list = other->nextedge;
+		if (other->nextedge != NULL)
+			other->nextedge->prevedge = NULL;
+		}
+	else if (other->nextedge == NULL)
+		(other->prevedge)->nextedge = NULL;
+	else {
+		(other->nextedge)->prevedge = other->prevedge;
+		(other->prevedge)->nextedge = other->nextedge;
+		}
+	free((edge < other) ? edge : other);
+	return(1);
+}
+
+int NumEdges(g)
+Graph g;
+{	int i,size,edges;
+
+	edges = 0;
+	size = Degree(g,0);
+	for (i=1; i<=size; i++)
+		edges += Degree(g,i);
+	edges /= 2;
+	return(edges);
+}
+
+Graph NewGraph(size)
+int size;
+{	Graph tmp;
+	int i;
+
+	tmp = (Graph) malloc((size+1)*sizeof(struct node_entry));
+
+	for (i=1; i<=size; i++) {
+		Degree(tmp,i) = 0;
+		FirstEdge(tmp,i) = NULL;
+		NLabel(tmp,i) = i;
+		}
+
+	Degree(tmp,0) = size;
+	return(tmp);
+}
+
+EuclidGraph NewEuclid(size)
+int size;
+{
+	EuclidGraph xy;
+
+	xy = (EuclidGraph) malloc((size+1)*2*sizeof(int));
+	xy[0][0] = size;
+	return(xy);
+}
+
+MatrixGraph NewMatrix(size)
+int size;
+{
+	MatrixGraph graph;
+	int i;
+
+	graph = (MatrixGraph) malloc((size*(size+1)+1)*sizeof(int));
+	graph[0] = size;
+
+	for (i=1; i<=size; i++)		/* zero the diagonal */
+		graph[i*(size+1)] = 0;
+
+	return(graph);
+}
+
+Graph CopyGraph(g)
+Graph g;
+{	int i,j,size;
+	Edge edge;
+	Graph cp;
+
+	size = Degree(g,0);
+	cp = NewGraph(size);
+	for (i=1; i<=size; i++) {
+		Xcoord(cp,i) = Xcoord(g,i);
+		Ycoord(cp,i) = Ycoord(g,i);
+		edge = FirstEdge(g,i);
+		for (j=1; j<=Degree(g,i); j++) {
+			if (i < EndPoint(edge))
+				AddEdge(cp,i,EndPoint(edge),ELabel(edge));
+			edge = NextEdge(edge);
+			}
+		}
+	return (cp);
+}
+
+/* Graph I/O routines */
+
+Graph ReadGraph (size,file)
+int *size;
+char file[];
+
+{	Graph graph;
+	FILE *fp;
+ 	char c;
+	int edges, degree, vlabel, elabel, adj_node, i, j;
+	int xcoord, ycoord;
+
+/*ccm   if (file[0] == `\0`) fp = stdin; */
+
+        if (file == 0) fp = stdin;
+	else fp = fopen(file,"r");
+
+	if (fp==NULL) {
+		printf("ReadGraph: file %s can't be opened\n",file);
+		exit(0);
+		}
+
+	fscanf(fp,"%d%d %c",size,&edges,&c);
+
+	if (c !='U' && c!='u') {
+		printf("ReadGraph: file %s does not contain an undirected graph\n",file);
+		exit(0);
+		}
+	
+	while (getc(fp)!='\n') ;
+
+	graph = NewGraph(*size);
+
+	for (i = 1; i <= *size; ++i) {
+		fscanf(fp,"%d%d%d%d",&degree,&vlabel,&xcoord,&ycoord);
+		NLabel(graph,i) = vlabel;
+		Xcoord(graph,i) = xcoord;
+		Ycoord(graph,i) = ycoord;
+		while (getc(fp)!='\n') ;
+		for (j = 1; j <= degree; ++j) {
+			fscanf(fp,"%d%d", &adj_node, &elabel);
+			while (getc(fp)!='\n') ;
+			if (i<adj_node)
+				AddEdge (graph,i,adj_node,elabel);
+			}
+		}
+	fclose(fp);
+	return(graph);
+}
+
+WriteGraph (graph,file)
+Graph graph;
+char file[];
+
+{	FILE *fp;
+	int size, i,j,edges;
+	Edge p;
+
+	if (file == 0) fp = stdout;
+	else fp = fopen(file,"w");
+	if (fp==NULL) {
+		printf("WriteGraph: file %s can't be opened\n",file);
+		exit(0);
+		}
+	size = Degree(graph,0);
+	edges = NumEdges(graph);
+	fprintf(fp,"%d %d U\n",size,edges);
+
+	for (i = 1; i <= size; i++) {
+		fprintf(fp,"%d %d %d %d L\n",Degree(graph,i),NLabel(graph,i),
+					   Xcoord(graph,i),Ycoord(graph,i));
+		p = FirstEdge(graph,i);
+		for (j = 1; j <= Degree(graph,i); ++j) {
+			fprintf(fp,"%d %d L\n",EndPoint(p),ELabel(p));
+			p = NextEdge(p);
+			}
+		}
+	fclose(fp);
+}
+
+EuclidGraph ReadEuclid(size,file)
+int *size;
+char file[];
+
+{	EuclidGraph graph;
+	FILE *fp;
+	char c;
+	int i,xcoord, ycoord;
+
+/*ccm	if (file[0]=='\0') fp=stdin; */
+
+        if (file == 0) fp= stdin;
+	else fp = fopen(file,"r");
+	if (fp==NULL) {
+		printf("ReadEuclid: file %s can't be opened\n",file);
+		exit(0);
+		}
+	fscanf(fp,"%d %c",size,&c);
+	if (c!='E' && c!='e') {
+		printf("ReadEuclid: file %s isn't Euclidean\n",file);
+		exit(0);
+		}
+	while (getc(fp)!='\n');
+	graph = NewEuclid(*size);
+
+	for (i=1; i<=*size; ++i) {
+		fscanf(fp,"%d%d",&xcoord,&ycoord);
+		while (getc(fp)!='\n') ;
+		graph[i][0] = xcoord;
+		graph[i][1] = ycoord;
+		}
+	fclose(fp);
+	return (graph);
+}
+
+WriteEuclid(graph,file)
+EuclidGraph graph;
+char file[];
+
+{	FILE *fp;
+	int size, i;
+
+	if (file == 0) fp = stdout;
+	else fp = fopen(file,"w");
+	if (fp==NULL) {
+		printf("WriteEuclid: file %s can't be opened\n",file);
+		exit(0);
+		}
+	size = graph[0][0];
+	fprintf(fp,"%d E\n",size);
+	for (i = 1; i <= size; i++) 
+		fprintf(fp,"%d %d\n",graph[i][0],graph[i][1]);
+	fclose(fp);
+}
+
+MatrixGraph ReadMatrix(size,file)
+int *size;
+char file[];
+{	MatrixGraph graph;
+	FILE *fp;
+	char c;
+	int i,j,k;
+
+/*ccm	if (file[0] == '\n') fp=stdin;  */
+
+	if (file == 0) fp=stdin;
+	else fp = fopen(file,"r");
+
+	if (fp==NULL) {
+		printf("ReadMatrix: file %s can't be opened\n",file);
+		exit(0);
+		}
+	fscanf(fp,"%d %c",size,&c);
+	if (c!='M' && c!='m') {
+		printf("ReadMatrix: file %s isn't a distance matrix\n",file);
+		exit(0);
+		}
+	while (getc(fp)!='\n');
+	graph = NewMatrix(*size);
+
+	for (i=1; i<*size; i++) {
+		for (j=i+1; j<=*size; j++) {
+			fscanf(fp,"%d",&k);
+			graph[i*(*size)+j] = graph[j*(*size)+i] = k;
+			}
+		while (getc(fp)!='\n');
+		}
+	fclose(fp);
+	return(graph);
+}
+
+WriteMatrix(graph,file)
+MatrixGraph graph;
+char file[];
+
+{	FILE *fp;
+	int size, i, j;
+
+	if (file == 0) fp =  stdout; 
+	else fp = fopen(file,"w");
+	if (fp==NULL) {
+		printf("WriteMatrix: file %s can't be opened\n",file);
+		exit(0);
+		}
+	size = graph[0];
+	fprintf(fp,"%d M\n",size);
+	for (i = 1; i < size; i++) {
+		for (j=i+1; j<=size; j++)
+			fprintf(fp,"%d ",graph[i*size+j]);
+		fprintf(fp,"\n");
+		}
+	fclose(fp);
+}
+
+/* Euclidean distance routines */
+
+int eucdist (graph,i,j) /* Find the distance between two points */
+			/* 10K x 10K unit square */
+EuclidGraph graph;
+int i,j;
+{	int dv,dh;
+	register int k, l;
+
+	dv = graph[i][0]-graph[j][0];
+	dh = graph[i][1]-graph[j][1];
+	k = dv*dv + dh*dh;
+	if (k==0) return(0);
+	if (dv<0) dv = -dv;
+	if (dh<0) dh = -dh;
+	l = dv + dh;
+	l = (l + k/l)>>1;
+	l = (l + k/l)>>1;
+	l = (l + k/l)>>1;
+	l = (l + k/l)>>1;
+	return ((l*l<k) ? ++l : l);
+}
+
+
+int eucdist2 (graph,i,j) /* Find the distance between two points */
+			/* 1M x 1M unit square */
+EuclidGraph graph;
+int i,j;
+{	double dv,dh,d;
+	int l;
+
+	dv = (double) graph[i][0]-graph[j][0];
+	dh = (double) graph[i][1]-graph[j][1];
+	d  = sqrt(dv*dv + dh*dh);
+	l  = (int) d;
+	return((d-l > .000000001) ? l+1 : l);
+}
+
+
+int eucdistsq(graph,i,j) /* Find the square of the dist between two points */
+EuclidGraph graph;
+int i,j;
+{
+	register int dv,dh;
+
+	dv = graph[i][0]-graph[j][0];
+	dh = graph[i][1]-graph[j][1];
+	return(dv*dv+dh*dh);
+}
+
+
+SHAR_EOF
+fi
+if test -f 'graphtypes.h'
+then
+	echo shar: "will not over-write existing file 'graphtypes.h'"
+else
+cat << \SHAR_EOF > 'graphtypes.h'
+#define INF	100000000
+#define NULL	0
+
+struct node_entry {
+    int degree;
+    int label;
+    int x;
+    int y;
+    struct edge_ent *adj_list;
+    };
+typedef struct node_entry *Graph;
+
+struct edge_ent {
+    int endpoint;
+    int label;
+    int label2;
+    struct edge_ent *nextedge;
+    struct edge_ent *prevedge;
+    struct edge_ent *otheredge;
+    };
+typedef struct edge_ent *Edge;
+
+extern Graph ReadGraph(),NewGraph(),CopyGraph();
+extern int RemoveEdge(),NumEdges();
+extern Edge FindEdge();
+
+#define Degree(graph,n)    (graph[n].degree)
+#define NLabel(graph,n)    (graph[n].label)
+#define Xcoord(graph,n)    (graph[n].x)
+#define Ycoord(graph,n)    (graph[n].y)
+#define FirstEdge(graph,n) (graph[n].adj_list)
+
+#define EndPoint(e) (e->endpoint)
+#define ELabel(e)   (e->label)
+#define ELabel2(e)  (e->label2)
+#define Other(e)    (e->otheredge)
+#define NextEdge(e) (e->nextedge)
+
+
+extern Graph Prim();
+extern int *EulerTraverse(),*Match(),*Weighted_Match(),*Dijkstra(),*Concomp();
+
+/* Euclidean graph type */
+typedef int (*EuclidGraph)[2];
+
+extern Graph EuclidPrim();
+extern EuclidGraph ReadEuclid(),NewEuclid();
+extern int eucdist(),eucdistsq();
+
+extern int *CvxHull();
+
+/* Distance matrix graph type */
+typedef int *MatrixGraph;
+
+extern int *MatrixDijkstra();
+extern Graph MatrixPrim();
+extern Graph MatrixMaxFlow();
+extern MatrixGraph ReadMatrix(), NewMatrix();
+
+
+SHAR_EOF
+fi
+if test -f 'input.form'
+then
+	echo shar: "will not over-write existing file 'input.form'"
+else
+cat << \SHAR_EOF > 'input.form'
+Disclaimer: the following description was obtained  by inspection of the
+code and some simple tests.  It was not written by the implementor.  CCM
+
+There will soon be available a program for translating from the DIMACS
+standard format to this format.  Contributions are welcome. CCM
+
+-------------------------------------------------------------------------
+INPUT FORMAT FOR FLOW:
+-------------------------------------------------------------------------
+   Graph I/O is performed by a generic graph library package, 
+   so some of the fields are ignored by the max-flow code (but 
+   you must include dummy fields in the input). 
+
+   The first vertex listed in the file is assumed to be the source;  
+   the last vertex is assumed to be the sink. 
+
+   There are three types of lines: the first line, vertex lines, 
+   and edge lines. The fields in each line type are as follows. 
+
+   First line-> size edges U
+      size: integer giving number of vertices
+      edges: integer giving number of edges (ignored)
+      U: character ``U'' or ``u'' specifying an undirected graph
+
+   Vertex lines->  degree vlabel xcoord ycoord
+      degree: edge degree of the vertex
+      vlabel: vertex label (ignored--vertices are referred to by index)
+      xcoord: integer x-coordinate location (ignored)
+      ycoord: integer y-coordinate location (ignored) 
+
+      *****Each vertex line is followed immediately by the lines 
+      for all its adjacent edges (thus each edge appears twice, 
+      once for each vertex).******
+
+   Edge lines-> adjacent  capacity
+      adjacent: index (not vlabel) of the adjacent vertex
+      capacity: integer edge capacity 
+     
+----------------------------------------------------------------------------
+INPUT FORMAT FOR MATFLOW
+----------------------------------------------------------------------------
+   Input files for matflow present a complete undirected graph
+   as the upper-triangular part of an integer distance matrix. 
+
+   First line -> size M
+     size: integer giving number of vertices
+     M: character ``M'' or ``m'' specifying matrix format
+ 
+   Matrix lines: 
+      Each entry is a positive integer giving edge capacity.  
+
+      First line corresponds to vertex 1. Contains size-1 
+      entries, for edges (1,2) (1,3) (1,4) . . . (1,size). Terminates
+      with newline.
+
+      Second line corresponds to vertex 2.  Contains entries for 
+      (2,3)  (2,4) ... (2,size). Terminates with newline. 
+
+      And so forth.  Here is an example of a 4-node graph.
+
+      4 M
+      22 55 34
+      90 11 
+      73
+
+
+SHAR_EOF
+fi
+if test -f 'main.c'
+then
+	echo shar: "will not over-write existing file 'main.c'"
+else
+cat << \SHAR_EOF > 'main.c'
+#include "graphtypes.h"
+
+main(argc,argv)
+int argc;
+char *argv[];
+
+{   Graph graph;
+    int size,i,flow;
+    Edge edge;
+
+    graph = ReadGraph(&size,argv[1]);
+
+    MaxFlow(graph,1,size,&flow);
+
+    printf("flow=%d\n",flow);
+    for (i=1; i<=size; i++) {
+	printf("%3d: ",i);
+	for (edge=FirstEdge(graph,i); edge!=NULL; edge=NextEdge(edge))
+	    if (ELabel2(edge) > 0)
+		printf("%d %d  ",EndPoint(edge),ELabel2(edge));
+	printf("\n");
+	}
+
+}
+
+
+SHAR_EOF
+fi
+if test -f 'makefile'
+then
+	echo shar: "will not over-write existing file 'makefile'"
+else
+cat << \SHAR_EOF > 'makefile'
+flow: main.o flow.o glib.o
+	cc  -o flow  main.o flow.o glib.o -lm
+
+matflow: matflow.o matmain.o glib.o
+	cc -o matflow matmain.o matflow.o glib.o -lm
+
+matflow.o: matfl.o flow.o
+	ld -r matfl.o flow.o -o matflow.o
+
+
+SHAR_EOF
+fi
+if test -f 'matfl.c'
+then
+	echo shar: "will not over-write existing file 'matfl.c'"
+else
+cat << \SHAR_EOF > 'matfl.c'
+#include "graphtypes.h"
+#include "matrix.h"
+
+Graph MatrixMaxFlow(graph,source,sink,flow)
+DistGraph graph;
+int source,sink,*flow;
+
+{	int size, i, j;
+	Graph g;
+	Edge edge;
+	DistGraph output;
+
+	size = GraphSize(graph);
+	g = NewGraph(size);
+
+	for (i=1; i<=size; i++) {
+		for (j=i+1; j<=size; j++) {
+			AddEdge(g,i,j,dist(graph,i,j));
+			}
+		}
+	MaxFlow(g,source,sink,flow);
+
+	return(g);
+}
+
+
+SHAR_EOF
+fi
+if test -f 'matmain.c'
+then
+	echo shar: "will not over-write existing file 'matmain.c'"
+else
+cat << \SHAR_EOF > 'matmain.c'
+#include "graphtypes.h"
+#include "matrix.h"
+
+main(argc,argv)
+int argc;
+char *argv[];
+
+{	DistGraph graph;
+	Graph g;
+	int size,i,flow;
+	Edge edge;
+
+	graph = ReadDist(&size,argv[1]);
+
+	g = DistMaxFlow(graph,1,size,&flow);
+
+	printf("flow=%d\n",flow);
+	for (i=1; i<=size; i++) {
+		printf("%3d: ",i);
+		for (edge=FirstEdge(g,i); edge!=NULL; edge=NextEdge(edge))
+			if (ELabel2(edge) > 0)
+				printf("%d %d  ",EndPoint(edge),ELabel2(edge));
+		printf("\n");
+	}
+
+}
+
+
+SHAR_EOF
+fi
+if test -f 'matrix.h'
+then
+	echo shar: "will not over-write existing file 'matrix.h'"
+else
+cat << \SHAR_EOF > 'matrix.h'
+/* Distance Matrix graph type */
+
+#define MATRIX
+
+typedef MatrixGraph DistGraph;
+
+#define dist(graph,i,j) (graph[(i)*graph[0]+j])
+#define ReadDist(size,file) ReadMatrix(size,file)
+#define WriteDist(graph,file) WriteMatrix(graph,file)
+#define NewDist(size) NewMatrix(size)
+#define GraphSize(g) (g[0])
+
+
+/* tourlib.c definitions */
+#define Tourcost(graph,tour) TourcostM(graph,tour)
+#define WriteTourPts(graph,tour,file) WriteTourPtsM(graph,tour,file)
+
+/* Graph algorithm definitions */
+#define DistPrim(graph,cost) MatrixPrim(graph,cost)
+#define DistWeighted_Match(graph,maximize) Weighted_Match(graph,3,maximize)
+#define DistDijkstra(graph,node) MatrixDijkstra(graph,node)
+#define DistMaxFlow(graph,source,sink,flow) MatrixMaxFlow(graph,source,sink,flow)
+
+
+SHAR_EOF
+fi
+if test -f 'output.form'
+then
+	echo shar: "will not over-write existing file 'output.form'"
+else
+cat << \SHAR_EOF > 'output.form'
+Disclaimer: the following description was obtained by inspection of the
+code and some simple tests.  It was not written by the implementor.  CCM
+
+There will soon be available a program for translating from this output
+format to the DIMACS standard format.  Contributions are welcome.  CCM
+----------------------------------------------------------------------
+OUTPUT FORMAT FOR FLOW AND MATFLOW
+----------------------------------------------------------------------
+
+First line: gives the total flow found 
+
+Other lines:  One line for each node, giving the nonzero flow along 
+   adjacent edges.  For each adjacent edge, there are two values: 
+   the adjacent node index, and the flow along that edge. 
+
+   For example:
+
+   2: 4 5  5 1
+
+   Means that from node 2 there is and edge to node 4 with flow 5 and 
+      and edge to node 5 with flow 1.
+
+
+SHAR_EOF
+fi
+if test -f 'readme'
+then
+	echo shar: "will not over-write existing file 'readme'"
+else
+cat << \SHAR_EOF > 'readme'
+-------------------------------------------------------------------------
+The Goldberg_C.shell file contains two programs, written in C, 
+for finding MAXIMUM-FLOW in UNDIRECTED graphs.  
+-------------------------------------------------------------------------
+
+These programs were written by Ed Rothberg to implement Goldberg's
+``new max-flow algorithm'' (STOC 86). There are two main programs, for two  
+types of input formats. 
+
+MAIN PROGRAMS:
+        - flow
+        - matflow
+
+REQUIRED FILES:
+        README input.form output.form makefile main.c flow.c
+        glib.c matfl.c graphtypes.h matrix.h matmain.c test.mat test.in
+
+TO GET THESE FILES:
+        Run the "goldberg_c.shell" file in the /bin/sh shell. 
+		(It will unwrap itself.)
+		Or copy the files themselves.
+
+FILE DESCRIPTIONS: 
+        input.form:  Describes the input formats for flow and matflow. 
+        output.form: Describes output formats for flow and matflow
+					Note: The DIMACS standard for maxflow needs a 
+							directed graph so it cannot be converted 
+							into this format.
+
+        test.in:  A sample input for flow
+        test.mat: A sample input for mat
+
+        The others are source code files written in C language.
+
+HOW TO MAKE THE PROBLEM-SOLVERS:
+
+		flow:  Solves max-flow for undirected graphs presented in an 
+				adjacency-list format. 
+  
+       			Requires: flow.c, main.c, glib.c, graphtypes.h, makefile. 
+
+       			To invoke: 		$make flow
+                  				$flow filename.in
+
+      	If no filename is given, flow uses standard input. It always  
+      	writes to standard out.  
+
+		matflow: Solves max-flow for complete undirected graphs presented in a
+       			distance-matrix format.  
+
+		       	Requires: 		matfl.c, flow.c, matmain.c, glib.c
+								graphtypes.h, matrix.h, makefile.  
+
+       			To invoke: 		$make matflow
+        				        $matflow filename.in
+
+		If no filename is given, matflow uses standard input. It 
+       	always writes to standard out. 
+
+/ This README file was written by DIMACS, and based on experiments with the
+codes. /
+       
+
+
+
+
+SHAR_EOF
+fi
+if test -f 'test.in'
+then
+	echo shar: "will not over-write existing file 'test.in'"
+else
+cat << \SHAR_EOF > 'test.in'
+6 8 U
+2 3 0 0 
+2 6
+3 8
+3 3 0 0 
+1 6 
+5 3
+4 6
+3 3 0 0 
+1 8
+4 3
+5 3
+3 3 0 0 
+2 6
+3 3
+6 8
+3 3 0 0 
+3 3
+2 3
+6 6
+2 3 0 0 
+4 8
+5 6
+
+
+SHAR_EOF
+fi
+if test -f 'test.mat'
+then
+	echo shar: "will not over-write existing file 'test.mat'"
+else
+cat << \SHAR_EOF > 'test.mat'
+4 m 
+1 1 1
+  2 2 
+    3
+
+SHAR_EOF
+fi
+exit 0
+#   End of shell archive

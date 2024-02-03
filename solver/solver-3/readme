@@ -1,0 +1,32 @@
+This directory contains the source code and executables for the
+maximum-flow problem developed by Richard Anderson and Joao Setubal,
+University of Washington, Seattle (e-mail: anderson@cs.washington.edu
+and setubal@cs.washington.edu).
+
+The code is not commented for the most part, and it contains several
+variants of maximum-flow algorithms. The 3 executables that the
+makefile generates are the following:
+
+gold_q: goldberg's algorithm using a queue to select active vertices.
+It corresponds to procedure Goldberg1 in file goldberg.c.
+
+gold_hlf: goldberg's algorithm using highest label first criterion.
+It corresponds to procedure Goldberg2 in file goldberg.c.
+
+dinic: dinic's algorithm. Relevant code in procedure AugmentFlow in
+main_dinic.c and in file dinic.c (look for option DINIC_NEW in the code).
+
+Usage is: <program> <input file> [<output file>].
+
+Input must be in DIMACS format. Maximum size allowed is 20,000 nodes
+(determined by constant MAX_N in file ghead.h).
+
+The programs report flow value, cpu time to compute max-flow (input
+and output time not reported) and some combinatorial quantities.
+
+The executable `flow' contains all 3 programs, plus some others, that
+are selected according to parameter fct (usage: flow <fct> <input file>
+[<output file>] ). File netflow.h describes (cryptically) which fct
+values can be chosen and what do they mean.
+
+This file written by J. Setubal on October, 15, 1991.

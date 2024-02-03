@@ -22,8 +22,8 @@ int main(int argc, char** argv) {
                 printf("Options:\n");
                 printf("\t-h\t\tShow this help message and exit\n");
                 printf("\t-v\t\tSpecify which kind of file to load\n");
-                printf("\t\t\t\t0: txt file (default)\n");
-                printf("\t\t\t\t1: binary file\n");
+                printf("\t\t\t\t0: SNAP txt file (default)\n");
+                printf("\t\t\t\t1: SNAP binary file\n");
                 printf("\t\t\t\t2: DIMACS file\n");
                 printf("\t-f filename\tSpecify the file path (binary or txt)\n");
                 printf("\t-s source\tSource node\n");
@@ -46,7 +46,7 @@ int main(int argc, char** argv) {
                         graph.loadFromBinary(filename);
                         break;
                     case 2:
-                        PRINTF("Loading DIMACS file\n");
+                        PRINTF("Loading Genrmf file\n");
                         graph.buildFromDIMACSFile(filename);
                         break;
                     default:
@@ -79,7 +79,6 @@ int main(int argc, char** argv) {
     ResidualGraph rgraph;
     rgraph.buildFromCSRGraph(graph);
     PRINTF("Finished building residual graph\n");
-    rgraph.print();
     
     if (!auto_tune) {
         printf("Starting push-relabel on %s\n", filename);

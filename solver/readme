@@ -1,0 +1,11 @@
+
+
+Each subdirectory contains contributed codes for solving maxflow problems.
+
+solver-1  Goldberg's (STOC 86) algorithm implemented by E. Rothberg
+solver-2  Author's algorithm (in TurboPascal) implemented by G. R. Waissi
+solver-3  Several programs (Goldberg variations, Dinics) implemented by 
+                 J. Setubal
+solver-4  The PLED algorithm implemented by T. Badics
+solver-5  The GOLD algorithm implemented by T. Badics
+

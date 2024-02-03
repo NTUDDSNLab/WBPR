@@ -1,0 +1,15 @@
+This directory contains a Maximum-flow solver written in TURBO-PASCAL 5.5.
+
+(*     Algorithms and program by      *)
+(*          Gary R. Waissi            *)
+(*       School of Management         *)
+(*   Department of Decision Science   *)
+(*      Information Systems and       *)
+(*      Operations Management         *)
+(*  University of Michigan - Dearborn *)
+
+
+It uses the standard DIMACS input files.
+
+
+

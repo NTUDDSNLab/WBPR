@@ -1,0 +1,1838 @@
+:	This is a shell archive.
+:	Remove everything above this line and
+:	run the following text with /bin/sh to create:
+:	README
+:	_maxflow.h
+:	macros.h
+:	maxflow.h
+:	maxflow_typedef.h
+:	netio.h
+:	queue.h
+:	big_relabel.c
+:	main.c
+:	maxflow.c
+:	maxflow_init.c
+:	netio.c
+:	queue.c
+:	makefile
+:	test.max
+: This archive created: Mon Aug  2 19:15:07 1993
+echo shar: extracting README
+sed 's/^XX//' << 'SHAR_EOF' > README
+XXThis is a preliminary information on how to compile
+XX, and use the GOLD maxflow solver. 
+XX
+XXThe package contains the GOLD Maxflow Algorithm 
+XXbased on A. Goldberg's preflow-push algorithm.
+XX
+XX   Implemented by
+XX   Tamas Badics, 1992,
+XX   Rutgers University, RUTCOR
+XX   P.O.Box 5062
+XX   New Brunswick, NJ, 08903
+XX   e-mail: badics@rutcor.rutgers.edu
+XX
+XXCopyright:
+XX	This program was written by Tamas Badics,
+XX	and may be used and modified for not-for-profit use.
+XX	This notice must be remained.	
+XX
+XXFiles:
+XX 	README                  makefile                netio.c
+XX	_maxflow.h              maxflow.c               netio.h
+XX	big_relabel.c           maxflow.h               queue.c
+XX	macros.h                maxflow_init.c          queue.h
+XX	main.c                  maxflow_typedef.h       test.max
+XX
+XXSample instance:
+XX	test.max
+XX
+XXCompilation:
+XX    Simple type "make" in the directory where the files are.
+XX    This command uses the file makefile, and build the executable
+XX    named GOLD.
+XX
+XXUsage:
+XX    GOLD [-in input_file] [-out out_file]
+XX		 [-pf print_freq] [-sf stall_freq]
+XX         [-rf relabel_freq]
+XX         [-rep s|p|t (report_controll)]
+XX         [-nogap] [-quiet]
+XX
+XX    For short help use the -h or -help option. (You will get 
+XX    the same help as written above here.)
+XX    By default some information is printed while the algorithm 
+XX    is running.
+XX    
+XX    Options:
+XX        Options can be used in arbitrary order.
+XX        The program will use stdin, stdout and stderr for 
+XX        I/O functions so everything can be redirected.
+XX        (Unless the user specifies another, using -in -out )
+XX
+XX        -in inputfile : The program will use inputfile - which must be
+XX                        in DIMACS .max format - to read a maxflow 
+XX                        problem. Try with test.max, which is a 
+XX                        small example.
+XX
+XX        -out out_file : Only in the case of '-rep s' this file will
+XX                        contain the solution, in the format which is
+XX                        required by DIMACS.
+XX                        (This should be changed by default, but
+XX                        until experimental phase is not finished
+XX                        I leave it in this form. )
+XX
+XX        -rep s|p|t    : These letters can form any string, they will
+XX                        be interpreted sequentially. (Eg. -rep tptp)
+XX                        s - Standard DIMACS format output.
+XX						p - Parameter settings
+XX                        t - Problem parameters. (title)
+XX
+XX        -quiet        : Shut every report, only '-rep s' has impact.
+XX    
+XX        -pf  freq     : Iteration report frequency. 
+XX                        Default is -1. (Give flow value after big relabeling)
+XX                        (freq is any integer number)
+XX        
+XX        -rf  freq     
+XX        -sf  freq     : These options controll the heuristic calling 
+XX                        frequency of big_relabel procedure.
+XX                        I just use them for experiments.
+XX
+XX                        rf - call it after this many macro_push
+XX                             Default: edge_num
+XX
+XX                        sf - call it after this many stalling of 
+XX                             source->excess (= actual flow value)
+XX                             (Reason: Amount of maxflow can be sent
+XX                              relatively soon, big_relabel will detect
+XX                              this. So stalling of the flow value can
+XX                              indicate this event. )
+XX                             Default: vertex_num /2
+XX
+XX		-nogap		  : This option will switch off the checking
+XX						of a gap among the distance labels.
+XX						By default if this check found a gap, then
+XX						it calls a big_relabel 
+XX-----------------------------------------------------------------------
+XX
+XX	Please send all comments (bug reports) to:
+XX	    badics@rutcor.rutgers.edu
+XX
+SHAR_EOF
+if test 3817 -ne "`wc -c README`"
+then
+echo shar: error transmitting README '(should have been 3817 characters)'
+fi
+echo shar: extracting _maxflow.h
+sed 's/^XX//' << 'SHAR_EOF' > _maxflow.h
+XX/* Data types and global declarations 
+XX   for the Cheriyan-Hagerup Max-flow algorithm */
+XX
+XX/* Copyright:
+XX	This program was written by 
+XX
+XX	Tamas Badics, 1991,
+XX	Rutgers University, RUTCOR
+XX	P.O.Box 5062
+XX	New Brunswick, NJ, 08903
+XX	e-mail: badics@rutcor.rutgers.edu
+XX 
+XX	The code may be used and modified for not-for-profit use.
+XX	This notice must be remained.	
+XX====================================================================*/
+XX
+XX#ifndef _MAXFLOW_H
+XX#define _MAXFLOW_H
+XX
+XX
+XX/*==================================================================*/
+XX/*========  NETWORK type for the algorithm  ========================*/
+XX/*========  see maxflow_typedef.h           ========================*/
+XX/*==================================================================*/
+XX
+XX#include <stdio.h>
+XX#include "maxflow_typedef.h"
+XX#include "queue.h"
+XX
+XX/*==================================================================*/
+XX/*======  Global variables          ================================*/
+XX/*==================================================================*/
+XX
+XXextern DOUBLE Delta;
+XXextern int Vertnum, Edgenum;
+XXextern int It;
+XXextern vertex * Source, * Sink;
+XXextern int * Labarr;
+XXextern queue * Q, * Qv;
+XXextern char Gap;
+XXextern int Inf, Bigrel;
+XX
+XX
+XX/*==================================================================*/
+XX/*======  Macro definitions         ================================*/
+XX/*==================================================================*/
+XX/*
+XX#define PRINT(a,b)
+XX*/
+XX
+XX#define PRINT(quiet, args) 	if (!(quiet)) printf args
+XX
+XX#define OUT_EDGE(V, E) ((E)->from == V)
+XX
+XX#define RESCAP(V, E) ((OUT_EDGE(V, E)) ? ((E)->cap - (E)->flow) : (E)->flow)
+XX
+XX#define OTHER(V, E)  (OUT_EDGE(V, E) ? (E)->to : (E)->from)
+XX
+XX#define LAST_EDGE(V) (&((V)->edgelist[(V)->degree -1]))
+XX/*==================================================================*/
+XX/*========   Function declarations   ===============================*/
+XX/*==================================================================*/
+XX
+XXint maxflow(network *n, controll *cont);
+XX                              /* Find the max-flow in the initialized 
+XX								 network n using the GOLD alg. 
+XX								 Return the # of iterations*/
+XXvoid pushrelabel(vertex *v);
+XXvoid discharge(vertex *v);
+XXvoid push(vertex *v, edge *e);
+XX
+XXvoid relabel(vertex *v);
+XX                            /* Relabel v and do permutation on
+XX							   v->edgelist */
+XX
+XXint big_relabel();  
+XX                           /* Bfs from the sink, searching for the
+XX							  min_cut if exists already. Returns
+XX							  true if mincut is found.
+XX							  Finally search from the source on 
+XX							  the left partition of the cut 
+XX							  (not necessarely min).
+XX							  Relabels all the vertices.
+XX							  Does an init_heap, and init_tree.
+XX							  Calling freqency is heuristic.*/
+XX
+XXint search();
+XX                        /* Bfs from source using q, and start_label */
+XX
+XXvoid print_report(void);
+XX
+XXvoid  permute_all();
+XX#endif
+SHAR_EOF
+if test 2896 -ne "`wc -c _maxflow.h`"
+then
+echo shar: error transmitting _maxflow.h '(should have been 2896 characters)'
+fi
+echo shar: extracting macros.h
+sed 's/^XX//' << 'SHAR_EOF' > macros.h
+XX/* These are some useful macro-declarations */
+XX
+XX
+XX#ifndef MYLIB_
+XX#define MYLIB_
+XX
+XX#define MIN3(A,B,C) (((A)<(B)) ? (((A)<(C))?(A):(C)):(((B)<(C))?(B):(C)))
+XX
+XX#define MIN2(A,B) (((A)<(B))?(A):(B))
+XX
+XX#define MAX3(A,B,C) (((A)>(B)) ? (((A)>(C))?(A):(C)):(((B)>(C))?(B):(C)))
+XX
+XX#define MAX2(A,B) (((A)>(B))?(A):(B))
+XX
+XX#define sgn(A)  (((A) > 0) ? 1 : ((A)== 0) ? 0 : -1)
+XX
+XX#endif
+XX
+SHAR_EOF
+if test 370 -ne "`wc -c macros.h`"
+then
+echo shar: error transmitting macros.h '(should have been 370 characters)'
+fi
+echo shar: extracting maxflow.h
+sed 's/^XX//' << 'SHAR_EOF' > maxflow.h
+XX/* Data types and global declarations 
+XX   for the Cheriyan-Hagerup Max-flow algorithm */
+XX
+XX/* Copyright:
+XX	This program was written by 
+XX
+XX	Tamas Badics, 1991,
+XX	Rutgers University, RUTCOR
+XX	P.O.Box 5062
+XX	New Brunswick, NJ, 08903
+XX	e-mail: badics@rutcor.rutgers.edu
+XX 
+XX	The code may be used and modified for not-for-profit use.
+XX	This notice must be remained.	
+XX====================================================================*/
+XX
+XX
+XX#ifndef _MAXFLOW_H
+XX#define _MAXFLOW_H
+XX
+XX
+XX/*==================================================================*/
+XX/*========  NETWORK type for the algorithm  ========================*/
+XX/*========  see maxflow_typedef.h           ========================*/
+XX/*==================================================================*/
+XX
+XX#include <stdio.h>
+XX#include "maxflow_typedef.h"
+XX
+XX/*==================================================================*/
+XX/*======  Global variables          ================================*/
+XX/*==================================================================*/
+XXextern int Itnum;
+XX
+XX/*==================================================================*/
+XX/*========   Function declarations   ===============================*/
+XX/*==================================================================*/
+XX
+XXint maxflow_cold_start(char * prob_file, network ** n,controll * cont);
+XX                           /* Reads the problem from the file.
+XX							  Then start the GOLD algorithm.
+XX							  Return false if infeasible.
+XX							  Return the network via n.
+XX							  See maxflow_typedef.h for controll.*/
+XX
+XXint maxflow_warm_start(network * n, int need_preflow, controll * cont);
+XX	                          /* After the allocations, with
+XX								 a prepared network * n it will
+XX								 start the maxflow algorithm.
+XX								 Return false if infeasible.
+XX								 if (need_preflow == true) then 
+XX								 it will make a preflow before
+XX								 starting. Otherwise starting preflow
+XX								 is assumed.*/
+XX
+XXint maxflow(network * n, controll * cont);
+XX                              /* Find the max-flow in the initialized 
+XX								 network n using the GOLD alg. 
+XX								 Return the # of iterations*/
+XX
+XXint check_maxflow(network *n);
+XX#endif
+XX
+XX
+SHAR_EOF
+if test 2168 -ne "`wc -c maxflow.h`"
+then
+echo shar: error transmitting maxflow.h '(should have been 2168 characters)'
+fi
+echo shar: extracting maxflow_typedef.h
+sed 's/^XX//' << 'SHAR_EOF' > maxflow_typedef.h
+XX/* maxflow_typedef.h == Type definitions for a directed graph +
+XX                        fibonacci heap declarations */
+XX
+XX/* Copyright:
+XX	This program was written by 
+XX
+XX	Tamas Badics, 1991,
+XX	Rutgers University, RUTCOR
+XX	P.O.Box 5062
+XX	New Brunswick, NJ, 08903
+XX	e-mail: badics@rutcor.rutgers.edu
+XX 
+XX	The code may be used and modified for not-for-profit use.
+XX	This notice must be remained.	
+XX====================================================================*/
+XX
+XX
+XX#ifndef MAXFLOW_TYPE_H
+XX#define MAXFLOW_TYPE_H
+XX
+XX#include <stdio.h>
+XX
+XX/*==================================================================*/
+XXtypedef struct VERTEX{
+XX	
+XX	struct EDGE ** edgelist;  /* Pointer to the list of pointers to 
+XX								 the adjacent edges. 
+XX								 (No matter that to or from edges) */
+XX
+XX	struct EDGE ** current;   /* Pointer to the current edge */
+XX
+XX	DOUBLE excess;     /* Excess in the pre-flow */
+XX
+XX	int degree;        /* Number of adjacent edges (both direction) */
+XX
+XX#ifdef DEBUG
+XX	int index;
+XX
+XX	int label;         /* Distance label */
+XX#else
+XX	int label;         /* Distance label */
+XX#endif
+XX
+XX}vertex;
+XX/*==================================================================*/
+XXtypedef struct EDGE{
+XX	struct VERTEX	* from;
+XX	struct VERTEX	* to;
+XX
+XX	DOUBLE flow;       /* Flow value */
+XX	int    cap;        /* Capacity */
+XX}edge;
+XX
+XX/*==================================================================*/
+XXtypedef  void (* permute_fct)(vertex * v);
+XX/*==================================================================*/
+XXtypedef struct NETWORK{
+XX
+XX	struct NETWORK	* next, * prev;
+XX
+XX	int vertnum;
+XX	int edgenum;
+XX
+XX	vertex	* verts; /* Vertex array[1..vertnum] */
+XX	edge    * edges; /* Edge array[1..edgenum] */
+XX
+XX	vertex	* source; /* Pointer to the source */
+XX	vertex	* sink;   /* Pointer to the sink */
+XX
+XX	DOUBLE maxflow;   /* the value of the maximum flow */
+XX
+XX}network;
+XX
+XX/*=================================================================*/
+XXtypedef struct Controll{
+XX	int perm;
+XX	int stall_freq;
+XX	int relab_freq;
+XX	int cut_freq;
+XX	int print_freq;
+XX	int quiet;
+XX	int gap;
+XX}controll;	
+XX#endif 
+XX
+SHAR_EOF
+if test 2031 -ne "`wc -c maxflow_typedef.h`"
+then
+echo shar: error transmitting maxflow_typedef.h '(should have been 2031 characters)'
+fi
+echo shar: extracting netio.h
+sed 's/^XX//' << 'SHAR_EOF' > netio.h
+XX/* netio.h == header for netio.c */
+XX
+XX#ifndef _NETIO_H
+XX#define _NETIO_H
+XX
+XX
+XXnetwork * read_net(char *filename);
+XX
+XXvoid free_net(network *n);
+XX
+XXvoid print_net(FILE *output, network *n, char *s, int quiet, char *prob_name, controll *cont);  
+XX                                        /* t = title
+XX										   p = parameter settings
+XX										   s = DIMACS std output
+XX										   
+XX										/  a = all adjacency lists 
+XX          only if compiled with DEBUG  {   e = edges
+XX										\  v = vertices */
+XXvoid print_DIMACS_std(FILE *Output, network *n, char *prob_name);
+XX
+XX#ifdef DEBUG
+XXvoid print_vertex();
+XX
+XXvoid print_edge();
+XX#endif
+XX
+XXvoid print_err(char *s, int stop);
+XX#endif
+SHAR_EOF
+if test 664 -ne "`wc -c netio.h`"
+then
+echo shar: error transmitting netio.h '(should have been 664 characters)'
+fi
+echo shar: extracting queue.h
+sed 's/^XX//' << 'SHAR_EOF' > queue.h
+XX/* Queue data structure for breadth first search */
+XX
+XX/* Copyright:
+XX	This program was written by 
+XX
+XX	Tamas Badics, 1991,
+XX	Rutgers University, RUTCOR
+XX	P.O.Box 5062
+XX	New Brunswick, NJ, 08903
+XX	e-mail: badics@rutcor.rutgers.edu
+XX 
+XX	The code may be used and modified for not-for-profit use.
+XX	This notice must be remained.	
+XX====================================================================*/
+XX
+XX#ifndef _QUEUE
+XX#define _QUEUE
+XX
+XXtypedef struct QUEUE_NODE
+XX{
+XX	void * data;
+XX}queue_node;
+XX
+XXtypedef struct QUEUE
+XX{
+XX	struct QUEUE_NODE * first;
+XX	struct QUEUE_NODE * last;
+XX	struct QUEUE_NODE * start;
+XX	struct QUEUE_NODE * end;
+XX}queue;
+XX
+XXqueue * new_queue(int size);
+XXvoid init_queue(queue *q);
+XXvoid free_queue(queue *q);
+XXvoid enqueue(queue *q, void *item);
+XXvoid * dequeue(queue *q);
+XX#define IS_EMPTY_QUEUE(q) ((q)->first == (q)->last)
+XX
+XX#endif
+SHAR_EOF
+if test 820 -ne "`wc -c queue.h`"
+then
+echo shar: error transmitting queue.h '(should have been 820 characters)'
+fi
+echo shar: extracting big_relabel.c
+sed 's/^XX//' << 'SHAR_EOF' > big_relabel.c
+XX/*=================================================================*/
+XX/*== Big relabel    ===============================================*/
+XX/*=================================================================*/
+XX
+XX/* Copyright:
+XX	This program was written by 
+XX
+XX	Tamas Badics, 1991,
+XX	Rutgers University, RUTCOR
+XX	P.O.Box 5062
+XX	New Brunswick, NJ, 08903
+XX	e-mail: badics@rutcor.rutgers.edu
+XX 
+XX	The code may be used and modified for not-for-profit use.
+XX	This notice must be remained.	
+XX====================================================================*/
+XX
+XX#include <stdio.h>
+XX#include "_maxflow.h"
+XX#include "queue.h"
+XX#include "netio.h"
+XX
+XX/*===============================================================*/
+XXstatic int Maxlev;
+XX
+XXint big_relabel(n, big)
+XX     network *n;
+XX     int big;       
+XX                        /* Bfs from the sink, searching for the
+XX						   min_cut if exists already. Returns
+XX						   true if mincut is found.
+XX						   Finally search from the source on the left
+XX						   partition of the cut (not necessarely min).
+XX						   Relabels all the vertices.
+XX						   Does an init_heap, and init_tree.
+XX						   Calling freqency is heuristic.*/
+XX{
+XX	int i;
+XX	int min_cut;
+XX	
+XX#ifdef COUNT
+XX	Bigrel++;
+XX#endif
+XX	
+XX	if (Gap)  Labarr[0] = Maxlev = 0;
+XX
+XX	for (i = 1; i <= Vertnum; i++){ 
+XX		n->verts[i].label = Inf;
+XX		if (Gap)  Labarr[i] = 0;
+XX	}
+XX	
+XX	if (big)
+XX	  min_cut = search(Sink, Q, 0);
+XX	else
+XX	  min_cut = 0;
+XX
+XX	if (Gap)  Labarr[0] = Maxlev;
+XX
+XX	if (Source->label < Vertnum)
+XX	  Source->label = Vertnum;
+XX	else	
+XX	  search(Source, Q, Vertnum);
+XX		
+XX	return (min_cut);
+XX}
+XX
+XX/*==================================================================*/
+XXint search(source, q, start_label)
+XX     vertex *source;
+XX     queue *q;
+XX     int start_label;
+XX{
+XX	int i, level, mincut;
+XX	vertex * v, * w;
+XX	edge * e, **ve;
+XX
+XX    level = start_label;
+XX	mincut = 1;
+XX	
+XX	init_queue(q);
+XX	enqueue(q, source);
+XX    enqueue(q, NULL);
+XX
+XX    while (1){
+XX		v = (vertex *)dequeue(q);
+XX		if (v == NULL){
+XX			if (IS_EMPTY_QUEUE(q))
+XX			  break;
+XX
+XX			level++;
+XX			enqueue(q, NULL);
+XX	    }else{
+XX			v->label = level;
+XX
+XX			if (Gap && level < Vertnum) (Labarr[level])++;
+XX
+XX			ve = v->edgelist;
+XX			for (i = 0; i < v->degree; i++){
+XX				e = ve[i];
+XX				
+XX				if (v == e->from){
+XX					if (((w = e->to)->label == Inf) 
+XX						&& (e->flow > 0))
+XX					  {	
+XX						  if (mincut && w->excess > 0)
+XX							mincut = 0;
+XX
+XX						  w->label = -1;
+XX						  enqueue(q, w);
+XX					  }
+XX				}else{ 
+XX					if (((w = e->from)->label == Inf) 
+XX						&& (e->cap > e->flow))
+XX					  {	
+XX						  if (mincut && w->excess > 0)
+XX							mincut = 0;
+XX
+XX						  w->label = -1;
+XX						  enqueue(q, w);
+XX					  }
+XX				}
+XX			}
+XX		}
+XX	}
+XX	Maxlev = level;
+XX
+XX	return (mincut);
+XX}
+XX/*=================================================================*/
+XXint check_maxflow(n)
+XX     network *n;
+XX{
+XX	int i, j, cutcap, level;
+XX	vertex  * v, * w;
+XX	edge * e;
+XX
+XX	for (i = 1; i <= Vertnum; i++)
+XX	  n->verts[i].label = Inf;
+XX
+XX	/* A breadth first search from the source through the 
+XX	   residual graph */
+XX
+XX    level = 1;
+XX
+XX	init_queue(Q);
+XX	enqueue(Q, Source);
+XX    enqueue(Q, NULL);
+XX
+XX    while (1){
+XX		v = (vertex *)dequeue(Q);
+XX		if (v == NULL){
+XX			if (IS_EMPTY_QUEUE(Q))
+XX			  break;
+XX			level++;
+XX			enqueue(Q, NULL);
+XX	    }else{
+XX			v->label = level;
+XX			
+XX			for (i = 0; i < v->degree; i++){
+XX				e = v->edgelist[i];
+XX				if ((w = OTHER(v, e))->label == Inf 
+XX					&& RESCAP(v, e) > 0)
+XX				  {	
+XX					  w->label = -1;
+XX					  enqueue(Q, w);
+XX				  }
+XX			}
+XX	    }
+XX	} /* end of search */
+XX	
+XX	for (i = 1, cutcap = 0; i <= Vertnum; i ++){  
+XX		                                 /* counting the minimum
+XX											cut value */
+XX		v = &(n->verts[i]);
+XX		if (v->label < Inf){
+XX			for (j = 0; j < v->degree; j++){
+XX				e = v->edgelist[j];
+XX				if (e->flow > e->cap)
+XX				  print_err("Err: Capacity bound is hurt!", 0);
+XX				if (OUT_EDGE(v, e) && OTHER(v, e)->label == Inf)
+XX				  cutcap += e->cap;
+XX			}
+XX		} 
+XX	}
+XX
+XX	if (n->maxflow == cutcap){ 
+XX		return 1;
+XX	}else
+XX	  return 0;
+XX}
+XX
+SHAR_EOF
+if test 3882 -ne "`wc -c big_relabel.c`"
+then
+echo shar: error transmitting big_relabel.c '(should have been 3882 characters)'
+fi
+echo shar: extracting main.c
+sed 's/^XX//' << 'SHAR_EOF' > main.c
+XX/* Main routine for the GOLD algorithm */
+XX/* Copyright:
+XX	This program was written by 
+XX
+XX	Tamas Badics, 1991,
+XX	Rutgers University, RUTCOR
+XX	P.O.Box 5062
+XX	New Brunswick, NJ, 08903
+XX	e-mail: badics@rutcor.rutgers.edu
+XX 
+XX	The code may be used and modified for not-for-profit use.
+XX	This notice must be remained.	
+XX====================================================================*/
+XX
+XX#include <stdio.h>
+XX#include "maxflow.h"
+XX#include "netio.h"
+XX
+XX#ifdef DEBUG
+XX#include "debug.h"
+XX#endif
+XX
+XXint look_up(char * s);
+XXvoid print_usage(void);
+XX
+XXextern char * Progname;
+XX
+XXvoid main(int argc, char * argv[])
+XX{
+XX	network * n;
+XX	char * report;
+XX	int i, feas, quiet;
+XX	controll cont;
+XX	char * prob_file;
+XX	FILE * output;
+XX	
+XX	Progname = argv[0];
+XX	
+XX	output = stdout;
+XX/* !!!!! should be report = "s" !!!!! */
+XX	report = "";
+XX	cont.perm = 0;
+XX	cont.print_freq = -1;
+XX	cont.stall_freq = -1;
+XX	cont.relab_freq = -1;
+XX	cont.cut_freq = -1;
+XX	cont.gap = -1;
+XX	cont.quiet = 0;
+XX
+XX	prob_file= NULL;
+XX	
+XX	for (i = 1; i < argc; i++){
+XX		switch (look_up(argv[i])){
+XX		  case 0: 
+XX			prob_file= argv[++i];
+XX			break;
+XX		  case 1: 
+XX			cont.print_freq = atoi(argv[++i]);
+XX			break;
+XX		  case 2: 
+XX			cont.stall_freq = atoi(argv[++i]);
+XX			break;
+XX		  case 3: 
+XX			cont.relab_freq = atoi(argv[++i]);
+XX			break;
+XX		  case 4: 
+XX			report = argv[++i];
+XX			break;
+XX		  case 5: /*help*/
+XX		  case 6:
+XX			print_usage();
+XX			break;
+XX		  case 7:
+XX			output = fopen(argv[++i],"w");
+XX			if (output == NULL) {
+XX				fprintf(stderr
+XX                    ,"%s: Output file %s can't be opened\n",Progname,argv[i]);
+XX				exit(0);
+XX			}	
+XX			break;
+XX		  case 8:
+XX			cont.quiet = 1;
+XX			break;
+XX		  case 9:
+XX			cont.gap = 0;
+XX			break;
+XX		  default:
+XX			break;
+XX		} 
+XX	}
+XX
+XX	cont.cut_freq = 0;
+XX	
+XX	quiet = cont.quiet;
+XX	
+XX	if (prob_file == NULL && !quiet)
+XX	  fprintf(stderr, "Input for %s is coming from stdin!\n", Progname);
+XX	
+XX	feas = maxflow_cold_start(prob_file, &n, &cont);
+XX
+XX	if (feas){
+XX		if (!quiet){ 
+XX			if (check_maxflow(n)){ 
+XX				printf("Maxflow is correct.\n");
+XX			}else{ 
+XX				print_err("Err: Wrong maxflow value!!!!", 1);
+XX			}
+XX		}
+XX		printf("The maximum flow: %d\n", (int)(n->maxflow));
+XX	}else{ 
+XX		if (!quiet) printf("NO FEASIBLE SOLUTION\n");
+XX	}
+XX	
+XX	print_net(output, n, report, quiet, prob_file, &cont);
+XX
+XX	free_net(n);
+XX
+XX	if (output != stdout)
+XX	  fclose(output);
+XX	
+XX	if (!quiet)
+XX	  printf("END\n");
+XX}
+XX/*=================================================================*/
+XX#define OPS_NUM 12
+XX
+XXint look_up(char * s)
+XX{
+XX	int i;
+XX	char * ops[OPS_NUM];
+XX
+XX	ops[0] = "-in";
+XX	ops[1] = "-pf";
+XX	ops[2] = "-sf";
+XX	ops[3] = "-rf";
+XX	ops[4] = "-rep";
+XX	ops[5] = "-h";
+XX	ops[6] = "-help";
+XX	ops[7] = "-out";
+XX	ops[8] = "-quiet";
+XX	ops[9] = "-nogap";
+XX	
+XX	for (i = 0; i < OPS_NUM; i++){
+XX		if (strcmp(ops[i], s) == 0)
+XX		  return i;
+XX	} 
+XX	return -1;
+XX} 
+XX
+XXvoid print_usage(void)
+XX{
+XX	printf("Usage: %s [-in input_file] [-out out_file]\n", Progname);
+XX	printf("            [-pf print_freq] [-sf stall_freq]\n");
+XX	printf("            [-rf relabel_freq]\n");
+XX#ifdef DEBUG
+XX	printf("            [-rep s|p|t|v|e|a (report_controll)]\n");
+XX#else
+XX	printf("            [-rep s|p|t (report_controll)]\n");
+XX#endif
+XX	printf("            [-nogap] [-quiet]\n");
+XX	exit(0);
+XX}
+XX
+SHAR_EOF
+if test 3106 -ne "`wc -c main.c`"
+then
+echo shar: error transmitting main.c '(should have been 3106 characters)'
+fi
+echo shar: extracting maxflow.c
+sed 's/^XX//' << 'SHAR_EOF' > maxflow.c
+XX/* This file contains the GOLD Maxflow Algorithm developed by 
+XX   Cheriyan & Hagerup. For details look: 
+XX   CH2806-8/89/0000/0118/$01.00(c)1989IEEE */
+XX
+XX/* Copyright:
+XX   This program was written by 
+XX   
+XX   Tamas Badics, 1991,
+XX   Rutgers University, RUTCOR
+XX   P.O.Box 5062
+XX   New Brunswick, NJ, 08903
+XX   e-mail: badics@rutcor.rutgers.edu
+XX   
+XX   The code may be used and modified for not-for-profit use.
+XX   This notice must be remained.	
+XX   ====================================================================*/
+XX
+XX#include "_maxflow.h"
+XX#include "macros.h"
+XX#include "netio.h"
+XX
+XX#ifdef DEBUG
+XX#include "debug.h"
+XX#endif
+XX
+XXstatic int quiet;
+XXint It, Big;
+XX
+XX#ifdef COUNT
+XXint Bigrel,Relab, Sat, Nonsat;
+XX#endif
+XX/*==================================================================*/
+XXint maxflow(network *n, controll *cont)
+XX                
+XX                    
+XX	 /* Finds the max-flow in the initialized 
+XX		network n using the GOLD alg.  */
+XX{
+XX	vertex *v;
+XX	int pf, sf, rf, last;
+XX	int big = 1, stall = 0, was_change = 0;
+XX	DOUBLE old_fl;   
+XX	int br = 0;
+XX	
+XX	It = Big = 0;
+XX	
+XX#ifdef COUNT
+XX	Bigrel = Relab = Sat = Nonsat = 0;
+XX#endif
+XX	last = 0;
+XX	
+XX	pf = cont->print_freq;
+XX	sf = cont->stall_freq;
+XX	rf = cont->relab_freq;
+XX	
+XX	quiet = cont->quiet;
+XX	Gap = cont->gap;
+XX	
+XX	while (!IS_EMPTY_QUEUE(Qv)){
+XX		It++;
+XX		
+XX		v = (vertex *)dequeue(Qv);
+XX		
+XX		if (v == NULL)
+XX		  print_err("Null dequeued", 1);
+XX		
+XX		old_fl = Sink->excess;
+XX		
+XX		discharge(v);
+XX		
+XX		if (v->excess > 0 && v->label != Inf)
+XX		  enqueue(Qv, v);
+XX		
+XX		/* -------------------------------------
+XX		   Big_relabel heuristics 
+XX		   -------------------------------------
+XX		   */
+XX		
+XX		if (Sink->excess == old_fl)
+XX		  stall++;
+XX		else{
+XX			old_fl = Sink->excess;
+XX			was_change = 1;
+XX			stall = 0;
+XX		}
+XX		
+XX		if ((was_change && sf && stall >= sf)
+XX			|| (rf && rf <= It - last)
+XX			|| (Gap && Big)){ 
+XX			
+XX			if (pf != 0){
+XX				print_report();
+XX				PRINT( quiet, ("BIG_RELABEL..%d\n", ++br));
+XX			}
+XX			
+XX			stall = 0;
+XX			was_change = 0;
+XX			last = It;
+XX			Big = 0;
+XX			
+XX			if (big_relabel(n, big)){
+XX				if (pf != 0) PRINT( quiet, ("MINCUT!\n"));
+XX				big = 0;
+XX			}
+XX		}
+XX		
+XX		if (pf > 0 && It%pf == 0)
+XX		  print_report();
+XX	}
+XX	
+XX	PRINT(quiet, ("========== END ============\n\n"));
+XX	
+XX#ifdef COUNT
+XX	PRINT(quiet, ("Bigrel: %d Select: %d Relab: %d Sat: %d Nonsat: %d\n"
+XX				  , Bigrel, It, Relab, Sat, Nonsat));
+XX#endif
+XX	
+XX	n->maxflow = Sink->excess;
+XX	return 1;
+XX}
+XX
+XX/*==================================================================*/
+XXvoid pushrelabel(vertex *v)
+XX{
+XX	int vl;
+XX	edge *e;
+XX	vertex * w;
+XX	
+XX	e = *v->current;
+XX	w = OTHER(v, e);
+XX	
+XX	if (v->label == w->label + 1 && RESCAP(v, e) > 0){
+XX		if (w->excess == 0 && w != Source && w != Sink)
+XX		  enqueue(Qv, w);
+XX		push(v, e);
+XX	}
+XX	else if (v->current == LAST_EDGE(v)){
+XX		v->current = v->edgelist;
+XX		
+XX		if (Gap && v->label < Vertnum){ 
+XX			(Labarr[(vl = v->label)])--;
+XX			relabel(v);
+XX			
+XX			if (v->label < Vertnum){ 
+XX				(Labarr[v->label])++;
+XX				if (v->label > Labarr[0])
+XX				  Labarr[0] = v->label;
+XX			}else{
+XX				if (vl == Labarr[0] && Labarr[vl] == 0)
+XX				  (Labarr[0])--;
+XX			}
+XX			
+XX			if (Labarr[vl] == 0 && vl < Labarr[0])
+XX			  Big = 1;
+XX			else
+XX			  Big = 0;
+XX			
+XX		}else
+XX		  relabel(v);
+XX	}else
+XX	  v->current++;
+XX}
+XX/*==================================================================*/
+XXvoid discharge(vertex *v)
+XX{
+XX	int d;
+XX	
+XX	d = v->label;
+XX	while (v->label == d && v->excess > 0)
+XX	  pushrelabel(v);
+XX}
+XX/*==================================================================*/
+XXvoid push(vertex *v, edge *e)
+XX{
+XX	DOUBLE c;
+XX	vertex * w;
+XX	
+XX	c = RESCAP(v, e);
+XX	c = MIN2(c, v->excess);
+XX	
+XX#ifdef COUNT
+XX	if (c == v->excess)
+XX	  Nonsat++;
+XX	else
+XX	  Sat++;
+XX#endif	
+XX	
+XX	v->excess -= c;
+XX	
+XX	if (OUT_EDGE(v, e)){
+XX		e->flow += c;
+XX		(w = e->to)->excess += c;
+XX	}else{
+XX		e->flow -= c;
+XX		(w = e->from)->excess += c;
+XX	}
+XX}
+XX/*==================================================================*/
+XXvoid relabel(vertex *v)
+XX{
+XX	int i, l;
+XX	edge * e, ** ep;
+XX	vertex * w;
+XX	
+XX#ifdef COUNT
+XX	Relab++;
+XX#endif	
+XX	
+XX	for (v->label = Inf, i = 0, ep = v->edgelist
+XX		 ; i < v->degree; i++){
+XX		
+XX		e = ep[i];
+XX		w = OTHER(v, e);
+XX		
+XX		if ((l = w->label) < v->label && RESCAP(v, e) > 0)
+XX		  v->label = l;
+XX	}
+XX	v->label += 1;
+XX}
+XX
+XX/*=================================================================*/
+XXvoid print_report(void)
+XX{
+XX#ifdef COUNT	
+XX	PRINT( quiet, ("Select: %9d\nRelab:  %9d\nSat:    %9d\nNonsat: %9d\n------------- ", It, Relab, Sat, Nonsat));
+XX#endif
+XX	PRINT( quiet, ("Flow: %ld\n", (int)(Sink->excess)));
+XX}
+SHAR_EOF
+if test 4393 -ne "`wc -c maxflow.c`"
+then
+echo shar: error transmitting maxflow.c '(should have been 4393 characters)'
+fi
+echo shar: extracting maxflow_init.c
+sed 's/^XX//' << 'SHAR_EOF' > maxflow_init.c
+XX/*=================================================================*/
+XX/*== Initialization ===============================================*/
+XX/* PLUS SOURCE ADDED */
+XX/*=================================================================*/
+XX/* Copyright:
+XX	This program was written by 
+XX
+XX	Tamas Badics, 1991,
+XX	Rutgers University, RUTCOR
+XX	P.O.Box 5062
+XX	New Brunswick, NJ, 08903
+XX	e-mail: badics@rutcor.rutgers.edu
+XX 
+XX	The code may be used and modified for not-for-profit use.
+XX	This notice must be remained.	
+XX====================================================================*/
+XX
+XX#include <stdio.h>
+XX#include "_maxflow.h"
+XX#include "netio.h"
+XX#include "macros.h"
+XX
+XX#define FEAS 1
+XX#define NOFEAS 0
+XX
+XX/*=== Global variable definitions =========*/
+XX
+XXvertex * Source, * Sink;
+XXint Vertnum, Edgenum, Itnum, Inf, Flow_bound;
+XX
+XXchar Gap;
+XX
+XXDOUBLE Delta;
+XX
+XXqueue * Q, *Qv;
+XXint * Labarr;    /* array of existing labels [0..Vertnum]:
+XX					Labarr[i] = # of vertices whose label is i */
+XX
+XX#ifdef DEBUG
+XXnetwork * Net;
+XX#endif
+XX
+XX/*=========================================*/
+XX
+XXint maxflow_warm_start(network *n, int need_preflow, controll *cont);
+XXvoid init_preflow(network *n);
+XXvoid search_cut(network *n, queue *q);
+XX
+XX/*=================================================================*/
+XXint maxflow_cold_start(char *prob_file, network **n, controll *cont)
+XX                     
+XX                 
+XX                    
+XX                           /* Reads the problem from the file.
+XX							  Then start the GOLD algorithm.
+XX							  Return false if infeasible.
+XX							  Return the network via n.
+XX							  See maxflow_typedef.h for controll.*/
+XX{
+XX	int quiet = cont->quiet;
+XX	int ret;
+XX	
+XX	PRINT( quiet, ("I am reading the network...\n"));
+XX	*n = read_net(prob_file);
+XX
+XX#ifdef DEBUG
+XX	Net = *n;
+XX#endif
+XX	
+XX	ret = maxflow_warm_start(*n, 1, cont);
+XX	
+XX	return ret;
+XX}	
+XX
+XX/*=================================================================*/
+XXint maxflow_warm_start(network *n, int need_preflow, controll *cont)
+XX                
+XX                      
+XX                    
+XX	                          /* After the allocations, with
+XX								 a prepared network * n, and
+XX								 a given preflow, it will
+XX								 start the maxflow algorithm */
+XX{
+XX	vertex * nv, * v; 
+XX	int i; 
+XX	int quiet = cont->quiet;
+XX	
+XX	PRINT( quiet, ("Initialize is started\n"));
+XX	
+XX	/*---- Fill up the global variables ----*/
+XX	n->maxflow = 0;
+XX	Source = n->source;
+XX	Sink = n->sink;
+XX	Vertnum = n->vertnum;
+XX	Edgenum = n->edgenum;
+XX	Itnum = 0;
+XX	Inf = 3 * Vertnum;
+XX
+XX	/*---- Default values of the frequencies ----*/
+XX	if (cont->stall_freq == -1)
+XX		cont->stall_freq = Vertnum / 2;
+XX	if (cont->relab_freq == -1)
+XX	  cont->relab_freq = (int)Edgenum;
+XX	if (cont->cut_freq == -1)
+XX	  cont->cut_freq = (char)0;
+XX	if (cont->gap == -1)
+XX	  cont->gap = (char)1;
+XX
+XX	if (need_preflow)
+XX	  init_preflow(n);
+XX	else{ 
+XX		Delta = 0; 
+XX		/*---- Counting the maximal excess for Delta ----------*/
+XX		for( i = 1, nv = n->verts; i <= Vertnum; i++){
+XX			v = &(nv[i]);
+XX			if (v->excess > Delta && v != Sink && v!= Source)
+XX			  Delta = v->excess;
+XX		}
+XX	}
+XX
+XX	if (cont->gap) Labarr = (int *)calloc(Vertnum, sizeof(int));
+XX
+XX	PRINT( quiet, ("Initialize is finished\n"));
+XX	
+XX	if (Delta == 0 && Sink->excess == 0)     
+XX	  return NOFEAS;              /* No feasible solution */ 
+XX
+XX	Q = new_queue(2*Vertnum);
+XX	Flow_bound = (*(Source->edgelist))->flow;
+XX	search_cut(n, Q);
+XX	(*(Source->edgelist))->cap = Flow_bound + 1;
+XX	
+XX	if (big_relabel(n, 1) && Sink->excess == 0)
+XX	  return NOFEAS;              /* No feasible solution */ 
+XX
+XX	(*(Source->edgelist))->cap = Flow_bound;
+XX	(*(Source->edgelist))->flow = Flow_bound;
+XX	(*(Source->edgelist))->to->excess = Flow_bound;
+XX	Source->excess = -Flow_bound;
+XX	
+XX	Qv = new_queue(Vertnum);
+XX	enqueue(Qv, (*(Source->edgelist))->to);
+XX
+XX	Itnum = maxflow(n, cont);
+XX	return FEAS;
+XX}
+XX/*==================================================================*/
+XXvoid init_preflow(network *n)
+XX                
+XX	                 /* Add all the capacities going into the Sink,
+XX						and assign this cut-value as capacity to
+XX						the artificial edge from the new source */
+XX{
+XX	int i;
+XX	vertex * v;
+XX	edge * e;
+XX	
+XX	Delta = 0;
+XX
+XX	v = Sink;
+XX	
+XX	for( i = 0; i < v->degree; i++){
+XX		e = v->edgelist[i];
+XX		if( !OUT_EDGE(v, e)){
+XX			Delta += e->cap;
+XX		}
+XX	}
+XX
+XX	Source->edgelist[0]->flow = Delta;
+XX	Source->edgelist[0]->cap = Delta;
+XX	Source->edgelist[0]->to->excess = Delta;
+XX	Source->excess = -Delta;
+XX	
+XX}
+XX/*==================================================================*/
+XXvoid search_cut(network *n, queue *q)
+XX{
+XX	int i, level;
+XX	double cutcap = 0;
+XX	vertex * v, * w;
+XX	edge * e, **ve;
+XX	
+XX	for( i = 1; i <= Vertnum; n->verts[i].label = Inf, i++);
+XX
+XX    level = 0;
+XX	init_queue(q);
+XX	enqueue(q, Sink);
+XX    enqueue(q, NULL);
+XX
+XX    while (1){
+XX		v = (vertex *)dequeue(q);
+XX		if (v == NULL){
+XX			if (IS_EMPTY_QUEUE(q))
+XX			  break;
+XX
+XX			level++;
+XX			if (cutcap < Flow_bound)
+XX			  Flow_bound = (int)cutcap;
+XX			cutcap = 0;
+XX			enqueue(q, NULL);
+XX	    }else{
+XX			v->label = level;
+XX			ve = v->edgelist;
+XX			for (i = 0; i < v->degree; i++){
+XX				e = ve[i];
+XX				
+XX				if (v == e->to){
+XX					if ((w = e->from)->label == Inf || w->label == -1)
+XX					  { 
+XX						  cutcap += (e->cap);
+XX						  if (w->label == Inf){ 
+XX							  w->label = -1;
+XX							  enqueue(q, w);
+XX						  }
+XX					  }
+XX				}
+XX			}
+XX		}
+XX	}
+XX}
+XX
+XX
+XX
+SHAR_EOF
+if test 5210 -ne "`wc -c maxflow_init.c`"
+then
+echo shar: error transmitting maxflow_init.c '(should have been 5210 characters)'
+fi
+echo shar: extracting netio.c
+sed 's/^XX//' << 'SHAR_EOF' > netio.c
+XX/* Input/output functions for DIMACS standard max-flow format */
+XX
+XX/* Copyright:
+XX	This program was written by 
+XX
+XX	Tamas Badics, 1991,
+XX	Rutgers University, RUTCOR
+XX	P.O.Box 5062
+XX	New Brunswick, NJ, 08903
+XX	e-mail: badics@rutcor.rutgers.edu
+XX 
+XX	The code may be used and modified for not-for-profit use.
+XX	This notice must be remained.	
+XX====================================================================*/
+XX
+XX
+XX#include <stdio.h>
+XX#include "_maxflow.h"
+XX#include "netio.h"
+XX
+XX#define LENGTH 255
+XX
+XX#ifndef DEBUG
+XX#define index label
+XX#endif
+XX
+XXchar * Progname;
+XX
+XX/*==================================================================*/
+XXnetwork * read_net(char *filename)
+XX                      
+XX                              /* Reads a network from DIMACS .max file.
+XX								 Allocates all the necessary arrays*/
+XX{
+XX	FILE * f;
+XX	network * n = NULL;
+XX	char line[LENGTH];
+XX	char dum[10];
+XX	int i, j;
+XX	edge * ed = NULL;
+XX	edge * ne, * e;
+XX	vertex * nv, *v, *s;
+XX	int c = 0;
+XX
+XX	if (filename == NULL){
+XX		f = stdin;
+XX	}else if ((f = fopen(filename, "r")) == NULL) {
+XX		fprintf(stderr,"Read_net: file %s can't be opened\n",filename);
+XX		exit(0);
+XX	}	
+XX	
+XX	while(NULL != fgets( line, LENGTH, f)){
+XX
+XX		switch ( line[0] ){
+XX		  case 'c':
+XX			break;
+XX			
+XX		  case 'p':
+XX			n = (network *)malloc(sizeof(network));
+XX			sscanf(line, "%s%s%d%d", dum, dum
+XX				   , &(n->vertnum), &(n->edgenum)); 
+XX			n->verts =(vertex *)calloc(n->vertnum + 2, sizeof(vertex));
+XX			n->edges = (edge *)calloc(n->edgenum + 2, sizeof(edge));
+XX			ed = n->edges + 1;
+XX			break;
+XX			
+XX		  case 'n':
+XX			if (!n) print_err("Err: No problem line.", 1);
+XX			
+XX			sscanf(line, "%s%d%s", dum, &i, dum); 
+XX			if (dum[0] == 's'){
+XX				n->source = &((n->verts)[i]);
+XX				break;
+XX			}
+XX			if (dum[0] == 't'){
+XX				n->sink =  &((n->verts)[i]);
+XX				break;
+XX			}
+XX			break;
+XX			
+XX		  case 'a':
+XX			if (!n) print_err("Err: No problem line.", 1);
+XX			
+XX			if (c == n->edgenum)
+XX			  print_err("Err: More edges in the input file than given!", 1);
+XX			
+XX			sscanf(line, "%s%d%d%d", dum, &i, &j, &(ed->cap));
+XX			
+XX			if (i == 0 || j == 0)
+XX			  print_err("Err: 0 index in the input file!", 1);
+XX
+XX			if (i > n->vertnum || j > n->vertnum)
+XX			  print_err("Err: Big index in the input file!", 1);
+XX			
+XX			ed->from = &((n->verts)[i]);
+XX			ed->to = &((n->verts)[j]);
+XX			ed->flow = 0;
+XX			((n->verts)[i]).degree++;
+XX			((n->verts)[j]).degree++;
+XX			ed++;
+XX			c++;
+XX			break;
+XX		  default:
+XX			break;
+XX		} /* switch */
+XX	}/* while */
+XX	
+XX	if (!n) print_err("Err: No problem line.", 1);
+XX			
+XX	if (f != stdin)
+XX	  fclose(f);
+XX	
+XX	if( c < n->edgenum) 
+XX	  print_err( "Err: Less edges in the input file than given!", 1);
+XX
+XX	/*------ Now build the adjacency lists for each vertex ----*/
+XX	for( i = 1, nv = n->verts; i <= n->vertnum; i++){   
+XX                                         /* Edgelist allocation */
+XX		v = &(nv[i]);
+XX		if (v == n->source)
+XX		  v->current = v->edgelist 
+XX			= (edge **)calloc(v->degree++, sizeof(edge *));
+XX		else
+XX		  v->current = v->edgelist 
+XX			= (edge **)calloc(v->degree, sizeof(edge *));
+XX
+XX#ifdef DEBUG
+XX		v->index = i;
+XX#endif
+XX	}
+XX
+XX	for( i = 1, ne = n->edges; i <= n->edgenum; i++){
+XX                                 /* Fill in the edgelists */ 
+XX		e = &(ne[i]);
+XX		*(e->from->current) = e;
+XX		*(e->to->current) = e; 
+XX		(e->from->current)++;
+XX		(e->to->current)++;
+XX		e->flow = 0;
+XX	}
+XX	
+XX/* Artificial source + edge */
+XX
+XX	n->vertnum++;     /* This makes the n->verts and n->edges 
+XX						 arrays one longer*/
+XX	n->edgenum++;
+XX	
+XX	e = &(n->edges[n->edgenum]);
+XX	s = n->source;
+XX	v = &(n->verts[n->vertnum]);
+XX	v->edgelist	= (edge **)calloc(1, sizeof(edge *));
+XX	v->degree = 1;
+XX
+XX#ifdef DEBUG
+XX	v->index = 0;
+XX#endif
+XX
+XX	*(s->current) = e;
+XX	*(v->edgelist) = e;
+XX	e->from = v;
+XX	e->to = s;
+XX	e->flow = 0;
+XX
+XX	n->source = v;
+XX	
+XX	for( i = 1, nv = n->verts; i <= n->vertnum; i++){   
+XX		v = &(nv[i]);
+XX		v->current = v->edgelist; 
+XX	}
+XX
+XX	return n;
+XX}
+XX/*===============================================================*/
+XXvoid free_net(network *n)
+XX{
+XX	int i;
+XX	
+XX	free(n->edges);
+XX	free_queue(Q);
+XX
+XX	for (i = 1; i <= n->vertnum; i++){
+XX		free(n->verts[i].edgelist);
+XX	}
+XX	free(n->verts);
+XX	free(n);
+XX}
+XX
+XX/*==================================================================*/
+XXvoid print_net(FILE *output, network *n, char *s, int quiet, char *prob_name, controll *cont)
+XX                  
+XX                
+XX             
+XX               
+XX                     
+XX                      
+XX					/* s is a combinations of [s, d, t, a, v, e]*/
+XX{
+XX	int i, k, vnum, e_num;
+XX
+XX#ifdef DEBUG
+XX	vertex v;
+XX	int j, to, from;
+XX#endif
+XX	
+XX	vnum = n->vertnum - 1;
+XX	e_num = n->edgenum - 1;
+XX
+XX#ifndef DEBUG
+XX	for (i = 1; i <= vnum; i++){
+XX		n->verts[i].index = i;
+XX	} 
+XX#endif
+XX	
+XX	for (k = 0; k < strlen(s); k++){
+XX		switch (s[k]) {
+XX
+XX		  case 't':			/* t = tiltle */
+XX			PRINT( quiet, ("\n---------------------------------\n"));
+XX			PRINT( quiet, ("\nVertex num:%6d Edge num: %10d\n", vnum, e_num));
+XX			PRINT( quiet, ("\nSource: %6d Sink: %6d\n"
+XX				   , (n->source->edgelist[0])->to->index, n->sink->index));
+XX			break;
+XX
+XX 		  case 'p':			/* p = parameter settings */
+XX			PRINT( quiet, ("\n---------------------------------\n"));
+XX			PRINT( quiet, ("\nParameters of the algorithm:\n"));
+XX			PRINT( quiet, ("Vertex num:%6d Edge num: %10d\n", vnum, e_num));
+XX			PRINT( quiet, ("Stall_freq: %8d\n", cont->stall_freq));
+XX			PRINT( quiet, ("Relab_freq: %8d\n", cont->relab_freq));
+XX			PRINT( quiet, ("       Gap: %8d\n", cont->gap));
+XX			break;
+XX
+XX		  case 's':			/* DIMACS standard output */
+XX			print_DIMACS_std(output, n, prob_name);
+XX			break;
+XX
+XX#ifdef DEBUG
+XX		  case 'a':			/* a = adjacency list */
+XX			PRINT( quiet, ("\n---------------------------------\n"));
+XX			PRINT( quiet, ("\n\nThe adjacency lists:\n"));
+XX			for( i = 1; i<= vnum; i++){
+XX				v = n->verts[i];
+XX				PRINT( quiet, ("\nVertex: [%6d]\n", i));
+XX				for( j = 0; j < v.degree; j++){
+XX					from = v.edgelist[j]->from->index;
+XX					to = v.edgelist[j]->to->index;
+XX					PRINT( quiet, ("\t(%6d %6d)\n", from, to));
+XX				}
+XX			}
+XX			break;
+XX			
+XX		  case 'e':			/* e = edges */
+XX			PRINT( quiet, ("\n---------------------------------\n"));
+XX			PRINT( quiet, ("\nThe edges:\n\n"));
+XX			for( i = 1 ; i <= e_num ; i++ ){
+XX				print_edge(&(n->edges[i]), quiet);
+XX			}
+XX			break;
+XX			
+XX		  case 'v':			/* v = vertices */
+XX			PRINT( quiet, ("\n---------------------------------\n"));
+XX			PRINT( quiet, ("\nThe vertices:\n\n"));
+XX			for( i = 1; i<= vnum; i++){
+XX				print_vertex(&n->verts[i], quiet);
+XX			}
+XX			break;
+XX#endif
+XX		  default:
+XX			break;
+XX		}
+XX	}
+XX}
+XX
+XX/*================================================================*/
+XXvoid print_DIMACS_std (FILE *Output, network *n, char *prob_name)
+XX{
+XX	int i, vnum, e_num;
+XX	edge * e;
+XX
+XX	vnum = n->vertnum - 1;
+XX	e_num = n->edgenum - 1;
+XX	if (Output == NULL)
+XX	  return;
+XX
+XX	fprintf(Output, "c --------------------------------------------\n");
+XX	fprintf(Output, "c Solution file for the problem: %s\n", prob_name);
+XX	fprintf(Output, "c Created by the program %s\n", Progname);
+XX	fprintf(Output, "c (c) Tamas Badics 1991\n");
+XX	fprintf(Output, "c --------------------------------------------\n");
+XX	fprintf(Output, "c Parameters of the network:\n");
+XX	fprintf(Output, "c Vertex number:%8d Edge number:%11d\n", vnum, e_num);
+XX	fprintf(Output, "c Source: %8d Sink: %8d\n"
+XX		   , (n->source->edgelist[0])->to->index, n->sink->index);
+XX	fprintf(Output, "c --------------------------------------------\n");
+XX	if (n->maxflow <= 0){ 
+XX		fprintf(Output, "c NO FEASIBLE SOLUTION\n");
+XX		exit(0);
+XX	}else{ 
+XX		fprintf(Output, "c The maximum flow value:\n");
+XX		fprintf(Output, "s %d\n", (int)n->maxflow);
+XX	}
+XX	
+XX	fprintf(Output, "c --------------------------------------------\n");
+XX	fprintf(Output, "c Flow values of the edges:\n");
+XX	fprintf(Output, "c         FROM       TO                FLOW\n");
+XX	fprintf(Output, "c --------------------------------------------\n");
+XX
+XX	for (i = 1; i <= e_num; i++){
+XX		e = &n->edges[i];
+XX		fprintf(Output, "f %8d %8d %20d\n"
+XX			   , e->from->index, e->to->index, (int)e->flow); 
+XX	}
+XX}
+XX/*===============================================================*/
+XX
+XX#ifdef DEBUG
+XXvoid print_edge(e, quiet)
+XX     edge *e;
+XX     int quiet;
+XX{
+XX	PRINT( quiet, ("Edge (%6d %6d) Fl:%10d\tCap: %10d\n"
+XX		   ,e->from->index, e->to->index, e->flow, e->cap));
+XX}
+XX
+XXvoid print_vertex(v, quiet)
+XX     vertex *v;
+XX     int quiet;
+XX{
+XX	PRINT( quiet, ("Vert:[%6d] Lab: %6d Exc: %10d"
+XX		   , v->index, v->label, v->excess));
+XX
+XX	if (v->current){
+XX		PRINT( quiet, (" Cur-"));
+XX		print_edge(*v->current, quiet);
+XX	}else
+XX	  PRINT( quiet, (" Cur-Edge: NULL\n"));
+XX}
+XX#endif
+XX
+XX/*=================================================================*/
+XXvoid print_err(char *s, int stop)
+XX{
+XX	fprintf(stderr, "%s\n", s);
+XX	if (stop)
+XX	  exit(-1);
+XX}
+XX
+SHAR_EOF
+if test 8509 -ne "`wc -c netio.c`"
+then
+echo shar: error transmitting netio.c '(should have been 8509 characters)'
+fi
+echo shar: extracting queue.c
+sed 's/^XX//' << 'SHAR_EOF' > queue.c
+XX/* queue data structure routines */
+XX
+XX/* Copyright:
+XX	This program was written by 
+XX
+XX	Tamas Badics, 1991,
+XX	Rutgers University, RUTCOR
+XX	P.O.Box 5062
+XX	New Brunswick, NJ, 08903
+XX	e-mail: badics@rutcor.rutgers.edu
+XX 
+XX	The code may be used and modified for not-for-profit use.
+XX	This notice must be remained.	
+XX====================================================================*/
+XX
+XX#include "queue.h"
+XX#include <stdio.h>
+XX
+XXqueue * new_queue(int size)
+XX{
+XX	queue * q;
+XX	
+XX	q = (queue *)malloc(sizeof(queue));
+XX	q->first = q->last = q->start 
+XX	  = (queue_node *)calloc(size, sizeof(queue_node));
+XX	q->end = &q->start[size];
+XX
+XX	return q;
+XX}
+XX
+XXvoid init_queue(queue *q)
+XX{
+XX	q->first = q->last = q->start;
+XX}
+XX
+XXvoid free_queue(queue *q)
+XX{
+XX	free(q->start);
+XX	free(q);
+XX}
+XX
+XXvoid enqueue(queue *q, void *item)
+XX{
+XX	q->last->data = item;
+XX
+XX	if (q->last == q->end)
+XX	  q->last = q->start;
+XX	else
+XX	  q->last++;
+XX}
+XX
+XXvoid * dequeue(queue *q)
+XX{
+XX	void * data;
+XX	
+XX	data = q->first->data;
+XX	
+XX	if (q->first == q->end)
+XX	  q->first = q->start;
+XX	else
+XX	  q->first++;
+XX	
+XX	return(data);
+XX}
+SHAR_EOF
+if test 1028 -ne "`wc -c queue.c`"
+then
+echo shar: error transmitting queue.c '(should have been 1028 characters)'
+fi
+echo shar: extracting makefile
+sed 's/^XX//' << 'SHAR_EOF' > makefile
+XXCFILES= maxflow_init.c main.c  maxflow.c queue.c netio.c big_relabel.c
+XX
+XXCFLAGS=-O -pedantic -ansi -Wall -D"DOUBLE=int" 
+XXOUTFILE = GOLD
+XX
+XXOBJS= $(CFILES:%.c=%.o) $(DEBUGFILES:%.c=%.o)
+XX
+XXCC= gcc
+XXCOMPILE.c =   $(CC) $(CFLAGS) $(CPPFLAGS) -c
+XX
+XXLIBS = -lm 
+XX
+XXgold: ${OBJS} 
+XX	${CC} ${OBJS} ${CFLAGS} ${LDFLAGS} -o ${OUTFILE} ${LIBS}
+XX
+XXdepend:
+XX	makedepend -- ${CFLAGS} -- ${CFILES}
+XX	
+XX$(OBJS): makefile
+XX
+XX# DO NOT DELETE THIS LINE -- make depend depends on it.
+XX
+XXmaxflow_init.o: /usr/include/stdio.h _maxflow.h maxflow_typedef.h queue.h
+XXmaxflow_init.o: netio.h macros.h
+XXmain.o: /usr/include/stdio.h maxflow.h maxflow_typedef.h netio.h
+XXmaxflow.o: _maxflow.h /usr/include/stdio.h maxflow_typedef.h queue.h macros.h
+XXmaxflow.o: netio.h
+XXqueue.o: queue.h /usr/include/stdio.h
+XXnetio.o: /usr/include/stdio.h _maxflow.h maxflow_typedef.h queue.h netio.h
+XXbig_relabel.o: /usr/include/stdio.h _maxflow.h maxflow_typedef.h queue.h
+XXbig_relabel.o: netio.h
+SHAR_EOF
+if test 926 -ne "`wc -c makefile`"
+then
+echo shar: error transmitting makefile '(should have been 926 characters)'
+fi
+echo shar: extracting test.max
+sed 's/^XX//' << 'SHAR_EOF' > test.max
+XXc This file was generated by genrmf.
+XXc The parameters are: a: 2 b: 3 c1: 10 c2: 10000
+XXp max      12         32
+XXn       1 s
+XXn      12 t
+XXa       1       5       5823
+XXa       1       2      40000
+XXa       1       3      40000
+XXa       2       7       9266
+XXa       2       1      40000
+XXa       2       4      40000
+XXa       3       8       4373
+XXa       3       4      40000
+XXa       3       1      40000
+XXa       4       6       7862
+XXa       4       3      40000
+XXa       4       2      40000
+XXa       5      10       2982
+XXa       5       6      40000
+XXa       5       7      40000
+XXa       6      12       7568
+XXa       6       5      40000
+XXa       6       8      40000
+XXa       7       9       4299
+XXa       7       8      40000
+XXa       7       5      40000
+XXa       8      11       9015
+XXa       8       7      40000
+XXa       8       6      40000
+XXa       9      10      40000
+XXa       9      11      40000
+XXa      10       9      40000
+XXa      10      12      40000
+XXa      11      12      40000
+XXa      11       9      40000
+XXa      12      11      40000
+XXa      12      10      40000
+SHAR_EOF
+if test 1063 -ne "`wc -c test.max`"
+then
+echo shar: error transmitting test.max '(should have been 1063 characters)'
+fi
+:	End of shell archive
+exit 0

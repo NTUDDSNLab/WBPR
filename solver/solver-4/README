@@ -1,0 +1,127 @@
+This is a preliminary information on how to compile
+, and use the PLED maxflow solver. 
+
+The package contains the PLED Maxflow Algorithm developed by
+Cheriyan & Hagerup. For details look:
+CH2806-8/89/0000/0118/$01.00(c)1989IEEE
+
+   Implemented by
+   Tamas Badics, 1991,
+   Rutgers University, RUTCOR
+   P.O.Box 5062
+   New Brunswick, NJ, 08903
+   e-mail: badics@rutcor.rutgers.edu
+
+Copyright:
+	This program was written by Tamas Badics,
+	and may be used and modified for not-for-profit use.
+	This notice must be remained.	
+
+Files:
+    dyn_tree_maxflow.c   maxflow_init.c
+    dyn_tree_maxflow.h   maxflow_typedef.h
+    fib_heap_maxflow.c   netio.c
+    _dyn_tree_maxflow.h  netio.h
+    _fib_heap_maxflow.h  macros.h             permute.c
+    _maxflow.h           main.c               queue.c   
+    big_relabel.c        makefile             queue.h
+    debug.c              math_to_gcc.h        
+    debug.h              maxflow.c           
+    dyn_splay_maxflow.c  maxflow.h
+
+Sample instance:
+    ww.max
+
+Compilation:
+    Simple type "make" in the directory where the files are.
+    This command uses the file makefile, and build the executable
+    named PLED.
+    If you want to use the debug routines, compile with -DDEBUG.
+    (See the makefile)
+
+Usage:
+    PLED [-in input_file] [-out out_file]
+         [-pf print_freq] [-sf stall_freq]
+         [-rf relabel_freq] [-cf cut_freq]
+         [-rep s|p|t|v|e|a (report_controll)]
+         [-nogap] [-perm] [-quiet] [-h] [-help]
+
+    For short help use the -h or -help option. (You will get 
+    the same help as written above here.)
+    By default some information is printed while the algorithm 
+    is running.
+    
+    Options:
+        Options can be used in arbitrary order.
+        The program will use stdin, stdout and stderr for 
+        I/O functions so everything can be redirected.
+        (Unless the user specifies another, using -in -out )
+
+        -in inputfile : The program will use inputfile - which must be
+                        in DIMACS .max format - to read a maxflow 
+                        problem. Try with ww.max, which is a 
+                        small example.
+
+        -out out_file : Only in the case of '-rep s' this file will
+                        contain the solution, in the format which is
+                        required by DIMACS.
+                        (This should be changed by default, but
+                        until experimental phase is not finished
+                        I leave it in this form. )
+
+        -rep s|p|t|v|e|a: Report options. v, e, a can only be used 
+                        after compiled with DEBUG.
+                        These letters can form any string, they will
+                        be interpreted sequentially. (Eg. -rep tavta)
+                        s - Standard DIMACS format output.
+						p - Parameter settings
+                        t - Problem parameters. (title)
+                        v - vertex list
+                        e - edge list
+                        a - adjacency lists for each vertex
+
+        -quiet        : Shut every report, only '-rep s' has impact.
+    
+        -pf  freq     : Iteration report frequency. 
+                        Default is 0.
+                        (freq is any integer number)
+        
+        -perm         : Use the permute_rnd function after each relabel
+                        Without this option - by default - there will 
+                        be no permutations.
+                        (This option should be extended with 
+                        Noga Alon's deterministic permutation.)
+
+        -rf  freq     
+        -sf  freq
+        -cf  freq     : These options controll the heuristic calling 
+                        frequency of big_relabel procedure.
+                        I just use them for experiments.
+
+                        rf - call it after this many macro_push
+                             Default: vertex_num
+
+                        sf - call it after this many stalling of 
+                             source->excess (= actual flow value)
+                             (Reason: Amount of maxflow can be sent
+                              relatively soon, big_relabel will detect
+                              this. So stalling of the flow value can
+                              indicate this event. )
+                             Default: 0 
+
+                        cf - This is a new option, it can be useless.
+                             Call big_relabel after this many real cut
+                             in the dynamic tree. Real cut means that
+                             there is no next_current after a cut of a
+                             vertex.
+                             Default: vertex_num / 2
+
+		-nogap		  : This option will switch off the checking
+						of a gap among the distance labels.
+						By default if this check found a gap, then
+						it calls a big_relabel 
+-----------------------------------------------------------------------
+
+	Please send all comments (bug reports) to:
+	    badics@rutcor.rutgers.edu
+

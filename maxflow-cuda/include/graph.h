@@ -21,13 +21,23 @@
 #include <unordered_set>
 #include <vector>
 
+
+#ifdef DEBUG
+#define PRINTF(...) printf(__VA_ARGS__)
+#else
+#define PRINTF(...)
+#endif
+
+
 // CSR graph representation
 class CSRGraph {
 public:
   CSRGraph() = default;
   CSRGraph(const std::string &filename);
+  ~CSRGraph() = default;
   void buildFromTxtFile(const std::string &filename);
   void buildFromMmioFile(const std::string &filename);
+  void buildFromDIMACSFile(const std::string &filename);
   void saveToBinary(const std::string &filename);
   void checkIfContinuous();
   void checkIfLowerTriangle();
@@ -40,6 +50,8 @@ public:
   int num_nodes;
   int num_edges;
   int num_edges_processed;
+  int source_node; // For maximum flow - DIMACS
+  int sink_node; // For maximum flow - DIMACS
   std::vector<int> destinations;
   std::vector<int> offsets;
   std::vector<int> capacities;
@@ -57,21 +69,44 @@ public:
 
     void print() const;
 
+    void preflow(int source);
+
+    /* Find the active node with the MAX height, return nodeID, or -1 if not find */
+    int findActiveNode(void);
+
+    int countActiveNodes(void);
+
+    bool push(int u); // Return true if the node u can push flow
+
+    void relabel(int u);
+
+    bool checkPath();
+
+    void maxflow(int source, int sink); 
+
     // Other methods and members...
 
     int num_nodes;
     int num_edges;
 
+    int source;
+    int sink;
+
     int* offsets;
     int* destinations;
     int* capacities;
-    int* flows; // cf(u, v)
+    int* forward_flows; // cf(u, v)
+    int* backward_flows; // cf(v, u)
 
     int* roffsets;
     int* rdestinations;
-    int* rflows; // cf(v, u)
+    int* flow_index;
+    
 
+    int* heights;
+    int* excesses;
 
+    int Excess_total;
     // std::vector<int> offsets;
     // std::vector<int> destinations;
     // std::vector<int> capacities; 

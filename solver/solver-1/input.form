@@ -1,0 +1,66 @@
+Disclaimer: the following description was obtained  by inspection of the
+code and some simple tests.  It was not written by the implementor.  CCM
+
+There will soon be available a program for translating from the DIMACS
+standard format to this format.  Contributions are welcome. CCM
+
+-------------------------------------------------------------------------
+INPUT FORMAT FOR FLOW:
+-------------------------------------------------------------------------
+   Graph I/O is performed by a generic graph library package, 
+   so some of the fields are ignored by the max-flow code (but 
+   you must include dummy fields in the input). 
+
+   The first vertex listed in the file is assumed to be the source;  
+   the last vertex is assumed to be the sink. 
+
+   There are three types of lines: the first line, vertex lines, 
+   and edge lines. The fields in each line type are as follows. 
+
+   First line-> size edges U
+      size: integer giving number of vertices
+      edges: integer giving number of edges (ignored)
+      U: character ``U'' or ``u'' specifying an undirected graph
+
+   Vertex lines->  degree vlabel xcoord ycoord
+      degree: edge degree of the vertex
+      vlabel: vertex label (ignored--vertices are referred to by index)
+      xcoord: integer x-coordinate location (ignored)
+      ycoord: integer y-coordinate location (ignored) 
+
+      *****Each vertex line is followed immediately by the lines 
+      for all its adjacent edges (thus each edge appears twice, 
+      once for each vertex).******
+
+   Edge lines-> adjacent  capacity
+      adjacent: index (not vlabel) of the adjacent vertex
+      capacity: integer edge capacity 
+     
+----------------------------------------------------------------------------
+INPUT FORMAT FOR MATFLOW
+----------------------------------------------------------------------------
+   Input files for matflow present a complete undirected graph
+   as the upper-triangular part of an integer distance matrix. 
+
+   First line -> size M
+     size: integer giving number of vertices
+     M: character ``M'' or ``m'' specifying matrix format
+ 
+   Matrix lines: 
+      Each entry is a positive integer giving edge capacity.  
+
+      First line corresponds to vertex 1. Contains size-1 
+      entries, for edges (1,2) (1,3) (1,4) . . . (1,size). Terminates
+      with newline.
+
+      Second line corresponds to vertex 2.  Contains entries for 
+      (2,3)  (2,4) ... (2,size). Terminates with newline. 
+
+      And so forth.  Here is an example of a 4-node graph.
+
+      4 M
+      22 55 34
+      90 11 
+      73
+
+

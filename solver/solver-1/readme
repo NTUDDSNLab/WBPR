@@ -1,0 +1,66 @@
+-------------------------------------------------------------------------
+The Goldberg_C.shell file contains two programs, written in C, 
+for finding MAXIMUM-FLOW in UNDIRECTED graphs.  
+-------------------------------------------------------------------------
+
+These programs were written by Ed Rothberg to implement Goldberg's
+``new max-flow algorithm'' (STOC 86). There are two main programs, for two  
+types of input formats. 
+
+MAIN PROGRAMS:
+        - flow
+        - matflow
+
+REQUIRED FILES:
+        README input.form output.form makefile main.c flow.c
+        glib.c matfl.c graphtypes.h matrix.h matmain.c test.mat test.in
+
+TO GET THESE FILES:
+        Run the "goldberg_c.shell" file in the /bin/sh shell. 
+		(It will unwrap itself.)
+		Or copy the files themselves.
+
+FILE DESCRIPTIONS: 
+        input.form:  Describes the input formats for flow and matflow. 
+        output.form: Describes output formats for flow and matflow
+					Note: The DIMACS standard for maxflow needs a 
+							directed graph so it cannot be converted 
+							into this format.
+
+        test.in:  A sample input for flow
+        test.mat: A sample input for mat
+
+        The others are source code files written in C language.
+
+HOW TO MAKE THE PROBLEM-SOLVERS:
+
+		flow:  Solves max-flow for undirected graphs presented in an 
+				adjacency-list format. 
+  
+       			Requires: flow.c, main.c, glib.c, graphtypes.h, makefile. 
+
+       			To invoke: 		$make flow
+                  				$flow filename.in
+
+      	If no filename is given, flow uses standard input. It always  
+      	writes to standard out.  
+
+		matflow: Solves max-flow for complete undirected graphs presented in a
+       			distance-matrix format.  
+
+		       	Requires: 		matfl.c, flow.c, matmain.c, glib.c
+								graphtypes.h, matrix.h, makefile.  
+
+       			To invoke: 		$make matflow
+        				        $matflow filename.in
+
+		If no filename is given, matflow uses standard input. It 
+       	always writes to standard out. 
+
+/ This README file was written by DIMACS, and based on experiments with the
+codes. /
+       
+
+
+
+

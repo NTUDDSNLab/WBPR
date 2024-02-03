@@ -1,0 +1,23 @@
+Disclaimer: the following description was obtained by inspection of the
+code and some simple tests.  It was not written by the implementor.  CCM
+
+There will soon be available a program for translating from this output
+format to the DIMACS standard format.  Contributions are welcome.  CCM
+----------------------------------------------------------------------
+OUTPUT FORMAT FOR FLOW AND MATFLOW
+----------------------------------------------------------------------
+
+First line: gives the total flow found 
+
+Other lines:  One line for each node, giving the nonzero flow along 
+   adjacent edges.  For each adjacent edge, there are two values: 
+   the adjacent node index, and the flow along that edge. 
+
+   For example:
+
+   2: 4 5  5 1
+
+   Means that from node 2 there is and edge to node 4 with flow 5 and 
+      and edge to node 5 with flow 1.
+
+

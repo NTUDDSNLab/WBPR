@@ -1,55 +1,27 @@
 #include"../include/parallel_graph.cuh"
 
 void global_relabel(int V, int E, int source, int sink, int *cpu_height, int *cpu_excess_flow, 
-                int *cpu_offsets, int *cpu_destinations, int* cpu_capacities, int* cpu_flows, int* cpu_roffsets, int* cpu_rdestinations, int* cpu_rflows,
-                int *Excess_total,
-                bool *mark, bool *scanned)
+                int *cpu_offsets, int *cpu_destinations, int* cpu_capacities, int* cpu_fflows, int* cpu_bflows, 
+                int* cpu_roffsets, int* cpu_rdestinations, int* cpu_flow_idx,
+                int *Excess_total, bool *mark, bool *scanned)
 {
-    // FIXME: The Exess_total is not being updated correctly
     for (int u = 0; u < V; u++) {
         // For all (u,v) belonging to E
         for (int i = cpu_offsets[u]; i < cpu_offsets[u + 1]; i++) {
             int v = cpu_destinations[i];
 
             if (cpu_height[u] > cpu_height[v] + 1) {
-                /* Find the backward edge */
-                int rv_idx = -1;
-                for (int j = cpu_roffsets[v]; j < cpu_roffsets[v + 1]; j++) {
-                    if (cpu_rdestinations[j] == u) {
-                        rv_idx = j;
-                        break;
-                    }
-                }
-                cpu_excess_flow[u] -= cpu_flows[i];
-                cpu_excess_flow[v] += cpu_flows[i];
-                cpu_flows[i] += cpu_rflows[rv_idx];
-                cpu_rflows[rv_idx] = 0;
 
-                printf("cpu_excess_flow[%d] = %d\n", u, cpu_excess_flow[u]);
-                printf("cpu_excess_flow[%d] = %d\n", v, cpu_excess_flow[v]);
+
+                cpu_excess_flow[u] -= cpu_fflows[i];
+                cpu_excess_flow[v] += cpu_fflows[i];
+                cpu_bflows[i] += cpu_fflows[i];
+                cpu_fflows[i] = 0;
             }
 
         }
     }
 
-
-    // for(int u = 0; u < V; u++)
-    // {
-    //     for(int v = 0; v < V; v++)
-    //     {
-    //         // for all (u,v) belonging to E
-    //         if(cpu_adjmtx[IDX(u,v)] > 0)
-    //         {
-    //             if(cpu_height[u] > cpu_height[v] + 1)
-    //             {
-    //                 cpu_excess_flow[u] = cpu_excess_flow[u] - cpu_rflowmtx[IDX(u,v)];
-    //                 cpu_excess_flow[v] = cpu_excess_flow[v] + cpu_rflowmtx[IDX(u,v)];
-    //                 cpu_rflowmtx[IDX(v,u)] = cpu_rflowmtx[IDX(v,u)] + cpu_rflowmtx[IDX(u,v)];
-    //                 cpu_rflowmtx[IDX(u,v)] = 0;
-    //             }
-    //         }
-    //     }
-    // }
     //printf("Prebfs\n");
     // performing backwards bfs from sink and assigning height values with each vertex's BFS tree level
     
@@ -78,7 +50,7 @@ void global_relabel(int V, int E, int source, int sink, int *cpu_height, int *cp
         x = Queue.front();
         Queue.pop_front();
 
-        printf("Global relabel: Dequeued: %d\n", x);
+        PRINTF("Global relabel: Dequeued: %d\n", x);
 
         // capture value of current level
         current = cpu_height[x];
@@ -91,20 +63,12 @@ void global_relabel(int V, int E, int source, int sink, int *cpu_height, int *cp
         for(int i = cpu_roffsets[x]; i < cpu_roffsets[x + 1]; i++)
         {
             y = cpu_rdestinations[i];
-
-            /* Find (y, x) flow */
-            int flow_index = -1;
-            for (int j = cpu_offsets[y]; j < cpu_offsets[y + 1]; j++) {
-                if (cpu_destinations[j] == x) {
-                    flow_index = j;
-                    break;
-                }
-            }
-
-            printf("(y, x): (%d, %d), flow[%d]: %d\n", y, x, flow_index, cpu_flows[flow_index]);
-            if (cpu_flows[flow_index] > 0) {
+            int flow_index = cpu_flow_idx[i];
+            PRINTF("Global relabel: (%d, %d)'s flow: %d\n",y, x, cpu_fflows[flow_index]);
+            
+            if (cpu_fflows[flow_index] > 0) {
                 // if y is not scanned
-                printf("Global relabel: (%d, %d)'s flow > 0\n",x, y);
+                PRINTF("Global relabel: (%d, %d)'s flow > 0\n",x, y);
                 if(scanned[y] == false)
                 {
                     // assign current as height of y node
@@ -115,7 +79,7 @@ void global_relabel(int V, int E, int source, int sink, int *cpu_height, int *cp
 
                     // Enqueue y
                     Queue.push_back(y);
-                    printf("Global relabel: Enqueued: %d\n", y);
+                    PRINTF("Global relabel: Enqueued: %d\n", y);
                 }
             }
 
@@ -170,10 +134,22 @@ void global_relabel(int V, int E, int source, int sink, int *cpu_height, int *cp
                 /* decrement excess flow of i'th node from Excess_total
                     * This shows that i'th node is not scanned now and needs to be marked, thereby no more contributing to Excess_total
                     */
-                printf("Global relabel: %d is not scanned\n", i);
+                PRINTF("Global relabel: %d is not scanned\n", i);
                 *Excess_total = *Excess_total - cpu_excess_flow[i];
                 //printf("Global relabel: Excess total: %d\n", *Excess_total);
             }
         }
     }
+}
+
+
+bool checkEnd(int V, int E, int source, int sink, int* cpu_excess_flow) {
+    for (int u = 0; u < V; u++) {
+        if (u != source && u != sink) {
+            if (cpu_excess_flow[u] > 0) {
+                return false;
+            }
+        }
+    }
+    return true;
 }
