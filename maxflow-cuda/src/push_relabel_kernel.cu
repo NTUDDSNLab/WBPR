@@ -8,7 +8,7 @@ __global__ void push_relabel_kernel(int V, int source, int sink, int *gpu_height
     unsigned int idx = (blockIdx.x*blockDim.x) + threadIdx.x;
 
     // cycle value is set to KERNEL_CYCLES as required 
-    int cycle = KERNEL_CYCLES;  
+    int cycle = (KERNEL_CYCLES);  
 
     while (cycle > 0) {
 
@@ -47,7 +47,7 @@ __global__ void push_relabel_kernel(int V, int source, int sink, int *gpu_height
                         if (h_double_dash < h_dash) {
                             v_dash = v;
                             h_dash = h_double_dash;
-                            v_index = i;
+                            v_index = flow_idx; // Find the bug here!!!
                             vinReverse = true;
                         }
                     }
@@ -86,6 +86,7 @@ __global__ void push_relabel_kernel(int V, int source, int sink, int *gpu_height
                             d = e_dash;
                         }
 
+                        //printf("[PUSH] u: %d, v_dash: %d, d: %d\n", u, v_dash, d);
                         /* Push flow to residual graph */
 
                         /* Push flow to residual graph */
@@ -185,6 +186,7 @@ __global__ void push_relabel_kernel(int V, int source, int sink, int *gpu_height
             // }
 
         }
+        __syncthreads(); // FIXME: Find why sync is required here
 
         // cycle value is decreased
         cycle = cycle - 1;

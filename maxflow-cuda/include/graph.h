@@ -22,13 +22,6 @@
 #include <vector>
 
 
-#ifdef DEBUG
-#define PRINTF(...) printf(__VA_ARGS__)
-#else
-#define PRINTF(...)
-#endif
-
-
 // CSR graph representation
 class CSRGraph {
 public:

@@ -1,11 +1,18 @@
 #pragma once
-#include "graph.h"
 #include <chrono>
-#include <cuda.h>
+#include <cuda_runtime.h>
 #include <iomanip> // put_time
 #include <iostream>
 #include <mutex>
 #include <thread>
+
+
+#ifdef DEBUG
+#define PRINTF(...) printf(__VA_ARGS__)
+#else
+#define PRINTF(...)
+#endif
+
 
 
 #define CHECK(x)                                                               \
@@ -51,4 +58,3 @@ public:
 private:
   cudaEvent_t startEvent, stopEvent;
 };
-

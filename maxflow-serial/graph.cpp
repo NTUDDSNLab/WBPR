@@ -473,6 +473,7 @@ ResidualGraph::preflow(int source)
     excesses[dest] = cap;
     forward_flows[i] = 0; // residualFlow[(source, dest)] = 0
     backward_flows[i] = cap; // residualFlow[(dest, source)] = cap
+    Excess_total += cap;
     PRINTF("Source: %d's neighbor: %d\n", source, dest);
   }
 }
@@ -562,6 +563,10 @@ ResidualGraph::maxflow(int source, int sink)
   }
 
   preflow(source);
+
+  printf("Preflow done\n");
+  printf("Excess total: %d\n", Excess_total);
+
 
 
   int active_node = findActiveNode();

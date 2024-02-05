@@ -12,6 +12,7 @@
 #include "assert.h"
 #include "../include/mmio.h"
 
+
 CSRGraph::CSRGraph(const std::string &filename) {
   if (filename.substr(filename.find_last_of(".") + 1) == "txt") {
     buildFromTxtFile(filename);
@@ -473,7 +474,7 @@ ResidualGraph::preflow(int source)
     excesses[dest] = cap;
     forward_flows[i] = 0; // residualFlow[(source, dest)] = 0
     backward_flows[i] = cap; // residualFlow[(dest, source)] = cap
-    PRINTF("Source: %d's neighbor: %d\n", source, dest);
+    //PRINTF("Source: %d's neighbor: %d\n", source, dest);
   }
 }
 
@@ -491,7 +492,7 @@ ResidualGraph::push(int v)
       backward_flows[i] += flow;
       excesses[v] -= flow;
       excesses[w] += flow;
-      PRINTF("Pushing flow %d from %d(%d) to %d(%d)\n", flow, v, excesses[v], w, excesses[w]);
+      //PRINTF("Pushing flow %d from %d(%d) to %d(%d)\n", flow, v, excesses[v], w, excesses[w]);
       return true;
     }
   }
@@ -508,7 +509,7 @@ ResidualGraph::push(int v)
       forward_flows[push_index] += flow;
       excesses[v] -= flow;
       excesses[w] += flow;
-      PRINTF("Pushing flow %d from %d(%d) to %d(%d)\n", flow, v, excesses[v], w, excesses[w]);
+      //PRINTF("Pushing flow %d from %d(%d) to %d(%d)\n", flow, v, excesses[v], w, excesses[w]);
       return true;
     }
   }
@@ -570,7 +571,7 @@ ResidualGraph::maxflow(int source, int sink)
     /* If there is an outgoing edge (v, w) of v in Gf with h(v) = h(w) + 1 */
     //printf("#active nodes: %d\n", countActiveNodes());
     if (!push(active_node)) {
-      PRINTF("Relabeling %d\n", active_node);
+      //PRINTF("Relabeling %d\n", active_node);
       relabel(active_node);
     }
     active_node = findActiveNode();

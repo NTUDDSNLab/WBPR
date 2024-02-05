@@ -5,7 +5,6 @@
 #include <bits/stdc++.h>
 #include <vector>
 #include <limits.h>
-#include "utils.cuh"
 
 // macros declared
 
@@ -17,6 +16,14 @@
 #define INF INT_MAX
 #define IDX(x,y) ( ( (x)*(number_of_nodes) ) + (y) )
 #define KERNEL_CYCLES V
+
+
+#ifdef DEBUG
+#define PRINTF(...) printf(__VA_ARGS__)
+#else
+#define PRINTF(...)
+#endif
+
 
 // function prototypes for parallel implementation
 

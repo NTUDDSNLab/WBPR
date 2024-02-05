@@ -1,4 +1,5 @@
 #include"../include/parallel_graph.cuh"
+#include "../include/utils.cuh"
 
 void global_relabel(int V, int E, int source, int sink, int *cpu_height, int *cpu_excess_flow, 
                 int *cpu_offsets, int *cpu_destinations, int* cpu_capacities, int* cpu_fflows, int* cpu_bflows, 
@@ -58,7 +59,8 @@ void global_relabel(int V, int E, int source, int sink, int *cpu_height, int *cp
         // increment current value
         current = current + 1;
 
-        // For all (y,x) belonging to E_f
+        // FIXME: For all (y,x) belonging to E_f or E ???
+
         // Scan reversed CSR but use the flow in the forward direction 
         for(int i = cpu_roffsets[x]; i < cpu_roffsets[x + 1]; i++)
         {

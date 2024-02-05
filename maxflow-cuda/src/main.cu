@@ -1,6 +1,7 @@
 #include"../include/parallel_graph.cuh"
 #include"../include/serial_graph.h"
 #include "../include/graph.h"
+#include "../include/utils.cuh"
 
 int main(int argc, char **argv)
 {
@@ -82,7 +83,7 @@ int main(int argc, char **argv)
             (res_graph.offsets), (res_graph.destinations), (res_graph.capacities), (res_graph.forward_flows), (res_graph.backward_flows),
             (res_graph.roffsets), (res_graph.rdestinations), (res_graph.flow_index), Excess_total);
     
-    // printf("Excess_total: %d\n",*Excess_total);
+    printf("Excess_total: %d\n",*Excess_total);
 
 
     //print(V,cpu_height,cpu_excess_flow,cpu_rflowmtx,cpu_adjmtx);
@@ -115,7 +116,7 @@ int main(int argc, char **argv)
     //int serial_check = check(V,E,source,sink);
 
     // print values from both implementations
-    printf("The maximum flow value of this flow network as calculated by the parallel implementation is %d\n",cpu_excess_flow[sink]);
+    printf("The maximum flow value of this flow network as calculated by the parallel implementation is %d, %d\n",cpu_excess_flow[sink], *Excess_total);
     //printf("The maximum flow of this flow network as calculated by the serial implementation is %d\n",serial_check);
     
     // print correctness check result
