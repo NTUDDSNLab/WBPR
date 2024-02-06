@@ -5,3 +5,4 @@ maxflow-serial/*.o
 *.o
 network/network/washington/gengraph
 .vscode
+dataset

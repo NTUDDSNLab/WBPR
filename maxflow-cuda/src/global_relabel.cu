@@ -12,12 +12,20 @@ void global_relabel(int V, int E, int source, int sink, int *cpu_height, int *cp
             int v = cpu_destinations[i];
 
             if (cpu_height[u] > cpu_height[v] + 1) {
+                
+                // BUGS HERE! The cpu_excess_flow[u] might be smaller than cpu_fflow[i]
+                // so we need to check if we can push more flow from u to v
+                int flow;
+                if (cpu_excess_flow[u] < cpu_fflows[i]) {
+                    flow = cpu_excess_flow[u];
+                } else {
+                    flow = cpu_fflows[i];
+                }
 
-
-                cpu_excess_flow[u] -= cpu_fflows[i];
-                cpu_excess_flow[v] += cpu_fflows[i];
-                cpu_bflows[i] += cpu_fflows[i];
-                cpu_fflows[i] = 0;
+                cpu_excess_flow[u] -= flow;
+                cpu_excess_flow[v] += flow;
+                cpu_bflows[i] += flow;
+                cpu_fflows[i] -= flow;
             }
 
         }
@@ -59,8 +67,7 @@ void global_relabel(int V, int E, int source, int sink, int *cpu_height, int *cp
         // increment current value
         current = current + 1;
 
-        // FIXME: For all (y,x) belonging to E_f or E ???
-
+        // For all (y,x) belonging to E_f (residual graph)
         // Scan reversed CSR but use the flow in the forward direction 
         for(int i = cpu_roffsets[x]; i < cpu_roffsets[x + 1]; i++)
         {
@@ -69,6 +76,30 @@ void global_relabel(int V, int E, int source, int sink, int *cpu_height, int *cp
             PRINTF("Global relabel: (%d, %d)'s flow: %d\n",y, x, cpu_fflows[flow_index]);
             
             if (cpu_fflows[flow_index] > 0) {
+                // if y is not scanned
+                PRINTF("Global relabel: (%d, %d)'s flow > 0\n",x, y);
+                if(scanned[y] == false)
+                {
+                    // assign current as height of y node
+                    cpu_height[y] = current;
+
+                    // mark scanned(y) as true
+                    scanned[y] = true;
+
+                    // Enqueue y
+                    Queue.push_back(y);
+                    PRINTF("Global relabel: Enqueued: %d\n", y);
+                }
+            }
+
+        }
+
+        for (int i = cpu_offsets[x]; i < cpu_offsets[x + 1]; i++) {
+            y = cpu_destinations[i];
+            int flow_index = i;
+            PRINTF("Global relabel: (%d, %d)'s flow: %d\n",x, y, cpu_fflows[flow_index]);
+            
+            if (cpu_bflows[flow_index] > 0) {
                 // if y is not scanned
                 PRINTF("Global relabel: (%d, %d)'s flow > 0\n",x, y);
                 if(scanned[y] == false)
@@ -137,6 +168,9 @@ void global_relabel(int V, int E, int source, int sink, int *cpu_height, int *cp
                     * This shows that i'th node is not scanned now and needs to be marked, thereby no more contributing to Excess_total
                     */
                 PRINTF("Global relabel: %d is not scanned\n", i);
+                if (cpu_excess_flow[i] < 0) {
+                    printf("Global relabel: %d's excess flow: %d\n", i, cpu_excess_flow[i]);
+                }
                 *Excess_total = *Excess_total - cpu_excess_flow[i];
                 //printf("Global relabel: Excess total: %d\n", *Excess_total);
             }

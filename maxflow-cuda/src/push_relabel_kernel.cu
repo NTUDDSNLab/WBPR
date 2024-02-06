@@ -186,7 +186,7 @@ __global__ void push_relabel_kernel(int V, int source, int sink, int *gpu_height
             // }
 
         }
-        __syncthreads(); // FIXME: Find why sync is required here
+        __syncthreads();
 
         // cycle value is decreased
         cycle = cycle - 1;

@@ -8,6 +8,7 @@
 */
 #include <ctype.h>
 #include <strings.h>
+#include <limits.h>
 
 /* ghead.h */
 
@@ -19,7 +20,7 @@
 #define TRUE       1
 
 
-#define MAX_N     20000  
+#define MAX_N     INT_MAX  
 /* #define MAX_N 60 */
 
 #define MAX_CAP   100000000

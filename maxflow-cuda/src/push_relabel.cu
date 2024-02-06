@@ -63,9 +63,11 @@ void push_relabel(int V, int E, int source, int sink, int *cpu_height, int *cpu_
         mark[i] = false;
     }
 
+    // FIXME: The Excess_total and cpu_excess_flow[sink] are not converged
     while((cpu_excess_flow[source] + cpu_excess_flow[sink]) < *Excess_total)
     {
         printf("cpu_excess_flow[source]: %d, cpu_excess_flow[sink]: %d\n",cpu_excess_flow[source], cpu_excess_flow[sink]);
+        printf("gpu_excess_flow[source]: %d, gpu_excess_flow[sink]: %d\n",gpu_excess_flow[source], gpu_excess_flow[sink]);
         // copying height values to CUDA device global memory
         CHECK(cudaMemcpy(gpu_height,cpu_height,V*sizeof(int),cudaMemcpyHostToDevice));
         CHECK(cudaMemcpy(gpu_excess_flow, cpu_excess_flow, V*sizeof(int), cudaMemcpyHostToDevice));
@@ -104,7 +106,6 @@ void push_relabel(int V, int E, int source, int sink, int *cpu_height, int *cpu_
         // perform the global_relabel routine on host
         // printf("Before global relabel, Excess total : %d\n",*Excess_total);
 
-        // FIXME: Excess_total will be negative on large graph
         global_relabel(V, E, source,sink,cpu_height,cpu_excess_flow,
                       cpu_offsets,cpu_destinations, cpu_capacities, cpu_fflows, cpu_bflows,
                       cpu_roffsets, cpu_rdestinations, cpu_flow_idx,
