@@ -47,6 +47,8 @@ int main(int argc, char **argv)
     int *gpu_capcities;
     int *gpu_fflows, *gpu_bflows; // Forward and backward flows
     int *gpu_flow_idx; // Index of the flow
+    int *avq;
+
 
     
     // allocating host memory
@@ -69,6 +71,7 @@ int main(int argc, char **argv)
     CHECK(cudaMalloc((void**)&gpu_roffsets, (V+1)*sizeof(int)));
     CHECK(cudaMalloc((void**)&gpu_bflows, E*sizeof(int)));
     CHECK(cudaMalloc((void**)&gpu_flow_idx, E*sizeof(int)));
+    CHECK(cudaMalloc((void**)&avq, V*sizeof(int)));
 
 
     // readgraph
@@ -103,6 +106,8 @@ int main(int argc, char **argv)
     //cudaMemcpy(gpu_adjmtx,cpu_adjmtx,V*V*sizeof(int),cudaMemcpyHostToDevice);
     // cudaMemcpy(gpu_rflowmtx,cpu_rflowmtx,V*V*sizeof(int),cudaMemcpyHostToDevice);
 
+    printf("Starting push_relabel\n");
+
     // push_relabel()
     push_relabel(V,E,source,sink,cpu_height,cpu_excess_flow, 
                 res_graph.offsets, res_graph.destinations, res_graph.capacities, res_graph.forward_flows, res_graph.backward_flows, 
@@ -110,7 +115,7 @@ int main(int argc, char **argv)
                 Excess_total,
                 gpu_height, gpu_excess_flow,
                 gpu_offsets, gpu_destinations, gpu_capcities, gpu_fflows, gpu_bflows,
-                gpu_roffsets, gpu_rdestinations, gpu_flow_idx);
+                gpu_roffsets, gpu_rdestinations, gpu_flow_idx, avq);
     
     // store value from serial implementation
     //int serial_check = check(V,E,source,sink);
@@ -140,6 +145,7 @@ int main(int argc, char **argv)
     CHECK(cudaFree(gpu_roffsets));
     CHECK(cudaFree(gpu_rdestinations));
     CHECK(cudaFree(gpu_flow_idx));
+    CHECK(cudaFree(avq));
 
     //cudaFree(gpu_adjmtx);
     //cudaFree(gpu_rflowmtx);
