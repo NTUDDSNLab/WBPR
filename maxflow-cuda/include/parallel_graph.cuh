@@ -42,7 +42,8 @@ void push_relabel(int V, int E, int source, int sink, int *cpu_height, int *cpu_
                 int *Excess_total, 
                 int *gpu_height, int *gpu_excess_flow, 
                 int *gpu_offsets, int* gpu_destinations, int* gpu_capacities, int* gpu_fflows, int* gpu_bflows,
-                int* gpu_roffsets, int* gpu_rdestinations, int* gpu_flow_idx, int* avq);
+                int* gpu_roffsets, int* gpu_rdestinations, int* gpu_flow_idx, 
+                int* avq, int* gpu_cycle);
 void global_relabel(int V, int E, int source, int sink, int *cpu_height, int *cpu_excess_flow, 
                 int *cpu_offsets, int *cpu_destinations, int* cpu_capacities, int* cpu_fflows, int* cpu_bflows, 
                 int* cpu_roffsets, int* cpu_rdestinations, int* cpu_flow_idx,
@@ -60,7 +61,8 @@ __global__ void push_relabel_kernel(int V, int source, int sink, int *gpu_height
 
 __global__ void coop_push_relabel_kernel(int V, int source, int sink, int *gpu_height, int *gpu_excess_flow, 
                                     int *gpu_offsets,int *gpu_destinations, int *gpu_capacities, int *gpu_fflows, int *gpu_bflows,
-                                    int *gpu_roffsets, int *gpu_rdestinations, int *gpu_flow_idx, int* avq);
+                                    int *gpu_roffsets, int *gpu_rdestinations, int *gpu_flow_idx, 
+                                    int* avq, int* gpu_cycle);
 
 __global__ void coop_simple_kernel(int V, int source, int sink, int *gpu_offsets);
 

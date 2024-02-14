@@ -38,7 +38,8 @@ void push_relabel(int V, int E, int source, int sink, int *cpu_height, int *cpu_
                 int *Excess_total, 
                 int *gpu_height, int *gpu_excess_flow, 
                 int *gpu_offsets, int* gpu_destinations, int* gpu_capacities, int* gpu_fflows, int* gpu_bflows,
-                int* gpu_roffsets, int* gpu_rdestinations, int* gpu_flow_idx, int* gpu_avq)
+                int* gpu_roffsets, int* gpu_rdestinations, int* gpu_flow_idx, 
+                int* gpu_avq, int* gpu_cycle)
 {
     /* Instead of checking for overflowing vertices(as in the sequential push relabel),
      * sum of excess flow values of sink and source are compared against Excess_total 
@@ -64,7 +65,7 @@ void push_relabel(int V, int E, int source, int sink, int *cpu_height, int *cpu_
     cudaGetDevice(&device);
     cudaDeviceProp deviceProp;
     cudaGetDeviceProperties(&deviceProp, device);
-    dim3 num_blocks(deviceProp.multiProcessorCount * numBlocksPerSM/2);
+    dim3 num_blocks(deviceProp.multiProcessorCount * numBlocksPerSM);
     dim3 block_size(numThreadsPerBlock/2);
 
     // Calculate the usage of shared memory
@@ -82,7 +83,7 @@ void push_relabel(int V, int E, int source, int sink, int *cpu_height, int *cpu_
     void* kernel_args[] = {&V, &source, &sink, &gpu_height, &gpu_excess_flow, 
                         &gpu_offsets, &gpu_destinations, &gpu_capacities, &gpu_fflows, &gpu_bflows, 
                         &gpu_roffsets, &gpu_rdestinations, &gpu_flow_idx, 
-                        &gpu_avq};
+                        &gpu_avq, &gpu_cycle};
 
 
     // initialising mark values to false for all nodes
@@ -102,13 +103,14 @@ void push_relabel(int V, int E, int source, int sink, int *cpu_height, int *cpu_
         CHECK(cudaMemcpy(gpu_excess_flow, cpu_excess_flow, V*sizeof(int), cudaMemcpyHostToDevice));
         CHECK(cudaMemcpy(gpu_fflows, cpu_fflows, E*sizeof(int), cudaMemcpyHostToDevice));
         CHECK(cudaMemcpy(gpu_bflows, cpu_bflows, E*sizeof(int), cudaMemcpyHostToDevice));
+        CHECK(cudaMemset(gpu_cycle, V, sizeof(int))); // Reset the gpu_cycle to V
 
 
         printf("Invoking kernel\n");
         
         timer.start();
         // invoking the push_relabel_kernel
-        //push_relabel_kernel<<<number_of_blocks_nodes,threads_per_block>>>
+        // push_relabel_kernel<<<num_blocks,block_size>>>
         //        (V,source,sink,gpu_height,gpu_excess_flow,
         //        gpu_offsets,gpu_destinations,gpu_capacities,gpu_fflows,gpu_bflows,
         //        gpu_roffsets,gpu_rdestinations,gpu_flow_idx);
@@ -116,8 +118,7 @@ void push_relabel(int V, int E, int source, int sink, int *cpu_height, int *cpu_
         // Cooperative groups version
         cudaError_t cudaStatus;
         cudaStatus = cudaLaunchCooperativeKernel((void*)coop_push_relabel_kernel, num_blocks, block_size, kernel_args, sharedMemSize, 0);
-        //cudaStatus = cudaLaunchCooperativeKernel((void*)coop_simple_kernel, 1, 128, kernelArgs, 0);
-
+        
         if (cudaStatus != cudaSuccess) {
             fprintf(stderr, "cudaLaunchCooperativeKernel failed: %s\n", cudaGetErrorString(cudaStatus));
             // Handle the error, for example, by cleaning up resources and exiting

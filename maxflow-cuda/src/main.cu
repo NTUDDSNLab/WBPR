@@ -48,6 +48,8 @@ int main(int argc, char **argv)
     int *gpu_fflows, *gpu_bflows; // Forward and backward flows
     int *gpu_flow_idx; // Index of the flow
     int *cpu_avq, *gpu_avq;
+    int cycle = res_graph.num_nodes;
+    int *gpu_cycle;
 
 
     
@@ -78,6 +80,7 @@ int main(int argc, char **argv)
     CHECK(cudaMalloc((void**)&gpu_bflows, E*sizeof(int)));
     CHECK(cudaMalloc((void**)&gpu_flow_idx, E*sizeof(int)));
     CHECK(cudaMalloc((void**)&gpu_avq, V*sizeof(int)));
+    CHECK(cudaMalloc((void**)&gpu_cycle, sizeof(int)));
 
 
     // readgraph
@@ -109,6 +112,7 @@ int main(int argc, char **argv)
     CHECK(cudaMemcpy(gpu_bflows, res_graph.backward_flows, res_graph.num_edges*sizeof(int), cudaMemcpyHostToDevice));
     CHECK(cudaMemcpy(gpu_flow_idx, res_graph.flow_index, res_graph.num_edges*sizeof(int), cudaMemcpyHostToDevice));
     CHECK(cudaMemcpy(gpu_avq, cpu_avq, res_graph.num_nodes*sizeof(int), cudaMemcpyHostToDevice));
+    CHECK(cudaMemcpy(gpu_cycle, &cycle, sizeof(int), cudaMemcpyHostToDevice));
     //cudaMemcpy(gpu_adjmtx,cpu_adjmtx,V*V*sizeof(int),cudaMemcpyHostToDevice);
     // cudaMemcpy(gpu_rflowmtx,cpu_rflowmtx,V*V*sizeof(int),cudaMemcpyHostToDevice);
 
@@ -121,7 +125,7 @@ int main(int argc, char **argv)
                 Excess_total,
                 gpu_height, gpu_excess_flow,
                 gpu_offsets, gpu_destinations, gpu_capcities, gpu_fflows, gpu_bflows,
-                gpu_roffsets, gpu_rdestinations, gpu_flow_idx, gpu_avq);
+                gpu_roffsets, gpu_rdestinations, gpu_flow_idx, gpu_avq, gpu_cycle);
     
     // store value from serial implementation
     //int serial_check = check(V,E,source,sink);
