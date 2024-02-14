@@ -1,5 +1,5 @@
-CC = g++ -g
-NVCC = nvcc -g
+CC = g++ -O0 -g
+NVCC = nvcc -g -G --cudart shared
 
 # run make all to create ./maxflow executable
 all : maxflow

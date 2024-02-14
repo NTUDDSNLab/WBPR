@@ -62,6 +62,8 @@ __global__ void coop_push_relabel_kernel(int V, int source, int sink, int *gpu_h
                                     int *gpu_offsets,int *gpu_destinations, int *gpu_capacities, int *gpu_fflows, int *gpu_bflows,
                                     int *gpu_roffsets, int *gpu_rdestinations, int *gpu_flow_idx, int* avq);
 
+__global__ void coop_simple_kernel(int V, int source, int sink, int *gpu_offsets);
+
 /* Global variables */
 __device__ unsigned int avq_size;
 

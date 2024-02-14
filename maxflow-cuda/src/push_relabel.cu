@@ -38,7 +38,7 @@ void push_relabel(int V, int E, int source, int sink, int *cpu_height, int *cpu_
                 int *Excess_total, 
                 int *gpu_height, int *gpu_excess_flow, 
                 int *gpu_offsets, int* gpu_destinations, int* gpu_capacities, int* gpu_fflows, int* gpu_bflows,
-                int* gpu_roffsets, int* gpu_rdestinations, int* gpu_flow_idx, int* avq)
+                int* gpu_roffsets, int* gpu_rdestinations, int* gpu_flow_idx, int* gpu_avq)
 {
     /* Instead of checking for overflowing vertices(as in the sequential push relabel),
      * sum of excess flow values of sink and source are compared against Excess_total 
@@ -56,23 +56,34 @@ void push_relabel(int V, int E, int source, int sink, int *cpu_height, int *cpu_
 
     CudaTimer timer;
     float totalMilliseconds = 0.0f;
+    printf("Inside push_relabel\n");
+
 
     // Configure the GPU
     int device = -1;
     cudaGetDevice(&device);
     cudaDeviceProp deviceProp;
     cudaGetDeviceProperties(&deviceProp, device);
-    dim3 num_blocks(deviceProp.multiProcessorCount * numBlocksPerSM);
-    dim3 block_size(numThreadsPerBlock);
+    dim3 num_blocks(deviceProp.multiProcessorCount * numBlocksPerSM/2);
+    dim3 block_size(numThreadsPerBlock/2);
 
     // Calculate the usage of shared memory
-    size_t sharedMemSize = 2 * numThreadsPerBlock * sizeof(int);
+    size_t sharedMemSize = 2 * numThreadsPerBlock/2 * sizeof(int);
 
-    // Prepare kernal arugments
-    void* kernel_args[] = {&V, &source, &sink, gpu_height, gpu_excess_flow, 
-                        gpu_offsets, gpu_destinations, gpu_capacities, gpu_fflows, gpu_bflows, 
-                        gpu_roffsets, gpu_rdestinations, gpu_flow_idx, 
-                        avq};
+    // Print the configuration
+    // Print GPU device name
+    printf("GPU Device: %s\n", deviceProp.name);
+    printf("Number of blocks: %d\n", num_blocks.x);
+    printf("Number of threads per block: %d\n", block_size.x);
+    printf("Shared memory size: %lu\n", sharedMemSize);
+
+
+
+    void* kernel_args[] = {&V, &source, &sink, &gpu_height, &gpu_excess_flow, 
+                        &gpu_offsets, &gpu_destinations, &gpu_capacities, &gpu_fflows, &gpu_bflows, 
+                        &gpu_roffsets, &gpu_rdestinations, &gpu_flow_idx, 
+                        &gpu_avq};
+
 
     // initialising mark values to false for all nodes
     for(int i = 0; i < V; i++)
@@ -80,7 +91,6 @@ void push_relabel(int V, int E, int source, int sink, int *cpu_height, int *cpu_
         mark[i] = false;
     }
 
-    printf("Before while loop\n");
 
     // FIXME: The Excess_total and cpu_excess_flow[sink] are not converged
     while((cpu_excess_flow[source] + cpu_excess_flow[sink]) < *Excess_total)
@@ -106,10 +116,12 @@ void push_relabel(int V, int E, int source, int sink, int *cpu_height, int *cpu_
         // Cooperative groups version
         cudaError_t cudaStatus;
         cudaStatus = cudaLaunchCooperativeKernel((void*)coop_push_relabel_kernel, num_blocks, block_size, kernel_args, sharedMemSize, 0);
-        
+        //cudaStatus = cudaLaunchCooperativeKernel((void*)coop_simple_kernel, 1, 128, kernelArgs, 0);
+
         if (cudaStatus != cudaSuccess) {
             fprintf(stderr, "cudaLaunchCooperativeKernel failed: %s\n", cudaGetErrorString(cudaStatus));
             // Handle the error, for example, by cleaning up resources and exiting
+            exit(1);
         }
         
         

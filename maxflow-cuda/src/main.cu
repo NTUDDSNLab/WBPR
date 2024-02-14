@@ -47,7 +47,7 @@ int main(int argc, char **argv)
     int *gpu_capcities;
     int *gpu_fflows, *gpu_bflows; // Forward and backward flows
     int *gpu_flow_idx; // Index of the flow
-    int *avq;
+    int *cpu_avq, *gpu_avq;
 
 
     
@@ -55,6 +55,12 @@ int main(int argc, char **argv)
     cpu_height = (int*)malloc(V*sizeof(int));
     cpu_excess_flow = (int*)malloc(V*sizeof(int));
     Excess_total = (int*)malloc(sizeof(int));
+    cpu_avq = (int*)malloc(V*sizeof(int));
+
+    for (int i = 0; i < V; i++)
+    {
+        cpu_avq[i] = 0;
+    }
 
 
 
@@ -71,7 +77,7 @@ int main(int argc, char **argv)
     CHECK(cudaMalloc((void**)&gpu_roffsets, (V+1)*sizeof(int)));
     CHECK(cudaMalloc((void**)&gpu_bflows, E*sizeof(int)));
     CHECK(cudaMalloc((void**)&gpu_flow_idx, E*sizeof(int)));
-    CHECK(cudaMalloc((void**)&avq, V*sizeof(int)));
+    CHECK(cudaMalloc((void**)&gpu_avq, V*sizeof(int)));
 
 
     // readgraph
@@ -102,7 +108,7 @@ int main(int argc, char **argv)
     CHECK(cudaMemcpy(gpu_rdestinations, res_graph.rdestinations, res_graph.num_edges*sizeof(int), cudaMemcpyHostToDevice));
     CHECK(cudaMemcpy(gpu_bflows, res_graph.backward_flows, res_graph.num_edges*sizeof(int), cudaMemcpyHostToDevice));
     CHECK(cudaMemcpy(gpu_flow_idx, res_graph.flow_index, res_graph.num_edges*sizeof(int), cudaMemcpyHostToDevice));
-
+    CHECK(cudaMemcpy(gpu_avq, cpu_avq, res_graph.num_nodes*sizeof(int), cudaMemcpyHostToDevice));
     //cudaMemcpy(gpu_adjmtx,cpu_adjmtx,V*V*sizeof(int),cudaMemcpyHostToDevice);
     // cudaMemcpy(gpu_rflowmtx,cpu_rflowmtx,V*V*sizeof(int),cudaMemcpyHostToDevice);
 
@@ -115,7 +121,7 @@ int main(int argc, char **argv)
                 Excess_total,
                 gpu_height, gpu_excess_flow,
                 gpu_offsets, gpu_destinations, gpu_capcities, gpu_fflows, gpu_bflows,
-                gpu_roffsets, gpu_rdestinations, gpu_flow_idx, avq);
+                gpu_roffsets, gpu_rdestinations, gpu_flow_idx, gpu_avq);
     
     // store value from serial implementation
     //int serial_check = check(V,E,source,sink);
@@ -145,7 +151,7 @@ int main(int argc, char **argv)
     CHECK(cudaFree(gpu_roffsets));
     CHECK(cudaFree(gpu_rdestinations));
     CHECK(cudaFree(gpu_flow_idx));
-    CHECK(cudaFree(avq));
+    CHECK(cudaFree(gpu_avq));
 
     //cudaFree(gpu_adjmtx);
     //cudaFree(gpu_rflowmtx);
@@ -154,6 +160,7 @@ int main(int argc, char **argv)
     free(cpu_height);
     free(cpu_excess_flow);
     free(Excess_total);
+    free(cpu_avq);
     //free(cpu_adjmtx);
     //free(cpu_rflowmtx);
     

@@ -317,9 +317,8 @@ tiled_search_neighbor(cg::thread_block_tile<tileSize> tile, int pos, int *sheigh
 
 __global__ void coop_push_relabel_kernel(int V, int source, int sink, int *gpu_height, int *gpu_excess_flow, 
                                     int *gpu_offsets,int *gpu_destinations, int *gpu_capacities, int *gpu_fflows, int *gpu_bflows,
-                                    int *gpu_roffsets, int *gpu_rdestinations, int *gpu_flow_idx, int* avq)
+                                    int *gpu_roffsets, int *gpu_rdestinations, int *gpu_flow_idx, int *avq)
 {
-    printf("Entered kernel\n");
     unsigned int cycle = KERNEL_CYCLES;
     grid_group grid = this_grid();
     cg::thread_block block = cg::this_thread_block();
@@ -327,8 +326,6 @@ __global__ void coop_push_relabel_kernel(int V, int source, int sink, int *gpu_h
     cg::thread_block_tile<tileSize> tile = cg::tiled_partition<tileSize>(block);
     int numTilesPerBlock = (blockDim.x + tileSize - 1)/ tileSize;
     int numTilesPerGrid = numTilesPerBlock * gridDim.x;
-
-    printf("numTilesPerBlock: %d, numTilesPerGrid: %d\n", numTilesPerBlock, numTilesPerGrid);
 
     int minV = -1;
     bool vinReverse = false;
@@ -339,7 +336,6 @@ __global__ void coop_push_relabel_kernel(int V, int source, int sink, int *gpu_h
     int* sheight = SharedMemory; // sdate store the temporary height of the neighbor of u in each tile
     int* svid = (int*)&SharedMemory[blockDim.x]; // svid store the temporary vertex ID of the neighbor of u in each tile
     
-    printf("Block: %d, Thread: %d\n", blockIdx.x, threadIdx.x);
     
     while (cycle > 0) {
 
@@ -405,6 +401,18 @@ __global__ void coop_push_relabel_kernel(int V, int source, int sink, int *gpu_h
         }
         grid.sync();
         cycle = cycle - 1;
+    }
+}
+
+__global__ void
+coop_simple_kernel(int V, int source, int sink, int *gpu_offsets)
+{
+    unsigned int idx = (blockIdx.x*blockDim.x) + threadIdx.x;
+    if (idx == 0) {
+        printf("gpu_offsets: \n");
+        for (int i = 0; i < V; i++) {
+            printf("%d ", gpu_offsets[i]);
+        }
     }
 }
 
