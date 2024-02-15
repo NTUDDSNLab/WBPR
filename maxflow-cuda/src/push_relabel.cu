@@ -157,7 +157,7 @@ void push_relabel(int V, int E, int source, int sink, int *cpu_height, int *cpu_
         printf("After global relabel--------------------\n");
         // //print(V,cpu_height,cpu_excess_flow,cpu_rflowmtx,cpu_adjmtx);
         printf("Excess total : %d\n",*Excess_total);
-
+        
         // printf("Excess total : %d\n",*Excess_total);
         // printExcessFlow(V,cpu_excess_flow);
 
