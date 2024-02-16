@@ -108,9 +108,11 @@ void push_relabel(int V, int E, int source, int sink, int *cpu_height, int *cpu_
 
         printf("Invoking kernel\n");
         
+        // FIXME: Both push_relabel_kernel and coop_push_relabel_kernel suffer from deadlock in large graphs.
+        
         timer.start();
         // invoking the push_relabel_kernel
-        // push_relabel_kernel<<<num_blocks,block_size>>>
+        //push_relabel_kernel<<<num_blocks,block_size>>>
         //        (V,source,sink,gpu_height,gpu_excess_flow,
         //        gpu_offsets,gpu_destinations,gpu_capacities,gpu_fflows,gpu_bflows,
         //        gpu_roffsets,gpu_rdestinations,gpu_flow_idx);
