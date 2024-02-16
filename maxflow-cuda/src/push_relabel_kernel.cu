@@ -214,9 +214,68 @@ scan_active_vertices(int V, int source, int sink, int *gpu_height, int *gpu_exce
     }
 }
 
+
 template <unsigned int tileSize>
 inline __device__ int
-tiled_search_neighbor(cg::thread_block_tile<tileSize> tile, int pos, int *sheight, int *svid, bool *vinReverse, int *v_index, int  V, int source, int sink, int *gpu_height, int *gpu_excess_flow, 
+iterative_search_neighbor(cg::thread_block_tile<tileSize> tile, int pos, int *sheight, int *svid, int* svidx, bool *vinReverse, int *v_index, int  V, int source, int sink, int *gpu_height, int *gpu_excess_flow, 
+                    int *gpu_offsets,int *gpu_destinations, int *gpu_capacities, int *gpu_fflows, int *gpu_bflows,
+                    int *gpu_roffsets, int *gpu_rdestinations, int *gpu_flow_idx, int* avq)
+{
+    unsigned int idx = tile.thread_rank(); // 0~31
+    int tileID = threadIdx.x / tileSize;
+    int u = avq[pos];
+    int e_dash = gpu_excess_flow[u];
+    int h_dash = INF;
+    int v_dash = NULL;
+    int h_double_dash, v;
+
+    if (idx == 0) {
+
+        // For all (u, v) belonging to E_f (residual graph edgelist)
+        // Find (u, v) in both CSR format and revesred CSR format
+        for (int i = gpu_offsets[u]; i < gpu_offsets[u + 1]; i++) {
+            v = gpu_destinations[i];
+            if (gpu_fflows[i] > 0) {
+                h_double_dash = gpu_height[v];
+                if (h_double_dash < h_dash) {
+                    v_dash = v;
+                    h_dash = h_double_dash;
+                    *v_index = i;
+                    *vinReverse = false;
+                }
+            }
+        }
+        // Find (u, v) in reversed CSR format
+        for (int i = gpu_roffsets[u]; i < gpu_roffsets[u + 1]; i++) {
+            v = gpu_rdestinations[i];
+            int flow_idx = gpu_flow_idx[i];
+            if (gpu_bflows[flow_idx] > 0) {
+                h_double_dash = gpu_height[v];
+                if (h_double_dash < h_dash) {
+                    v_dash = v;
+                    h_dash = h_double_dash;
+                    *v_index = flow_idx; // Find the bug here!!!
+                    *vinReverse = true;
+                }
+            }
+        }
+    }
+    tile.sync();
+    *v_index = __shfl_sync(0xffffffff, *v_index, 0, 32);
+    v_dash = __shfl_sync(0xffffffff, v_dash, 0, 32);
+
+
+    return v_dash;
+}
+
+
+
+
+
+// NOTICE: vinReverse should be set to false when finding in CSR
+template <unsigned int tileSize>
+inline __device__ int
+tiled_search_neighbor(cg::thread_block_tile<tileSize> tile, int pos, int *sheight, int *svid, int* svidx, bool *vinReverse, int *v_index, int  V, int source, int sink, int *gpu_height, int *gpu_excess_flow, 
                     int *gpu_offsets,int *gpu_destinations, int *gpu_capacities, int *gpu_fflows, int *gpu_bflows,
                     int *gpu_roffsets, int *gpu_rdestinations, int *gpu_flow_idx, int* avq)
 {
@@ -228,6 +287,12 @@ tiled_search_neighbor(cg::thread_block_tile<tileSize> tile, int pos, int *sheigh
 
     int minH = INF;
     int minV = -1;
+    
+    /* Initialize the shared memory */
+    sheight[threadIdx.x] = INF;
+    svid[threadIdx.x] = -1;
+    svidx[threadIdx.x] = -2;
+    tile.sync();
 
     /* Scan all the neighbors of u */
     for (int i = idx; i < degree; i += tile.size()) {
@@ -240,21 +305,22 @@ tiled_search_neighbor(cg::thread_block_tile<tileSize> tile, int pos, int *sheigh
         if ((gpu_fflows[v_pos] > 0) && (v != source)) {
             sheight[threadIdx.x] = gpu_height[v];
             svid[threadIdx.x] = v;
+            svidx[threadIdx.x] = v_pos;
         } else {
             sheight[threadIdx.x] = INF;
             svid[threadIdx.x] = -1;
+            svidx[threadIdx.x] = -1;
         }
 
         tile.sync();
 
+        // Parallel reduction to find min
         for (unsigned int s = tile.size()/2; s > 0; s >>= 1) {
             if (idx < s) {
                 if ((sheight[threadIdx.x] > sheight[threadIdx.x + s])) {
                     sheight[threadIdx.x] = sheight[threadIdx.x + s];
                     svid[threadIdx.x] = svid[threadIdx.x + s];
-                } else {
-                    sheight[threadIdx.x] = sheight[threadIdx.x];
-                    svid[threadIdx.x] = svid[threadIdx.x];
+                    svidx[threadIdx.x] = svidx[threadIdx.x + s];
                 }
             }
             tile.sync();
@@ -268,6 +334,8 @@ tiled_search_neighbor(cg::thread_block_tile<tileSize> tile, int pos, int *sheigh
             if (minH > sheight[threadIdx.x]) { // The address of the first thread in the tile
                 minH = sheight[threadIdx.x];
                 minV = svid[threadIdx.x];
+                *v_index = svidx[threadIdx.x];
+                *vinReverse = false;
             }
         }
         tile.sync();  
@@ -286,9 +354,11 @@ tiled_search_neighbor(cg::thread_block_tile<tileSize> tile, int pos, int *sheigh
         if ((gpu_bflows[v_pos] > 0) && (v != source)) {
             sheight[threadIdx.x] = gpu_height[v];
             svid[threadIdx.x] = v;
+            svidx[threadIdx.x] = v_pos;
         } else {
             sheight[threadIdx.x] = INF;
             svid[threadIdx.x] = -1;
+            svidx[threadIdx.x] = -2;
         }
         tile.sync();
 
@@ -298,9 +368,7 @@ tiled_search_neighbor(cg::thread_block_tile<tileSize> tile, int pos, int *sheigh
                 if ((sheight[threadIdx.x] > sheight[threadIdx.x + s])) {
                     sheight[threadIdx.x] = sheight[threadIdx.x + s];
                     svid[threadIdx.x] = svid[threadIdx.x + s];
-                } else {
-                    sheight[threadIdx.x] = sheight[threadIdx.x];
-                    svid[threadIdx.x] = svid[threadIdx.x];
+                    svidx[threadIdx.x] = svidx[threadIdx.x + s];
                 }
             }
             tile.sync();
@@ -312,40 +380,21 @@ tiled_search_neighbor(cg::thread_block_tile<tileSize> tile, int pos, int *sheigh
             if (minH > sheight[threadIdx.x]) {
                 minH = sheight[threadIdx.x];
                 minV = svid[threadIdx.x];
+                *v_index = svidx[threadIdx.x];
                 *vinReverse = true;
             }
         }
         tile.sync();  
         svid[threadIdx.x] = -1;
         sheight[threadIdx.x] = INF;
+        svidx[threadIdx.x] = -2;
         tile.sync();
     }
+    tile.sync();
     svid[threadIdx.x] = -1;
     sheight[threadIdx.x] = INF;
-    tile.sync();
 
-    /* FIXME: The value is not broadcasted to other threads 
-    Parallel find the v_index of the minV */
-    if (*vinReverse) {
-        for (int i = idx; i < rdegree; i += tile.size()) {
-            if (minV == gpu_rdestinations[gpu_roffsets[u] + i]) {
-                // FIXME: The v_index is not ensured to give to the idx == 0 thread
-                //*v_index = gpu_flow_idx[gpu_roffsets[u] + i];
-                // Shuffle *v_index to the first thread of the tile
-                *v_index = __shfl_sync(0xFFFFFFFF, gpu_flow_idx[gpu_roffsets[u] + i], tile.thread_rank(), tileSize);
-            }
-            tile.sync();
-        }
-    } else {
-        for (int i = idx; i < degree; i += tile.size()) {
-            if (minV == gpu_destinations[gpu_offsets[u] + i]) {
-                //*v_index = gpu_offsets[u] + i;
-                *v_index = __shfl_sync(0xFFFFFFFF, gpu_offsets[u] + i, tile.thread_rank(), tileSize);
-            }
-            tile.sync();
-        }
-    }
-    printf("[%d]idx: %d, minV: %d, *v_index: %d, minH: %d\n", tileID, idx, minV, *v_index, minH);
+    //printf("[%d]idx: %d, minV: %d, *v_index: %d, minH: %d\n", tileID, idx, minV, *v_index, minH);
     tile.sync();
 
 
@@ -373,21 +422,22 @@ __global__ void coop_push_relabel_kernel(int V, int source, int sink, int *gpu_h
     int minV = -1;
     bool vinReverse = false;
     int v_index = -1;
+    int cycle = V;
 
     /* Allocate shared array for parallel reduction of finding minimum height */
     extern __shared__ int SharedMemory[];
     int* sheight = SharedMemory; // sdate store the temporary height of the neighbor of u in each tile
     int* svid = (int*)&SharedMemory[blockDim.x]; // svid store the temporary vertex ID of the neighbor of u in each tile
-    
-    // Initialize the cycle value
-    if (idx == 0) {
-        *gpu_cycle = V;
-    }
-    grid.sync();
-    
-    while (*gpu_cycle > 0) {
+    int* svidx = (int*)&svid[blockDim.x]; // svidx store the temporary index of the neighbor of u in each tile
 
+    
+    while (cycle > 0) {
+        
         scan_active_vertices(V, source, sink, gpu_height, gpu_excess_flow, avq);
+
+        //if (idx == 0) 
+        //    printf("----- << avq_size: %d >>-------------\n", avq_size);
+
         grid.sync();
 
         /* Early break condition: if avq_size == 0, cannot because 
@@ -402,19 +452,20 @@ __global__ void coop_push_relabel_kernel(int V, int source, int sink, int *gpu_h
         // Use a tile for an active vertex
         for (int i = tileIdx; i < avq_size; i += numTilesPerGrid) {
             int u = avq[i];
-            minV = tiled_search_neighbor<tileSize>(tile, i, sheight, svid, &vinReverse, &v_index, V, source, sink, gpu_height, gpu_excess_flow, gpu_offsets, gpu_destinations, gpu_capacities, gpu_fflows, gpu_bflows, gpu_roffsets, gpu_rdestinations, gpu_flow_idx, avq); 
-            
+            minV = tiled_search_neighbor<tileSize>(tile, i, sheight, svid, svidx, &vinReverse, &v_index, V, source, sink, gpu_height, gpu_excess_flow, gpu_offsets, gpu_destinations, gpu_capacities, gpu_fflows, gpu_bflows, gpu_roffsets, gpu_rdestinations, gpu_flow_idx, avq); 
+            // minV = iterative_search_neighbor<tileSize>(tile, i, sheight, svid, svidx, &vinReverse, &v_index, V, source, sink, gpu_height, gpu_excess_flow, gpu_offsets, gpu_destinations, gpu_capacities, gpu_fflows, gpu_bflows, gpu_roffsets, gpu_rdestinations, gpu_flow_idx, avq);
             // Each thread print its minV
-            //printf("[%d] threadID: %d, u: %d, minV: %d, v_index: %d, vinReverse: %d\n", tileIdx, idx, u, minV, v_index, vinReverse);
             tile.sync();
             
             
             /* Let delegated thread to push or relabel */
             if (tile.thread_rank() == 0) {
+                //printf("[%d] threadID: %d, u: %d, minV: %d, v_index: %d, vinReverse: %d\n", tileIdx, idx, u, minV, v_index, vinReverse);
                 /* Perform push or relabel operation */
                 if (minV == -1) {
                     // u has no neighbor in E_f
                     gpu_height[u] = V; // Set the height of u to be the maximum
+                    //printf("[%d-INF] threadID: %d, u: %d, minV: %d\n", tileIdx, u, minV);
                 } else {
                     // u has neighbor in E_f
                     if (gpu_height[u] > gpu_height[minV]) {
@@ -429,7 +480,7 @@ __global__ void coop_push_relabel_kernel(int V, int source, int sink, int *gpu_h
                                 d = gpu_excess_flow[u];
                             }
 
-                            //printf("[PUSH] u: %d, minV: %d, d: %d\n", u, minV, d);
+                            //printf("[%d-PUSH] u: %d, minV: %d, d: %d\n", tileIdx, u, minV, d);
                             /* Push flow to residual graph */
                             atomicAdd(&gpu_bflows[v_index], d);
                             atomicSub(&gpu_fflows[v_index], d);
@@ -446,8 +497,8 @@ __global__ void coop_push_relabel_kernel(int V, int source, int sink, int *gpu_h
                             } else {
                                 d = gpu_excess_flow[u];
                             }
-
-                            //printf("[PUSH] u: %d, v_dash: %d, d: %d\n", u, v_dash, d);
+                            
+                            //printf("[%d-PUSH] u: %d, minV: %d, d: %d\n", tileIdx, u, minV, d);
                             /* Push flow to residual graph */
 
                             /* Push flow to residual graph */
@@ -462,16 +513,14 @@ __global__ void coop_push_relabel_kernel(int V, int source, int sink, int *gpu_h
                     } else {
                         /* Perform relabel operation */
                         gpu_height[u] = gpu_height[minV] + 1;
+                        //printf("[%d-RELABEL] u: %d, minV: %d\n", tileIdx, u, minV);
                     }
                 } 
             }
-            tile.sync();      
+            tile.sync();     
         }
         grid.sync();
-        if ((blockIdx.x*blockDim.x) + threadIdx.x == 0) {
-            *gpu_cycle = *gpu_cycle - 1;
-        }
-        grid.sync();
+        cycle = cycle - 1;
     }
 }
 

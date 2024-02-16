@@ -169,9 +169,9 @@ void global_relabel(int V, int E, int source, int sink, int *cpu_height, int *cp
                     */
                 PRINTF("Global relabel: %d is not scanned\n", i);
                 *Excess_total = *Excess_total - cpu_excess_flow[i];
-                cpu_excess_flow[i] = 0;
-                cpu_height[i] = V;
-                printf("Removed excess flow from vertex: %d\n", i);
+                // cpu_excess_flow[i] = 0;
+                // cpu_height[i] = V;
+                // printf("Removed excess flow from vertex: %d\n", i);
                 //printf("Global relabel: Excess total: %d\n", *Excess_total);
             }
         }

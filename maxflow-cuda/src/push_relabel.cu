@@ -69,7 +69,7 @@ void push_relabel(int V, int E, int source, int sink, int *cpu_height, int *cpu_
     dim3 block_size(numThreadsPerBlock/2);
 
     // Calculate the usage of shared memory
-    size_t sharedMemSize = 2 * block_size.x * sizeof(int);
+    size_t sharedMemSize = 3 * block_size.x * sizeof(int);
 
     // Print the configuration
     // Print GPU device name
