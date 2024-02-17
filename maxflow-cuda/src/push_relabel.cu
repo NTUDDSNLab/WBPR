@@ -65,8 +65,11 @@ void push_relabel(int V, int E, int source, int sink, int *cpu_height, int *cpu_
     cudaGetDevice(&device);
     cudaDeviceProp deviceProp;
     cudaGetDeviceProperties(&deviceProp, device);
-    dim3 num_blocks(deviceProp.multiProcessorCount * numBlocksPerSM);
-    dim3 block_size(numThreadsPerBlock/2);
+    // dim3 num_blocks(deviceProp.multiProcessorCount * numBlocksPerSM);
+    // dim3 block_size(numThreadsPerBlock/2);
+    dim3 num_blocks(1);
+    dim3 block_size(64);
+
 
     // Calculate the usage of shared memory
     size_t sharedMemSize = 3 * block_size.x * sizeof(int);
@@ -112,7 +115,7 @@ void push_relabel(int V, int E, int source, int sink, int *cpu_height, int *cpu_
         
         timer.start();
         // invoking the push_relabel_kernel
-        //push_relabel_kernel<<<num_blocks,block_size>>>
+        // push_relabel_kernel<<<num_blocks,block_size>>>
         //        (V,source,sink,gpu_height,gpu_excess_flow,
         //        gpu_offsets,gpu_destinations,gpu_capacities,gpu_fflows,gpu_bflows,
         //        gpu_roffsets,gpu_rdestinations,gpu_flow_idx);

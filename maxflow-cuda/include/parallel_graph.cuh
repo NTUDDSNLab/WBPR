@@ -22,6 +22,8 @@ namespace cg = cooperative_groups;
 #define INF INT_MAX
 #define IDX(x,y) ( ( (x)*(number_of_nodes) ) + (y) )
 #define KERNEL_CYCLES V
+#define TILE_SIZE 32
+
 
 
 #ifdef DEBUG
