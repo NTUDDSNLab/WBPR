@@ -2,30 +2,77 @@
 #include"../include/serial_graph.h"
 #include "../include/graph.h"
 #include "../include/utils.cuh"
+#include <unistd.h>
 
 int main(int argc, char **argv)
 {
-    // checking if sufficient number of arguments (4) are passed in CLI
-    if(argc != 4)
-    {
-        printf("Invalid number of arguments passed during execution\n");
-        exit(0);
-    }
-    // reading the arguments passed in CLI
-    char* filename = argv[1];
-    // int V = atoi(argv[2]);
-    // int E = atoi(argv[3]);
-    int source = atoi(argv[2]);
-    int sink = atoi(argv[3]);
-
-    // Read from snap txt
     CSRGraph csr_graph;
-    csr_graph.buildFromDIMACSFile(filename);
+    int ch;
+    int file_type = 0;
+    int source = -1;
+    int sink = -1;
+    char* filename = NULL;
+
+    while ((ch = getopt(argc, argv, "hv:f:s:t:")) != -1) {
+        switch(ch)
+        {
+            case 'h':
+                printf("Usage: %s [-h] [-v file type] [-f filename] [-s source] [-t sink]\n",argv[0]);
+                printf("Options:\n");
+                printf("\t-h\t\tShow this help message and exit\n");
+                printf("\t-v\t\tSpecify which kind of file to load\n");
+                printf("\t\t\t\t0: SNAP txt file (default)\n");
+                printf("\t\t\t\t1: SNAP binary file\n");
+                printf("\t\t\t\t2: DIMACS file\n");
+                printf("\t-f filename\tSpecify the file path (binary or txt)\n");
+                printf("\t-s source\tSource node\n");
+                printf("\t-t sink\t\tSink node\n");
+                exit(0);
+            case 'v':
+                file_type = atoi(optarg);
+                break;
+            case 'f':
+                filename = optarg;
+                switch(file_type) {
+                    case 0:
+                        printf("Loading from txt file: %s\n", filename);
+                        csr_graph.buildFromTxtFile(filename);
+                        break;
+                    case 1:
+                        printf("Loading from binary file: %s\n", filename);
+                        csr_graph.loadFromBinary(filename);
+                        break;
+                    case 2:
+                        printf("Loading from DIMACS file: %s\n", filename);
+                        csr_graph.buildFromDIMACSFile(filename);
+                        break;
+                    default:
+                        printf("Invalid file type\n");
+                        exit(1);
+                }             
+                break;
+            case 's':
+                source = atoi(optarg);
+                break;
+            case 't':
+                sink = atoi(optarg);
+                break;
+            default:
+                printf("Invalid option\n");
+                exit(1);
+
+        }
+    }
+
+    // If the input file is DIMACS, the source and sink nodes are the first and last nodes
+    if (file_type == 2) {
+        source = csr_graph.source_node;
+        sink = csr_graph.sink_node;
+    }
+
 
     ResidualGraph res_graph;
     res_graph.buildFromCSRGraph(csr_graph);
-
-    printf("Reading graph from file %s\n",filename);
     
     int V = csr_graph.num_nodes;
     int E = csr_graph.num_edges;
