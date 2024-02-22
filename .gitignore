@@ -6,3 +6,5 @@ maxflow-serial/*.o
 network/network/washington/gengraph
 .vscode
 dataset
+network/GTgraph/R-MAT/log
+network/GTgraph/SSCA2/log
