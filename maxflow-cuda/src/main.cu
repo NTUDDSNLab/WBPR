@@ -9,11 +9,12 @@ int main(int argc, char **argv)
     CSRGraph csr_graph;
     int ch;
     int file_type = 0;
+    int algo_type = 0;
     int source = -1;
     int sink = -1;
     char* filename = NULL;
 
-    while ((ch = getopt(argc, argv, "hv:f:s:t:")) != -1) {
+    while ((ch = getopt(argc, argv, "hv:f:s:t:a:")) != -1) {
         switch(ch)
         {
             case 'h':
@@ -27,6 +28,9 @@ int main(int argc, char **argv)
                 printf("\t-f filename\tSpecify the file path (binary or txt)\n");
                 printf("\t-s source\tSource node\n");
                 printf("\t-t sink\t\tSink node\n");
+                printf("\t-a algorithm\tSpecify the algorithm to use\n");
+                printf("\t\t\t\t0: Thread-centric push-relabel (default)\n");
+                printf("\t\t\t\t1: Vertex-centric push-relabel\n");
                 exit(0);
             case 'v':
                 file_type = atoi(optarg);
@@ -57,6 +61,9 @@ int main(int argc, char **argv)
             case 't':
                 sink = atoi(optarg);
                 break;
+            case 'a':
+                algo_type = atoi(optarg);
+                break;
             default:
                 printf("Invalid option\n");
                 exit(1);
@@ -80,6 +87,15 @@ int main(int argc, char **argv)
     sink = csr_graph.sink_node;
 
     printf("Source: %d, Sink: %d\n", source, sink);
+    
+    if (algo_type == 0) {
+        printf("Using thread-centric push-relabel algorithm\n");
+    } else if (algo_type == 1) {
+        printf("Using vertex-centric push-relabel algorithm\n");
+    } else {
+        printf("Invalid algorithm type\n");
+        exit(1);
+    }
 
     // Print res_graph
     // res_graph.print();
@@ -166,7 +182,7 @@ int main(int argc, char **argv)
     printf("Starting push_relabel\n");
 
     // push_relabel()
-    push_relabel(V,E,source,sink,cpu_height,cpu_excess_flow, 
+    push_relabel(algo_type, V,E,source,sink,cpu_height,cpu_excess_flow, 
                 res_graph.offsets, res_graph.destinations, res_graph.capacities, res_graph.forward_flows, res_graph.backward_flows, 
                 res_graph.roffsets, res_graph.rdestinations, res_graph.flow_index,
                 Excess_total,
@@ -174,8 +190,6 @@ int main(int argc, char **argv)
                 gpu_offsets, gpu_destinations, gpu_capcities, gpu_fflows, gpu_bflows,
                 gpu_roffsets, gpu_rdestinations, gpu_flow_idx, gpu_avq, gpu_cycle);
     
-    // store value from serial implementation
-    //int serial_check = check(V,E,source,sink);
 
     // print values from both implementations
     printf("The maximum flow value of this flow network as calculated by the parallel implementation is %d, %d\n",cpu_excess_flow[sink], *Excess_total);

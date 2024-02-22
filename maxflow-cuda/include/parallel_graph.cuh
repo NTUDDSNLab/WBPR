@@ -38,7 +38,7 @@ namespace cg = cooperative_groups;
 void preflow(int V, int source, int sink, int *cpu_height, int *cpu_excess_flow, 
              int *offsets, int *destinations, int* capacities, int* forward_flows, int* backward_flows,
              int *roffsets, int* rdestinations, int* flow_idx, int *Excess_total);
-void push_relabel(int V, int E, int source, int sink, int *cpu_height, int *cpu_excess_flow, 
+void push_relabel(int algo_type, int V, int E, int source, int sink, int *cpu_height, int *cpu_excess_flow, 
                 int *cpu_offsets, int *cpu_destinations, int* cpu_capacities, int* cpu_fflows, int* cpu_bflows,
                 int* cpu_roffsets, int* cpu_rdestinations, int* cpu_flow_idx,
                 int *Excess_total, 

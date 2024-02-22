@@ -3,7 +3,7 @@ maxflow-cuda/maxflow
 maxflow-serial/maxflow-serial
 maxflow-serial/*.o
 *.o
-network/network/washington/gengraph
+network/DIMACS/washington/gengraph
 .vscode
 dataset
 network/GTgraph/R-MAT/log
