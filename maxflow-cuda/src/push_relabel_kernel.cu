@@ -396,7 +396,7 @@ __global__ void coop_push_relabel_kernel(int V, int source, int sink, int *gpu_h
         // Use a tile for an active vertex
         for (int i = tileIdx; i < avq_size; i += numTilesPerGrid) {
             int u = avq[i];
-            // FIXME: Some threads are barriered in the function
+
             minV = tiled_search_neighbor<tileSize>(tile, i, sheight, svid, svidx, &vinReverse, &v_index, V, source, sink, gpu_height, gpu_excess_flow, gpu_offsets, gpu_destinations, gpu_capacities, gpu_fflows, gpu_bflows, gpu_roffsets, gpu_rdestinations, gpu_flow_idx, avq); 
             // minV = iterative_search_neighbor<tileSize>(tile, i, sheight, svid, svidx, &vinReverse, &v_index, V, source, sink, gpu_height, gpu_excess_flow, gpu_offsets, gpu_destinations, gpu_capacities, gpu_fflows, gpu_bflows, gpu_roffsets, gpu_rdestinations, gpu_flow_idx, avq);
             // Each thread print its minV

@@ -66,7 +66,7 @@ void push_relabel(int algo_type, int V, int E, int source, int sink, int *cpu_he
     cudaDeviceProp deviceProp;
     cudaGetDeviceProperties(&deviceProp, device);
     dim3 num_blocks(deviceProp.multiProcessorCount * numBlocksPerSM);
-    dim3 block_size(numThreadsPerBlock/2);
+    dim3 block_size(numThreadsPerBlock);
     // dim3 num_blocks(1);
     // dim3 block_size(64);
 

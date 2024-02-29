@@ -613,3 +613,71 @@ ResidualGraph::checkPath(void)
 
   return visited[sink];
 }
+
+
+std::pair<double, double>
+CSRGraph::calDegree() const
+{
+  std::vector<int> degrees(num_nodes, 0);
+
+  // Calculate out-degree for each node
+  for (int i = 0; i < num_nodes; ++i) {
+      degrees[i] = offsets[i + 1] - offsets[i];
+  }
+
+  // Compute average
+  double sum = std::accumulate(degrees.begin(), degrees.end(), 0.0);
+  double average = sum / num_nodes;
+
+  // Compute standard deviation
+  double sq_sum = std::inner_product(degrees.begin(), degrees.end(), degrees.begin(), 0.0,
+                                      std::plus<double>(), [&](double a, double b) {
+                                          return (a - average) * (b - average);
+                                      });
+  double stddev = std::sqrt(sq_sum / num_nodes);
+
+  return {average, stddev};
+}
+
+
+std::pair<int, int> 
+CSRGraph::findMaxMinDegreeNode() const
+{
+  /* Find the maximum and minimum degree with the corresponding vertex IDs */
+  int max_degree = 0;
+  int max_degree_vertex = 0;
+  int min_degree = num_nodes;
+  int min_degree_vertex = 0;
+
+  for (int i = 0; i < num_nodes; ++i) {
+      int degree = offsets[i + 1] - offsets[i];
+      if (degree > max_degree) {
+          max_degree = degree;
+          max_degree_vertex = i;
+      }
+      if (degree < min_degree) {
+          min_degree = degree;
+          min_degree_vertex = i;
+      }
+  }
+
+  return {max_degree_vertex, min_degree_vertex};
+}
+
+
+void
+CSRGraph::printGraphStatus() const
+{
+  std::pair<double, double> degree = calDegree();
+  std::pair<int, int> max_min_degree = findMaxMinDegreeNode();
+
+  printf("---------<< Graph Status >>---------\n");
+  printf("Number of nodes: %d\n", num_nodes);
+  printf("Number of edges: %d\n", num_edges);
+  printf("Average degree: %.2f\n", degree.first);
+  printf("Standard deviation of degree: %.2f\n", degree.second);
+  printf("Maximum degree: %d (Node %d)\n", offsets[max_min_degree.first + 1] - offsets[max_min_degree.first], max_min_degree.first);
+  printf("Minimum degree: %d (Node %d)\n", offsets[max_min_degree.second + 1] - offsets[max_min_degree.second], max_min_degree.second);
+  printf("Source node: %d, Sink node: %d\n", source_node, sink_node);
+
+}

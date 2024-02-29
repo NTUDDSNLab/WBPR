@@ -20,6 +20,8 @@
 #include <unordered_map>
 #include <unordered_set>
 #include <vector>
+#include <cmath>
+#include <numeric>
 
 
 // CSR graph representation
@@ -39,6 +41,7 @@ public:
     return num_nodes == rhs.num_nodes && num_edges == rhs.num_edges &&
            destinations == rhs.destinations && offsets == rhs.offsets;
   }
+  void printGraphStatus() const;
 
   int num_nodes;
   int num_edges;
@@ -48,6 +51,10 @@ public:
   std::vector<int> destinations;
   std::vector<int> offsets;
   std::vector<int> capacities;
+
+private:
+  std::pair<double, double> calDegree() const;
+  std::pair<int, int> findMaxMinDegreeNode() const;
 };
 
 // Residual graph representation

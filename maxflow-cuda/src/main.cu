@@ -56,10 +56,14 @@ int main(int argc, char **argv)
                 }             
                 break;
             case 's':
-                source = atoi(optarg);
+                if (file_type != 2) {
+                    csr_graph.source_node = atoi(optarg);
+                }
                 break;
             case 't':
-                sink = atoi(optarg);
+                if (file_type != 2) {
+                    csr_graph.sink_node = atoi(optarg);
+                }
                 break;
             case 'a':
                 algo_type = atoi(optarg);
@@ -86,8 +90,9 @@ int main(int argc, char **argv)
     source = csr_graph.source_node;
     sink = csr_graph.sink_node;
 
-    printf("Source: %d, Sink: %d\n", source, sink);
-    
+    // Print the graph information, including the statistics
+    csr_graph.printGraphStatus();
+
     if (algo_type == 0) {
         printf("Using thread-centric push-relabel algorithm\n");
     } else if (algo_type == 1) {
