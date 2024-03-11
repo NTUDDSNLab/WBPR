@@ -35,10 +35,14 @@ if __name__ == "__main__":
     # ]
     # List of commands to execute
     commands = [
-        "./maxflow -v 2 -f dataset/Segmentation/adhead.n6c10.max -s 0 -t 1 -a 0 -s 0 -t 1 -a 0",
-        "./maxflow -v 2 -f dataset/Segmentation/adhead.n6c10.max -s 0 -t 1 -a 0 -s 0 -t 1 -a 1",
-        "./maxflow -v 2 -f dataset/Segmentation/adhead.n26c100.max -s 0 -t 1 -a 0 -s 0 -t 1 -a 0",
-        "./maxflow -v 2 -f dataset/Segmentation/adhead.n26c100.max -s 0 -t 1 -a 0 -s 0 -t 1 -a 1",
+        "./maxflow -v 2 -f /disk_182a/andrew/maximum_flow/source_sink_pairs/bipartite/imdb_super.txt -s 0 -t 1 -a 0",
+        "./maxflow -v 2 -f /disk_182a/andrew/maximum_flow/source_sink_pairs/bipartite/imdb_super.txt -s 0 -t 1 -a 1",
+        "./maxflow -v 2 -f /disk_182a/andrew/maximum_flow/source_sink_pairs/bipartite/github_super.txt -s 0 -t 1 -a 0",
+        "./maxflow -v 2 -f /disk_182a/andrew/maximum_flow/source_sink_pairs/bipartite/github_super.txt -s 0 -t 1 -a 1",
+        "./maxflow -v 2 -f /disk_182a/andrew/maximum_flow/source_sink_pairs/bipartite/youtube_super.txt -s 0 -t 1 -a 0",
+        "./maxflow -v 2 -f /disk_182a/andrew/maximum_flow/source_sink_pairs/bipartite/youtube_super.txt -s 0 -t 1 -a 1",
+        "./maxflow -v 2 -f /disk_182a/andrew/maximum_flow/source_sink_pairs/bipartite/bookcrossing_super.txt -s 0 -t 1 -a 0",
+        "./maxflow -v 2 -f /disk_182a/andrew/maximum_flow/source_sink_pairs/bipartite/bookcrossing_super.txt -s 0 -t 1 -a 1"
         # Add more commands as strings in this list
     ]
 
