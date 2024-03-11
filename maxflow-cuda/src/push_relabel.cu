@@ -97,10 +97,11 @@ void push_relabel(int algo_type, int V, int E, int source, int sink, int *cpu_he
     {
         mark[i] = false;
     }
-
+    //for (int i = 0; i < 3; i++)
     while((cpu_excess_flow[source] + cpu_excess_flow[sink]) < *Excess_total)
     {
         printf("cpu_excess_flow[source]: %d, cpu_excess_flow[sink]: %d\n",cpu_excess_flow[source], cpu_excess_flow[sink]);
+
         //printf("gpu_excess_flow[source]: %d, gpu_excess_flow[sink]: %d\n",gpu_excess_flow[source], gpu_excess_flow[sink]);
         // copying height values to CUDA device global memory
         CHECK(cudaMemcpy(gpu_height,cpu_height,V*sizeof(int),cudaMemcpyHostToDevice));
@@ -146,8 +147,9 @@ void push_relabel(int algo_type, int V, int E, int source, int sink, int *cpu_he
 
 
         // printf("Before global relabel--------------------\n");
-        printf("Excess total : %d\n",*Excess_total);
-        // printExcessFlow(V,cpu_excess_flow);
+
+
+        //printExcessFlow(V,cpu_excess_flow);
         //print(V,cpu_height,cpu_excess_flow,cpu_rflowmtx,cpu_adjmtx);
         //printf("Excess total : %d\n",*Excess_total);
         // perform the global_relabel routine on host

@@ -33,7 +33,7 @@ __global__ void push_relabel_kernel(ull *V, ull source, ull sink, int *gpu_heigh
                 {
                     e_dash = gpu_excess_flow[u];
                     h_dash = INF;
-                    v_dash = NULL;
+                    v_dash = -1;
 
                     for(v = 0; v < *V; v++)
                     {

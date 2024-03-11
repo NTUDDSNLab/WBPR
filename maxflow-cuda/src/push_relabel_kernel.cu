@@ -19,14 +19,13 @@ __global__ void push_relabel_kernel(int V, int source, int sink, int *gpu_height
             int e_dash, h_dash, h_double_dash, v, v_dash, d;
             int v_index = -1; // The index of the edge of u to v_dash
             bool vinReverse = false;
-
+            //printf("u: %d, excess_flow: %d, height: %d\n", u, gpu_excess_flow[u], gpu_height[u]);
             // Find the activate nodes
-            // FIXME: Consider not finding the minimum-height neighbor -> set its height to be V
             if (gpu_excess_flow[u] > 0 && gpu_height[u] < V && u != source && u != sink) {
                 
                 e_dash = gpu_excess_flow[u];
                 h_dash = INF;
-                v_dash = NULL;
+                v_dash = -1; // Modify from NULL to -1
 
                 // For all (u, v) belonging to E_f (residual graph edgelist)
                 // Find (u, v) in both CSR format and revesred CSR format
@@ -46,6 +45,9 @@ __global__ void push_relabel_kernel(int V, int source, int sink, int *gpu_height
                 for (int i = gpu_roffsets[u]; i < gpu_roffsets[u + 1]; i++) {
                     v = gpu_rdestinations[i];
                     int flow_idx = gpu_flow_idx[i];
+                    
+                    //if (u==2) printf("v: %d, gpu_height[%d]: %d, h_double_dash: %d\n", v, v, gpu_height[v], h_double_dash);
+
                     if (gpu_bflows[flow_idx] > 0) {
                         h_double_dash = gpu_height[v];
                         if (h_double_dash < h_dash) {
@@ -58,9 +60,10 @@ __global__ void push_relabel_kernel(int V, int source, int sink, int *gpu_height
                 }
 
                 /* Push operation */
-                if (v_dash == NULL) {
+                if (v_dash == -1) {
                     /* If there is no connected neighbors */
                     gpu_height[u] = V;
+                    //printf("[NO_NEIGHBOR] u: %d\n", u);
                 } else {
                     if (gpu_height[u] > h_dash) {
                         
@@ -223,7 +226,7 @@ tiled_search_neighbor(cg::thread_block_tile<tileSize> tile, int pos, int *sheigh
     svidx[threadIdx.x] = -2;
     tile.sync();
 
-    /* FIXME: The idx beyound the degree will not be barriered
+    /* The idx beyound the degree will not be barriered
         for (int i = idx; i < degree; i += tile.size())
     */
     /* Scan all the neighbors of u */
