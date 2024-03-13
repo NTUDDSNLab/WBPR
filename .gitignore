@@ -2,6 +2,7 @@ maxflow-cuda/obj/*.o
 maxflow-cuda/maxflow
 maxflow-serial/maxflow-serial
 maxflow-serial/*.o
+maxflow-cuda/*.txt
 *.o
 network/DIMACS/washington/gengraph
 .vscode
