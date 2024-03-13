@@ -24,6 +24,12 @@ namespace cg = cooperative_groups;
 #define KERNEL_CYCLES V
 #define TILE_SIZE 32
 
+#ifdef WORKLOAD
+#define enoughArraySize 1000000
+__device__ unsigned long long warpExecutionTime[enoughArraySize] = {0}; // Enough space for all warps in RTX 3090
+__global__ void copyFromStaticToArray(unsigned long long* tempArray, int N);
+#endif /* WORKLOAD */
+
 
 
 #ifdef DEBUG

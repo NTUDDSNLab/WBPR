@@ -55,6 +55,9 @@ void push_relabel(int algo_type, int V, int E, int source, int sink, int *cpu_he
     mark = (bool*)malloc(V*sizeof(bool));
     scanned = (bool*)malloc(V*sizeof(bool));
 
+
+
+
     CudaTimer timer;
     float totalMilliseconds = 0.0f;
     printf("Inside push_relabel\n");
@@ -70,9 +73,24 @@ void push_relabel(int algo_type, int V, int E, int source, int sink, int *cpu_he
     // dim3 num_blocks(1);
     // dim3 block_size(64);
 
-
     // Calculate the usage of shared memory
     size_t sharedMemSize = 3 * block_size.x * sizeof(int);
+
+#ifdef WORKLOAD
+    // Caculate the total number of warps
+    int num_warps = (block_size.x * num_blocks.x) / 32;
+    
+    // Allocate device buffer for warp execution time
+    unsigned long long *gpu_warpExecutionTime;
+    CHECK(cudaMalloc((void**)&gpu_warpExecutionTime, num_warps*sizeof(unsigned long long)));
+
+    // Allocate host buffer for warp execution time
+    unsigned long long *cpuWarpExecution = (unsigned long long*)malloc(num_warps*sizeof(unsigned long long));
+    unsigned long long *tempWarpExecution = (unsigned long long*)malloc(num_warps*sizeof(unsigned long long));
+    for (int i = 0; i < num_warps; i++) {
+        cpuWarpExecution[i] = 0;
+    }
+#endif // WORKLOAD
 
     // Print the configuration
     // Print GPU device name
@@ -143,6 +161,17 @@ void push_relabel(int algo_type, int V, int E, int source, int sink, int *cpu_he
         CHECK(cudaMemcpy(cpu_fflows,gpu_fflows, E*sizeof(int),cudaMemcpyDeviceToHost));
         CHECK(cudaMemcpy(cpu_bflows,gpu_bflows, E*sizeof(int),cudaMemcpyDeviceToHost));
 
+#ifdef WORKLOAD
+
+        // Copy warp execution time from device to host
+        copyFromStaticToArray<<<num_blocks, block_size>>>(gpu_warpExecutionTime, num_warps);
+        cudaDeviceSynchronize();
+
+        CHECK(cudaMemcpy(tempWarpExecution, gpu_warpExecutionTime, num_warps*sizeof(unsigned long long), cudaMemcpyDeviceToHost));
+        for (int i = 0; i < num_warps; i++) {
+            cpuWarpExecution[i] += tempWarpExecution[i];
+        }
+#endif // WORKLOAD
 
 
 
@@ -169,5 +198,24 @@ void push_relabel(int algo_type, int V, int E, int source, int sink, int *cpu_he
 
     }
     printf("Total kernel time: %.6f ms\n", totalMilliseconds);
+
+#ifdef WORKLOAD
+    printf("------------<< Workload Information >>------------\n");
+    printf("#warps: %d\n", num_warps);
+    printf("Warp execution time:\n");
+    for (int i = 0; i < num_warps; i++) {
+        printf("%llu ", cpuWarpExecution[i]);
+    }
+    printf("\n");
+
+    // Free device buffer for warp execution time
+    CHECK(cudaFree(gpu_warpExecutionTime));
+
+    // Free host buffer for warp execution time
+    free(cpuWarpExecution);
+    free(tempWarpExecution);
+
+#endif // WORKLOAD
+
 
 }

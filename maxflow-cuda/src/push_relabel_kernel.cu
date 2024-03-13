@@ -1,5 +1,15 @@
 #include"../include/parallel_graph.cuh"
 
+#ifdef WORKLOAD
+__global__ void copyFromStaticToArray(unsigned long long* tempArray, int N) {
+    int idx = blockIdx.x * blockDim.x + threadIdx.x;
+    if (idx < N) {
+        tempArray[idx] = warpExecutionTime[idx];
+    }
+}
+#endif // WORKLOAD
+
+
 
 __global__ void push_relabel_kernel(int V, int source, int sink, int *gpu_height, int *gpu_excess_flow, 
                                     int *gpu_offsets,int *gpu_destinations, int *gpu_capacities, int *gpu_fflows, int *gpu_bflows,
@@ -12,7 +22,22 @@ __global__ void push_relabel_kernel(int V, int source, int sink, int *gpu_height
     // cycle value is set to KERNEL_CYCLES as required 
     int cycle = (KERNEL_CYCLES);  
 
+#ifdef WORKLOAD
+    unsigned long long start, end;
+    // Initialize the warpExecutionTime
+    if (idx % 32 == 0) {
+        warpExecutionTime[idx / 32] = 0;
+    }
+#endif // WORKLOAD
+
     while (cycle > 0) {
+
+#ifdef WORKLOAD
+        // Initialize the warpExecutionTime
+        if (idx % 32 == 0) {
+            start = clock64();
+        }
+#endif // WORKLOAD
 
         for (unsigned int u = idx; u < V; u += blockDim.x * gridDim.x) {
             
@@ -118,6 +143,14 @@ __global__ void push_relabel_kernel(int V, int source, int sink, int *gpu_height
             }
         }
 
+#ifdef WORKLOAD
+        // Sum up the execution time of each warp
+        if (idx % 32 == 0) {
+            end = clock64();
+            warpExecutionTime[idx / 32] += (end - start);
+        }
+#endif // WORKLOAD
+
         // cycle value is decreased
         cycle = cycle - 1;
         grid.sync();
@@ -135,13 +168,27 @@ scan_active_vertices(int V, int source, int sink, int *gpu_height, int *gpu_exce
         avq_size = 0;
     }
     grid.sync();
-    
+
+#ifdef WORKLOAD
+    unsigned long long start, end;
+    if (idx % 32 == 0) {
+        start = clock64();
+    }
+#endif // WORKLOAD
+
     /* Stride scan the V set */
     for (int u = idx; u < V; u+= blockDim.x * gridDim.x) {
         if (gpu_excess_flow[u] > 0 && gpu_height[u] < V && u != source && u != sink) {
             avq[atomicAdd(&avq_size, 1)] = u;
         }
     }
+#ifdef WORKLOAD
+    if (idx % 32 == 0) {
+        end = clock64();
+        warpExecutionTime[idx / 32] += (end - start);
+    }
+#endif // WORKLOAD
+
 }
 
 
@@ -396,6 +443,13 @@ __global__ void coop_push_relabel_kernel(int V, int source, int sink, int *gpu_h
 
         grid.sync();
 
+#ifdef WORKLOAD
+        unsigned long long start, end;
+        if (idx % 32 == 0) {
+            start = clock64();
+        }
+#endif // WORKLOAD
+
         // Use a tile for an active vertex
         for (int i = tileIdx; i < avq_size; i += numTilesPerGrid) {
             int u = avq[i];
@@ -468,6 +522,14 @@ __global__ void coop_push_relabel_kernel(int V, int source, int sink, int *gpu_h
             }
             tile.sync();  
         }
+        
+#ifdef WORKLOAD
+        if (idx % 32 == 0) {
+            end = clock64();
+            warpExecutionTime[idx / 32] += (end - start);
+        }
+#endif // WORKLOAD
+        
         grid.sync();
         cycle = cycle - 1;
     }
