@@ -46,7 +46,8 @@ def batch_execute(commands, log_file, times_file, stats_file=None):
                         median = np.median(warps_times)
                         upper_quartile = np.percentile(warps_times, 75)
                         max_time = np.max(warps_times)
-                        stats = f"Min: {min_time}, Lower Quartile: {lower_quartile}, Median: {median}, Upper Quartile: {upper_quartile}, Max: {max_time}"
+                        avg_time = np.mean(warps_times)
+                        stats = f"Min: {min_time}, Lower Quartile: {lower_quartile}, Median: {median}, Upper Quartile: {upper_quartile}, Max: {max_time}, Avg: {avg_time}"
                         stats_file.write(f"{command}:\n\t{stats}\n")
 
         else:
