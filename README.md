@@ -7,8 +7,8 @@
     - `NVIDIA GPU (arch>=86)` with device memory >= 12GB.(Support NVIDIA RTX3080(sm_86)). Note that we mainly evaluate our experience on RTX3090. The execution time could be different with different devices.
 - OS & Compler:
     - `Ubuntu 22.04`
-    - `CUDA = 11.6`
-    - `nvcc = 11.6` 
+    - `CUDA >= 11.6`
+    - `nvcc >= 11.6` 
 - Important Files/Directories
     - `maxflow-cuda/`: contains all source code of parallel push-relabel algorithm using bidirectional CSR (BCSR), including thread-centric and vertex-centric approach.
     - `maxflow-serial/`: contains all source code of serial version of push-relabel algorithm on CPU.
@@ -38,15 +38,15 @@ make
 ### (3) Prepare the networks
 
 * 1st DIMACS Challenge synethesized networks (types: Washiongton, Genrmf):
-```
-% Washiongton
-cd network/DIMACS/washiongton
-cc washington.c -o gengraph
+    ```
+    % Washiongton
+    cd network/DIMACS/washiongton
+    cc washington.c -o gengraph
 
-% Genrmf
-cd network/DIMACS/genrmf
-make
-```
+    % Genrmf
+    cd network/DIMACS/genrmf
+    make
+    ```
 
 
 * SNAP
@@ -71,8 +71,7 @@ Options:
 
 ### (5) Use the scripts
 
-* maxflow-cuda/bash_run.py:
-    Execute a list of shell commands, log their output, and capture execution times.
+* `maxflow-cuda/bash_run.py`: Execute all files in the given directory and capture the total execution time and each warp's accumulated execution time
     ```
     usage: bash_run.py [-h] [--log LOG] --dir DIR --times TIMES [--stats STATS]
 
@@ -80,9 +79,18 @@ Options:
     -h, --help     show this help message and exit
     --log LOG      Path to the log file or 'stdout' for console output.
     --dir DIR      Path to the directory where the input files to execute.
-    --times TIMES  Path to the file where execution times will be logged.
-    --stats STATS  Path to the file where execution time           statistics will be logged.
+    --times TIMES  Path to the file where execution times of each warp will be logged. (Please add the WORKLOAD flag.)
+    --stats STATS  Path to the file where statistics of warp execution time will be logged. (Please add the WORKLOAD flag.)
     ```
 
+* `plots/boxplot`: Plot the boxplot of workload
+    ```
+    usage: boxplot.py [-h] --file FILE --output OUTPUT
+
+    optional arguments:
+    -h, --help       show this help message and exit
+    --file FILE      Path to the statistics file generated from bash_run.py.
+    --output OUTPUT  Path to the output image file.
+    ```
 
         

@@ -79,7 +79,7 @@ def boxplot_test(df, output_path):
     
     fig, ax = plt.subplots(figsize=(14, 6), dpi=200)
     plt.subplots_adjust(hspace=0.5)
-    plt.ylabel('Load distribution across warps (normalized to average)', fontsize=15)
+    plt.ylabel('Workload distribution (normalized to average)', fontsize=15)
     plt.grid(axis = 'y', color = 'grey', linestyle = '--')
     
 
