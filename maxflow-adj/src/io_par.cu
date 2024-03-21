@@ -26,9 +26,17 @@ readFromDIMACSFormat(std::string filename, ull *V, ull *E, ull *source, ull *sin
             std::string format;
             iss >> p >> format >> *V >> *E;
 
+            std::cout << "*V = " << *V << ", *E = " << *E << std::endl;
+
             // allocating host memory
-            *cpu_adjmtx = (int *)malloc(*V**V*sizeof(int));
-            *cpu_rflowmtx = (int *)malloc(*V**V*sizeof(int));
+            *cpu_adjmtx = (int *)malloc((*V)*(*V)*sizeof(int));
+            *cpu_rflowmtx = (int *)malloc((*V)*(*V)*sizeof(int));
+
+            // Check if cpu_adjmtx and cpu_rflowmtx are allocated successfully
+            if (*cpu_adjmtx == NULL || *cpu_rflowmtx == NULL) {
+                std::cerr << "Out of system memory (OoM)" << std::endl;
+                exit(1);
+            }
 
             for (ull i = 0; i < *V; i++) {
                 for (ull j = 0; j < *V; j++) {

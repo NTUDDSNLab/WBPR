@@ -12,8 +12,7 @@ __global__ void copyFromStaticToArray(unsigned long long* tempArray, int N) {
 
 
 __global__ void push_relabel_kernel(int V, int source, int sink, int *gpu_height, int *gpu_excess_flow, 
-                                    int *gpu_offsets,int *gpu_destinations, int *gpu_capacities, int *gpu_fflows, int *gpu_bflows,
-                                    int *gpu_roffsets, int *gpu_rdestinations, int *gpu_flow_idx)
+                                    int *gpu_offsets,int *gpu_destinations, int *gpu_capacities, int *gpu_fflows)
 {
     // u'th node is operated on by the u'th thread
     grid_group grid = this_grid();
@@ -43,7 +42,7 @@ __global__ void push_relabel_kernel(int V, int source, int sink, int *gpu_height
             
             int e_dash, h_dash, h_double_dash, v, v_dash, d;
             int v_index = -1; // The index of the edge of u to v_dash
-            bool vinReverse = false;
+            // bool vinReverse = false;
             //printf("u: %d, excess_flow: %d, height: %d\n", u, gpu_excess_flow[u], gpu_height[u]);
             // Find the activate nodes
             if (gpu_excess_flow[u] > 0 && gpu_height[u] < V && u != source && u != sink) {
@@ -62,82 +61,91 @@ __global__ void push_relabel_kernel(int V, int source, int sink, int *gpu_height
                             v_dash = v;
                             h_dash = h_double_dash;
                             v_index = i;
-                            vinReverse = false;
+                            // vinReverse = false;
                         }
                     }
                 }
-                // Find (u, v) in reversed CSR format
-                for (int i = gpu_roffsets[u]; i < gpu_roffsets[u + 1]; i++) {
-                    v = gpu_rdestinations[i];
-                    int flow_idx = gpu_flow_idx[i];
+                // // Find (u, v) in reversed CSR format
+                // for (int i = gpu_roffsets[u]; i < gpu_roffsets[u + 1]; i++) {
+                //     v = gpu_rdestinations[i];
+                //     int flow_idx = gpu_flow_idx[i];
                     
-                    //if (u==2) printf("v: %d, gpu_height[%d]: %d, h_double_dash: %d\n", v, v, gpu_height[v], h_double_dash);
+                //     //if (u==2) printf("v: %d, gpu_height[%d]: %d, h_double_dash: %d\n", v, v, gpu_height[v], h_double_dash);
 
-                    if (gpu_bflows[flow_idx] > 0) {
-                        h_double_dash = gpu_height[v];
-                        if (h_double_dash < h_dash) {
-                            v_dash = v;
-                            h_dash = h_double_dash;
-                            v_index = flow_idx; // Find the bug here!!!
-                            vinReverse = true;
-                        }
-                    }
-                }
+                //     if (gpu_bflows[flow_idx] > 0) {
+                //         h_double_dash = gpu_height[v];
+                //         if (h_double_dash < h_dash) {
+                //             v_dash = v;
+                //             h_dash = h_double_dash;
+                //             v_index = flow_idx; // Find the bug here!!!
+                //             vinReverse = true;
+                //         }
+                //     }
+                // }
 
                 /* Push operation */
                 if (v_dash == -1) {
                     /* If there is no connected neighbors */
                     gpu_height[u] = V;
-                    //printf("[NO_NEIGHBOR] u: %d\n", u);
+                    // printf("[NO_NEIGHBOR] u: %d\n", u);
                 } else {
                     if (gpu_height[u] > h_dash) {
                         
                         /* Find the proper flow to push */
 
                         /* Find flow[(u,v_dash)] in CSR */
-                        if (!vinReverse) {
-                            if (e_dash > gpu_fflows[v_index]) {
-                                d = gpu_fflows[v_index];
-                            } else {
-                                d = e_dash;
-                            }
-
-                            //printf("[PUSH] u: %d, v_dash: %d, d: %d\n", u, v_dash, d);
-
-
-                            /* Push flow to residual graph */
-                            atomicAdd(&gpu_bflows[v_index], d);
-                            atomicSub(&gpu_fflows[v_index], d);
-
-                            /* Update Excess Flow */
-                            atomicAdd(&gpu_excess_flow[v_dash], d);
-                            atomicSub(&gpu_excess_flow[u], d);
-                            
-
+                        if (e_dash > gpu_fflows[v_index]) {
+                            d = gpu_fflows[v_index];
                         } else {
-                            /* Find rflow[(u,v)] in reversed CSR */
-                            if (e_dash > gpu_bflows[v_index]) {
-                                d = gpu_bflows[v_index];
-                            } else {
-                                d = e_dash;
-                            }
-
-                            //printf("[PUSH] u: %d, v_dash: %d, d: %d\n", u, v_dash, d);
-                            /* Push flow to residual graph */
-
-                            /* Push flow to residual graph */
-                            atomicAdd(&gpu_fflows[v_index], d);
-                            atomicSub(&gpu_bflows[v_index], d);
-
-                            /* Update Excess Flow */
-                            atomicAdd(&gpu_excess_flow[v_dash], d);
-                            atomicSub(&gpu_excess_flow[u], d);
-
+                            d = e_dash;
                         }
+
+                        // printf("[PUSH] u: %d, v_dash: %d, d: %d\n", u, v_dash, d);
+
+
+                        /* Push flow to residual graph */
+                        int backward_index = -1;
+                        for (int j = gpu_offsets[v_dash]; j < gpu_offsets[v_dash + 1]; j++) {
+                            if (gpu_destinations[j] == u) {
+                                backward_index = j;
+                                break;
+                            }
+                        }
+
+
+                        /* Note: Use binary search to find the backward edge (v_dash, u)*/
+                        // int start_idx = gpu_offsets[v_dash];
+                        // int end_idx = gpu_offsets[v_dash + 1];
+                        // int backward_index = -1;
+                        
+                        // while(start_idx < end_idx) {
+                        //     int mid = start_idx + (end_idx - start_idx) / 2;
+                        //     if (gpu_destinations[mid] == u) {
+                        //         backward_index = mid;
+                        //         break;
+                        //     } else if (gpu_destinations[mid] < u) {
+                        //         start_idx = mid + 1;
+                        //     } else {
+                        //         end_idx = mid;
+                        //     }
+                        // }
+
+                        if (backward_index == -1) {
+                            printf("Cannot find the backward edge\n");
+                            return;
+                        }
+
+                        atomicAdd(&gpu_fflows[backward_index], d);
+                        atomicSub(&gpu_fflows[v_index], d);
+
+                        /* Update Excess Flow */
+                        atomicAdd(&gpu_excess_flow[v_dash], d);
+                        atomicSub(&gpu_excess_flow[u], d);
+                            
                     } else {
                         /* Relabel operation */
                         gpu_height[u] = h_dash + 1;
-                        //printf("[RELABEL] u: %d, h_dash: %d\n", u, h_dash);
+                        // printf("[RELABEL] u: %d, h_dash: %d\n", u, h_dash);
                     } 
                 }
             }

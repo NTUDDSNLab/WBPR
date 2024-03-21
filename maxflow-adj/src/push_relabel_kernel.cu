@@ -2,18 +2,18 @@
 
 __global__ void push_relabel_kernel(ull *V, ull source, ull sink, int *gpu_height, int *gpu_excess_flow, int *gpu_adjmtx,int *gpu_rflowmtx)
 {
+    grid_group grid = this_grid();
     // u'th node is operated on by the u'th thread
     unsigned int idx = (blockIdx.x*blockDim.x) + threadIdx.x;
     // printf("thread id : %d\n",idx);
 
+    ull cycle = *V;
 
-    for (unsigned int u = idx; u < *V; u += blockDim.x * gridDim.x) {
+    while (cycle > 0) {
 
-        if(u < *V && u != source && u != sink)
-        {
+        for (unsigned int u = idx; u < *V; u += blockDim.x * gridDim.x) {
+
             //printf("Thread id : %d\n",u);
-            // cycle value is set to KERNEL_CYCLES as required 
-            ull cycle = *V;
 
             /* Variables declared to be used inside the kernel :
             * e_dash - initial excess flow of node u
@@ -27,29 +27,29 @@ __global__ void push_relabel_kernel(ull *V, ull source, ull sink, int *gpu_heigh
             int e_dash, h_dash, h_double_dash, d;
             ull v,v_dash;
 
-            while(cycle > 0)
+            if( (gpu_excess_flow[u] > 0) && (gpu_height[u] < *V) && u != source && u != sink)
             {
-                if( (gpu_excess_flow[u] > 0) && (gpu_height[u] < *V) )
-                {
-                    e_dash = gpu_excess_flow[u];
-                    h_dash = INF;
-                    v_dash = -1;
+                e_dash = gpu_excess_flow[u];
+                h_dash = INF;
+                v_dash = -1;
 
-                    for(v = 0; v < *V; v++)
+                for(v = 0; v < *V; v++)
+                {
+                    // for all (u,v) belonging to E_f (residual graph edgelist)
+                    if(gpu_rflowmtx[IDX(u,v)] > 0)
                     {
-                        // for all (u,v) belonging to E_f (residual graph edgelist)
-                        if(gpu_rflowmtx[IDX(u,v)] > 0)
+                        h_double_dash = gpu_height[v];
+                        // finding lowest neighbor of node u
+                        if(h_double_dash < h_dash)
                         {
-                            h_double_dash = gpu_height[v];
-                            // finding lowest neighbor of node u
-                            if(h_double_dash < h_dash)
-                            {
-                                v_dash = v;
-                                h_dash = h_double_dash;
-                            }
+                            v_dash = v;
+                            h_dash = h_double_dash;
                         }
                     }
-
+                }
+                if (v_dash == -1) {
+                    gpu_height[u] = *V;
+                } else {
                     if(gpu_height[u] > h_dash)
                     {
                         /* height of u > height of lowest neighbor
@@ -91,13 +91,11 @@ __global__ void push_relabel_kernel(ull *V, ull source, ull sink, int *gpu_heigh
                         // printf("-gpu_height[u]: %d\n",gpu_height[u]);
                         gpu_height[u] = h_dash + 1;
                     }
-
                 }
-
-                // cycle value is decreased
-                cycle = cycle - 1;
-
             }
         }
+        // cycle value is decreased
+        cycle = cycle - 1;
+        grid.sync();
     }
 }

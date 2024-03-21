@@ -1,5 +1,5 @@
-CC = g++ -g
-NVCC = nvcc -g -lineinfo
+CC = g++ -O3
+NVCC = nvcc -O3
 
 # run make all to create ./maxflow executable
 all : maxflow
