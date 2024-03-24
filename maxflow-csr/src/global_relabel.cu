@@ -29,7 +29,7 @@ void global_relabel(int V, int E, int source, int sink, int *cpu_height, int *cp
         }
     }
 
-    //printf("Prebfs\n");
+    printf("Prebfs\n");
     // performing backwards bfs from sink and assigning height values with each vertex's BFS tree level
     
     // declaring the Queue 
@@ -52,6 +52,7 @@ void global_relabel(int V, int E, int source, int sink, int *cpu_height, int *cp
     // bfs routine and assigning of height values with tree level values
     while(!Queue.empty())
     {
+        //printf("In while, Queue.size: %d\n", Queue.size());
         // dequeue
         
         x = Queue.front();
@@ -66,7 +67,8 @@ void global_relabel(int V, int E, int source, int sink, int *cpu_height, int *cp
         current = current + 1;
 
         // For all (y,x) belonging to E_f (residual graph)
-        for (y = 0; y < V; y++) {
+        // Use intel TBB for CPU parallelism
+        for(int y = 0; y < V; y++) {
             for (int i = cpu_offsets[y]; i < cpu_offsets[y + 1]; i++) {
                 if (cpu_destinations[i] == x) {
                     int flow_index = i;
@@ -90,6 +92,30 @@ void global_relabel(int V, int E, int source, int sink, int *cpu_height, int *cp
                 }
             }
         }
+        // for (y = 0; y < V; y++) {
+        //     for (int i = cpu_offsets[y]; i < cpu_offsets[y + 1]; i++) {
+        //         if (cpu_destinations[i] == x) {
+        //             int flow_index = i;
+
+        //             if (cpu_fflows[flow_index] > 0) {
+        //                 // if y is not scanned
+        //                 if(scanned[y] == false)
+        //                 {
+        //                     // assign current as height of y node
+        //                     cpu_height[y] = current;
+
+        //                     // mark scanned(y) as true
+        //                     scanned[y] = true;
+
+        //                     // Enqueue y
+        //                     Queue.push_back(y);
+        //                     PRINTF("Global relabel: Enqueued: %d\n", y);
+        //                 }
+                    
+        //             }
+        //         }
+        //     }
+        // }
 
 
         // Scan reversed CSR but use the flow in the forward direction 

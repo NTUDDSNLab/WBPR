@@ -111,8 +111,8 @@ void push_relabel(int algo_type, int V, int E, int source, int sink, int *cpu_he
     {
         mark[i] = false;
     }
-    //for (int i = 0; i < 3; i++)
-    while((cpu_excess_flow[source] + cpu_excess_flow[sink]) < *Excess_total)
+    for (int i = 0; i < 3; i++)
+    // while((cpu_excess_flow[source] + cpu_excess_flow[sink]) < *Excess_total)
     {
         printf("cpu_excess_flow[source]: %d, cpu_excess_flow[sink]: %d\n",cpu_excess_flow[source], cpu_excess_flow[sink]);
 
@@ -177,10 +177,18 @@ void push_relabel(int algo_type, int V, int E, int source, int sink, int *cpu_he
         //printf("Excess total : %d\n",*Excess_total);
         // perform the global_relabel routine on host
         // printf("Before global relabel, Excess total : %d\n",*Excess_total);
+        
+        // global_relabel(V, E, source,sink,cpu_height,cpu_excess_flow,
+        //               cpu_offsets,cpu_destinations, cpu_capacities, cpu_fflows,
+        //               Excess_total, mark, scanned);
 
-        global_relabel(V, E, source,sink,cpu_height,cpu_excess_flow,
-                      cpu_offsets,cpu_destinations, cpu_capacities, cpu_fflows,
-                      Excess_total, mark, scanned);
+        printf("Before global relabel--------------------\n");
+        printf("Excess total: %d\n",*Excess_total);
+
+        global_relabel_gpu(V, E, source, sink, 
+                        cpu_height, cpu_excess_flow, cpu_offsets, cpu_destinations, cpu_capacities, cpu_fflows,
+                        gpu_height, gpu_excess_flow, gpu_offsets, gpu_destinations, gpu_capacities, gpu_fflows,
+                        Excess_total, mark, scanned);
 
         printf("After global relabel--------------------\n");
         // //print(V,cpu_height,cpu_excess_flow,cpu_rflowmtx,cpu_adjmtx);

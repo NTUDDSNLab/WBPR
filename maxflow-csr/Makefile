@@ -1,16 +1,14 @@
-CC = g++ 
-NVCC = nvcc
+CC = g++ -std=c++11
+NVCC = nvcc -std=c++11
 
-CC_FLAG = -O3
+CC_FLAG = -O3 
 NVCC_FLAG = -O3 --cudart shared
 
 # Profiling flags
-# CC_FLAG += -DWORKLOAD
-CC_FLAG += -UWORKLOAD
-# NVCC_FLAG += -DWORKLOAD
-NVCC_FLAG += -UWORKLOAD
-
-
+CC_FLAG += -DWORKLOAD
+# CC_FLAG += -UWORKLOAD
+NVCC_FLAG += -DWORKLOAD
+# NVCC_FLAG += -UWORKLOAD
 
 # run make all to create ./maxflow executable
 all : maxflow
@@ -18,11 +16,11 @@ all : maxflow
 # run make debug to create ./maxflowdbg executable, which is the debug build to use in cuda-gdb and cuda-memcheck
 debug : maxflowdbg
 
-maxflow : obj/graph_s.o obj/io_par.o obj/main.o obj/preflow.o obj/push_relabel_kernel.o obj/push_relabel.o obj/global_relabel.o obj/graph.o obj/mmio.o
-	$(NVCC) $(NVCC_FLAG) obj/graph_s.o obj/io_par.o obj/main.o obj/preflow.o obj/push_relabel_kernel.o obj/push_relabel.o obj/global_relabel.o obj/graph.o obj/mmio.o -o maxflow
+maxflow : obj/graph_s.o obj/io_par.o obj/main.o obj/preflow.o obj/push_relabel_kernel.o obj/push_relabel.o obj/global_relabel.o obj/graph.o obj/mmio.o obj/global_relabel_gpu.o
+	$(NVCC) $(NVCC_FLAG) obj/graph_s.o obj/io_par.o obj/main.o obj/preflow.o obj/push_relabel_kernel.o obj/push_relabel.o obj/global_relabel.o obj/graph.o obj/mmio.o obj/global_relabel_gpu.o -o maxflow
 
-maxflowdbg : obj/graph_s.o obj/io_par.o obj/main.o obj/preflow.o obj/push_relabel_kernel.o obj/push_relabel.o obj/global_relabel.o
-	$(NVCC) $(NVCC_FLAG) obj/graph_s.o obj/io_par.o obj/main.o obj/preflow.o obj/push_relabel_kernel.o obj/push_relabel.o obj/global_relabel.o -g -G -o maxflowdbg
+maxflowdbg : obj/graph_s.o obj/io_par.o obj/main.o obj/preflow.o obj/push_relabel_kernel.o obj/push_relabel.o obj/global_relabel.o obj/global_relabel_gpu.o
+	$(NVCC) $(NVCC_FLAG) obj/graph_s.o obj/io_par.o obj/main.o obj/preflow.o obj/push_relabel_kernel.o obj/push_relabel.o obj/global_relabel.o obj/global_relabel_gpu.o -g -G -o maxflowdbg
 
 obj/main.o : src/main.cu obj
 	$(NVCC) $(NVCC_FLAG) -c src/main.cu -o obj/main.o
@@ -50,6 +48,9 @@ obj/push_relabel_kernel.o : src/push_relabel_kernel.cu obj
 
 obj/global_relabel.o : src/global_relabel.cu obj
 	$(NVCC) $(NVCC_FLAG) -c src/global_relabel.cu -o obj/global_relabel.o
+
+obj/global_relabel_gpu.o : src/global_relabel_gpu.cu obj
+	$(NVCC) $(NVCC_FLAG) -c src/global_relabel_gpu.cu -o obj/global_relabel_gpu.o
 
 obj :
 	mkdir obj

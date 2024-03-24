@@ -52,6 +52,10 @@ void push_relabel(int algo_type, int V, int E, int source, int sink, int *cpu_he
 void global_relabel(int V, int E, int source, int sink, int *cpu_height, int *cpu_excess_flow, 
                 int *cpu_offsets, int *cpu_destinations, int* cpu_capacities, int* cpu_fflows,
                 int *Excess_total, bool *mark, bool *scanned);
+void global_relabel_gpu(int V, int E, int source, int sink, 
+                int *cpu_height, int *cpu_excess_flow, int *cpu_offsets, int *cpu_destinations, int* cpu_capacities, int* cpu_fflows,
+                int *gpu_height, int *gpu_excess_flow, int *gpu_offsets, int *gpu_destinations, int* gpu_capacities, int* gpu_fflows,
+                int *Excess_total, bool *mark, bool *scanned);
 void readgraph(char* filename, int V, int E, int source, int sink, int *cpu_height, int *cpu_excess_flow, int *cpu_adjmtx, int *cpu_rflowmtx);
 void print(int V,int *cpu_height, int *cpu_excess_flow, int *cpu_rflowmtx, int *cpu_adjmtx);
 
@@ -63,11 +67,15 @@ __global__ void push_relabel_kernel(int V, int source, int sink, int *gpu_height
                                     int *gpu_offsets,int *gpu_destinations, int *gpu_capacities, int *gpu_fflows);
 
 __global__ void coop_push_relabel_kernel(int V, int source, int sink, int *gpu_height, int *gpu_excess_flow, 
-                                    int *gpu_offsets,int *gpu_destinations, int *gpu_capacities, int *gpu_fflows, int *gpu_bflows,
-                                    int *gpu_roffsets, int *gpu_rdestinations, int *gpu_flow_idx, 
+                                    int *gpu_offsets,int *gpu_destinations, int *gpu_capacities, int *gpu_fflows,  
                                     int* avq, int* gpu_cycle);
 
 __global__ void coop_simple_kernel(int V, int source, int sink, int *gpu_offsets);
+
+__global__ void global_relabel_gpu_kernel(int V, int E, int source, int sink,
+                int *gpu_height, int *gpu_excess_flow, int *gpu_offsets, int *gpu_destinations, int* gpu_capacities, int* gpu_fflows,
+                int *gpu_status, int *gpu_queue, int* gpu_queue_size, int *gpu_level, int *gpu_Excess_total, bool* terminate);
+
 
 /* Global variables */
 __device__ unsigned int avq_size;

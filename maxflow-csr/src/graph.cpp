@@ -195,6 +195,7 @@ void CSRGraph::buildFromDIMACSFile(const std::string &filename) {
 
           // Note: DIMACS format uses 1-based indexing, while C++ uses 0-based indexing
           adjacency_list[u - 1].push_back({v - 1, capacity});
+          // FIXME: If there are bidrectional edges, we need to add the reverse edge
           // Note: Add backward edge for the residual graph
           adjacency_list[v - 1].push_back({u - 1, 0});
       }
@@ -204,6 +205,7 @@ void CSRGraph::buildFromDIMACSFile(const std::string &filename) {
   int edge_count = 0;
   for (int i = 0; i < num_nodes; ++i) {
       offsets[i] = edge_count;
+      // FIXME: Sort the adjacency list by destination node
       for (const auto& edge : adjacency_list[i]) {
           destinations.push_back(edge.first);
           capacities.push_back(edge.second);

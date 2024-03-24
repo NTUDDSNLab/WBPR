@@ -106,6 +106,7 @@ __global__ void push_relabel_kernel(int V, int source, int sink, int *gpu_height
                         /* Push flow to residual graph */
                         int backward_index = -1;
                         for (int j = gpu_offsets[v_dash]; j < gpu_offsets[v_dash + 1]; j++) {
+                            // printf("[%d] finds %d\n", v_dash, gpu_destinations[j]);
                             if (gpu_destinations[j] == u) {
                                 backward_index = j;
                                 break;
@@ -118,8 +119,10 @@ __global__ void push_relabel_kernel(int V, int source, int sink, int *gpu_height
                         // int end_idx = gpu_offsets[v_dash + 1];
                         // int backward_index = -1;
                         
+                        // FIXME: Fail to find all neighbor now !!!!
                         // while(start_idx < end_idx) {
                         //     int mid = start_idx + (end_idx - start_idx) / 2;
+                        //     printf("[%d] finds %d\n", v_dash, gpu_destinations[mid]);
                         //     if (gpu_destinations[mid] == u) {
                         //         backward_index = mid;
                         //         break;
@@ -130,8 +133,9 @@ __global__ void push_relabel_kernel(int V, int source, int sink, int *gpu_height
                         //     }
                         // }
 
+                        
                         if (backward_index == -1) {
-                            printf("Cannot find the backward edge\n");
+                            printf("Cannot find the backward edge of (%d, %d) \n", v_dash, u);
                             return;
                         }
 
@@ -163,6 +167,7 @@ __global__ void push_relabel_kernel(int V, int source, int sink, int *gpu_height
         cycle = cycle - 1;
         grid.sync();
     }
+    grid.sync();
 }
 
 inline __device__ void
@@ -260,17 +265,15 @@ iterative_search_neighbor(cg::thread_block_tile<tileSize> tile, int pos, int *sh
 // NOTICE: vinReverse should be set to false when finding in CSR
 template <unsigned int tileSize>
 inline __device__ int
-tiled_search_neighbor(cg::thread_block_tile<tileSize> tile, int pos, int *sheight, int *svid, int* svidx, bool *vinReverse, int *v_index, int  V, int source, int sink, int *gpu_height, int *gpu_excess_flow, 
-                    int *gpu_offsets,int *gpu_destinations, int *gpu_capacities, int *gpu_fflows, int *gpu_bflows,
-                    int *gpu_roffsets, int *gpu_rdestinations, int *gpu_flow_idx, int* avq)
+tiled_search_neighbor(cg::thread_block_tile<tileSize> tile, int pos, int *sheight, int *svid, int* svidx, int *v_index, int  V, int source, int sink, int *gpu_height, int *gpu_excess_flow, 
+                    int *gpu_offsets,int *gpu_destinations, int *gpu_capacities, int *gpu_fflows,
+                    int* avq)
 {
     unsigned int idx = tile.thread_rank(); // 0~31
     int tileID = threadIdx.x / tileSize;
     int u = avq[pos];
     int degree = gpu_offsets[u + 1] - gpu_offsets[u];
-    int rdegree = gpu_roffsets[u + 1] - gpu_roffsets[u];
     int num_iters = (int)ceilf((float)degree / (float)tileSize);
-    int num_r_iters = (int)ceilf((float)rdegree / (float)tileSize);
 
     int minH = INF;
     int minV = -1;
@@ -329,7 +332,6 @@ tiled_search_neighbor(cg::thread_block_tile<tileSize> tile, int pos, int *sheigh
                 minH = sheight[threadIdx.x];
                 minV = svid[threadIdx.x];
                 *v_index = svidx[threadIdx.x];
-                *vinReverse = false;
             }
         }
         tile.sync();  
@@ -337,63 +339,6 @@ tiled_search_neighbor(cg::thread_block_tile<tileSize> tile, int pos, int *sheigh
         sheight[threadIdx.x] = INF;
         tile.sync();
     }
-
-    tile.sync();
-
-    /* Scan all the neighbors of u in reversed CSR */
-    for (int i = 0; i < num_r_iters; i++) {
-        /* Fetch all the neighbor of u to the shared memory */
-        int v_pos, v;
-        if (i * tileSize + idx < rdegree) { 
-            v_pos = gpu_flow_idx[gpu_roffsets[u] + i * tileSize + idx];
-            v = gpu_rdestinations[gpu_roffsets[u] + i * tileSize + idx];
-            if ((gpu_bflows[v_pos] > 0) && (v != source)) {
-                sheight[threadIdx.x] = gpu_height[v];
-                svid[threadIdx.x] = v;
-                svidx[threadIdx.x] = v_pos;
-            } else {
-                sheight[threadIdx.x] = INF;
-                svid[threadIdx.x] = -1;
-                svidx[threadIdx.x] = -2;
-            }
-        } else {
-            sheight[threadIdx.x] = INF;
-            svid[threadIdx.x] = -1;
-            svidx[threadIdx.x] = -2;
-        }
-        tile.sync();
-
-        /* Parallel reduction to find min */
-        for (unsigned int s = tile.size()/2; s > 0; s >>= 1) {
-            if (idx < s) {
-                if ((sheight[threadIdx.x] > sheight[threadIdx.x + s])) {
-                    sheight[threadIdx.x] = sheight[threadIdx.x + s];
-                    svid[threadIdx.x] = svid[threadIdx.x + s];
-                    svidx[threadIdx.x] = svidx[threadIdx.x + s];
-                }
-            }
-            tile.sync();
-        }
-        tile.sync();
-
-        /* Use delegated thread to update the minimum height a tile finding in an iteration */
-        if (idx == 0) {
-            if (minH > sheight[threadIdx.x]) {
-                minH = sheight[threadIdx.x];
-                minV = svid[threadIdx.x];
-                *v_index = svidx[threadIdx.x];
-                *vinReverse = true;
-            }
-        }
-        tile.sync();  
-        svid[threadIdx.x] = -1;
-        sheight[threadIdx.x] = INF;
-        svidx[threadIdx.x] = -2;
-        tile.sync();
-    }
-    tile.sync();
-    svid[threadIdx.x] = -1;
-    sheight[threadIdx.x] = INF;
 
     tile.sync();
 
@@ -406,8 +351,7 @@ tiled_search_neighbor(cg::thread_block_tile<tileSize> tile, int pos, int *sheigh
 
 
 __global__ void coop_push_relabel_kernel(int V, int source, int sink, int *gpu_height, int *gpu_excess_flow, 
-                                    int *gpu_offsets,int *gpu_destinations, int *gpu_capacities, int *gpu_fflows, int *gpu_bflows,
-                                    int *gpu_roffsets, int *gpu_rdestinations, int *gpu_flow_idx, 
+                                    int *gpu_offsets,int *gpu_destinations, int *gpu_capacities, int *gpu_fflows,
                                     int *avq, int* gpu_cycle)
 {
     grid_group grid = this_grid();
@@ -420,7 +364,6 @@ __global__ void coop_push_relabel_kernel(int V, int source, int sink, int *gpu_h
     int idx = (blockIdx.x*blockDim.x) + threadIdx.x;
 
     int minV = -1;
-    bool vinReverse = false;
     int v_index = -1;
     int cycle = V;
 
@@ -463,7 +406,7 @@ __global__ void coop_push_relabel_kernel(int V, int source, int sink, int *gpu_h
         for (int i = tileIdx; i < avq_size; i += numTilesPerGrid) {
             int u = avq[i];
 
-            minV = tiled_search_neighbor<tileSize>(tile, i, sheight, svid, svidx, &vinReverse, &v_index, V, source, sink, gpu_height, gpu_excess_flow, gpu_offsets, gpu_destinations, gpu_capacities, gpu_fflows, gpu_bflows, gpu_roffsets, gpu_rdestinations, gpu_flow_idx, avq); 
+            minV = tiled_search_neighbor<tileSize>(tile, i, sheight, svid, svidx, &v_index, V, source, sink, gpu_height, gpu_excess_flow, gpu_offsets, gpu_destinations, gpu_capacities, gpu_fflows, avq); 
             // minV = iterative_search_neighbor<tileSize>(tile, i, sheight, svid, svidx, &vinReverse, &v_index, V, source, sink, gpu_height, gpu_excess_flow, gpu_offsets, gpu_destinations, gpu_capacities, gpu_fflows, gpu_bflows, gpu_roffsets, gpu_rdestinations, gpu_flow_idx, avq);
             // Each thread print its minV
             // printf("[%d] sync, u: %d, minV: %d\n", threadIdx.x, u, minV);
@@ -484,44 +427,33 @@ __global__ void coop_push_relabel_kernel(int V, int source, int sink, int *gpu_h
                         /* Perform push operation */
                         int d;
                         
-                        /* Find flow[(u,v_dash)] in CSR */
-                        if (!vinReverse) {
-                            if (gpu_excess_flow[u] > gpu_fflows[v_index]) {
-                                d = gpu_fflows[v_index];
-                            } else {
-                                d = gpu_excess_flow[u];
+                        /* Find flow[(minV, u)] in CSR */
+                        int backward_index = -1;
+                        for (int j = gpu_offsets[minV]; j < gpu_offsets[minV + 1]; j++) {
+                            if (gpu_destinations[j] == u) {
+                                backward_index = j;
+                                break;
                             }
-
-                            //printf("[%d-PUSH] u: %d, minV: %d, d: %d\n", tileIdx, u, minV, d);
-                            /* Push flow to residual graph */
-                            atomicAdd(&gpu_bflows[v_index], d);
-                            atomicSub(&gpu_fflows[v_index], d);
-
-                            /* Update Excess Flow */
-                            atomicAdd(&gpu_excess_flow[minV], d);
-                            atomicSub(&gpu_excess_flow[u], d);
-                            
-
-                        } else {
-                            /* Find rflow[(u,v)] in reversed CSR */
-                            if (gpu_excess_flow[u] > gpu_bflows[v_index]) {
-                                d = gpu_bflows[v_index];
-                            } else {
-                                d = gpu_excess_flow[u];
-                            }
-                            
-                            //printf("[%d-PUSH] u: %d, minV: %d, d: %d\n", tileIdx, u, minV, d);
-                            /* Push flow to residual graph */
-
-                            /* Push flow to residual graph */
-                            atomicAdd(&gpu_fflows[v_index], d);
-                            atomicSub(&gpu_bflows[v_index], d);
-
-                            /* Update Excess Flow */
-                            atomicAdd(&gpu_excess_flow[minV], d);
-                            atomicSub(&gpu_excess_flow[u], d);
-
                         }
+
+                        if (backward_index == -1) {
+                            printf("Cannot find the backward edge of (%d, %d) \n", minV, u);
+                            return;
+                        }
+
+                        if (gpu_excess_flow[u] > gpu_fflows[v_index]) {
+                            d = gpu_fflows[v_index];
+                        } else {
+                            d = gpu_excess_flow[u];
+                        }
+
+                        atomicAdd(&gpu_fflows[backward_index], d);
+                        atomicSub(&gpu_fflows[v_index], d);
+
+                        /* Update Excess Flow */
+                        atomicAdd(&gpu_excess_flow[minV], d);
+                        atomicSub(&gpu_excess_flow[u], d);
+
                     } else {
                         /* Perform relabel operation */
                         gpu_height[u] = gpu_height[minV] + 1;

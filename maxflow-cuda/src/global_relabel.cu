@@ -55,7 +55,6 @@ void global_relabel(int V, int E, int source, int sink, int *cpu_height, int *cp
     while(!Queue.empty())
     {
         // dequeue
-        
         x = Queue.front();
         Queue.pop_front();
 
