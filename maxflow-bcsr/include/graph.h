@@ -95,9 +95,8 @@ public:
     int* offsets;
     int* destinations;
     int* capacities;
-    int* forward_flows; // cf(u, v)
-    int* backward_idx; // BCSR: index of the reverse edge in the residual graph
-    
+    int* forward_flows; // BCSR:　cf(u, v) + Backward_idx
+    int* backward_idx;
 
     int* heights;
     int* excesses;
