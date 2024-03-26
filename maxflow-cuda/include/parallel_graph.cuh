@@ -2,20 +2,34 @@
 #define __PARALLEL__GRAPH__HEADER__CUDA__
 
 #include <cuda.h>
+#include <cooperative_groups.h>
 #include <bits/stdc++.h>
 #include <vector>
 #include <limits.h>
+
+using namespace cooperative_groups;
+namespace cg = cooperative_groups;
 
 // macros declared
 
 #define number_of_nodes V
 #define number_of_edges E
 #define threads_per_block 256
+#define numBlocksPerSM 1
+#define numThreadsPerBlock 1024
 #define number_of_blocks_nodes ((number_of_nodes/threads_per_block) + 1)
 #define number_of_blocks_edges ((number_of_edges/threads_per_block) + 1)
 #define INF INT_MAX
 #define IDX(x,y) ( ( (x)*(number_of_nodes) ) + (y) )
 #define KERNEL_CYCLES V
+#define TILE_SIZE 32
+
+#ifdef WORKLOAD
+#define enoughArraySize 1000000
+__device__ unsigned long long warpExecutionTime[enoughArraySize] = {0}; // Enough space for all warps in RTX 3090
+__global__ void copyFromStaticToArray(unsigned long long* tempArray, int N);
+#endif /* WORKLOAD */
+
 
 
 #ifdef DEBUG
@@ -30,13 +44,14 @@
 void preflow(int V, int source, int sink, int *cpu_height, int *cpu_excess_flow, 
              int *offsets, int *destinations, int* capacities, int* forward_flows, int* backward_flows,
              int *roffsets, int* rdestinations, int* flow_idx, int *Excess_total);
-void push_relabel(int V, int E, int source, int sink, int *cpu_height, int *cpu_excess_flow, 
+void push_relabel(int algo_type, int V, int E, int source, int sink, int *cpu_height, int *cpu_excess_flow, 
                 int *cpu_offsets, int *cpu_destinations, int* cpu_capacities, int* cpu_fflows, int* cpu_bflows,
                 int* cpu_roffsets, int* cpu_rdestinations, int* cpu_flow_idx,
                 int *Excess_total, 
                 int *gpu_height, int *gpu_excess_flow, 
                 int *gpu_offsets, int* gpu_destinations, int* gpu_capacities, int* gpu_fflows, int* gpu_bflows,
-                int* gpu_roffsets, int* gpu_rdestinations, int* gpu_flow_idx);
+                int* gpu_roffsets, int* gpu_rdestinations, int* gpu_flow_idx, 
+                int* avq, int* gpu_cycle);
 void global_relabel(int V, int E, int source, int sink, int *cpu_height, int *cpu_excess_flow, 
                 int *cpu_offsets, int *cpu_destinations, int* cpu_capacities, int* cpu_fflows, int* cpu_bflows, 
                 int* cpu_roffsets, int* cpu_rdestinations, int* cpu_flow_idx,
@@ -51,5 +66,15 @@ bool checkEnd(int V, int E, int source, int sink, int* cpu_excess_flow);
 __global__ void push_relabel_kernel(int V, int source, int sink, int *gpu_height, int *gpu_excess_flow, 
                                     int *gpu_offsets,int *gpu_destinations, int *gpu_capacities, int *gpu_fflows, int *gpu_bflows,
                                     int *gpu_roffsets, int *gpu_rdestinations, int *gpu_flow_idx);
+
+__global__ void coop_push_relabel_kernel(int V, int source, int sink, int *gpu_height, int *gpu_excess_flow, 
+                                    int *gpu_offsets,int *gpu_destinations, int *gpu_capacities, int *gpu_fflows, int *gpu_bflows,
+                                    int *gpu_roffsets, int *gpu_rdestinations, int *gpu_flow_idx, 
+                                    int* avq, int* gpu_cycle);
+
+__global__ void coop_simple_kernel(int V, int source, int sink, int *gpu_offsets);
+
+/* Global variables */
+__device__ unsigned int avq_size;
 
 #endif

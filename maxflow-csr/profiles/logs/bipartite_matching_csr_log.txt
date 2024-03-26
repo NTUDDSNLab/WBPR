@@ -1,0 +1,516 @@
+Command succeeded: ./maxflow -v 2 -s 0 -t 1 -f /disk_182a/andrew/maximum_flow/source_sink_pairs/bipartite2/ucforum_super.txt -a 0
+Output:
+Loading from DIMACS file: /disk_182a/andrew/maximum_flow/source_sink_pairs/bipartite2/ucforum_super.txt
+---------<< Graph Status >>---------
+Number of nodes: 1423
+Number of edges: 17018
+Average degree: 11.96
+Standard deviation of degree: 29.87
+Maximum degree: 899 (Node 1421)
+Minimum degree: 1 (Node 1420)
+Source node: 1421, Sink node: 1422
+Using thread-centric push-relabel algorithm
+V: 1423, E: 17018
+Initializing cpu_avq
+Starting preflow
+Excess_total: 899
+Starting push_relabel
+Inside push_relabel
+GPU Device: NVIDIA GeForce RTX 3090
+Number of blocks: 82
+Number of threads per block: 1024
+Shared memory size: 12288
+cpu_excess_flow[source]: 0, cpu_excess_flow[sink]: 0
+Invoking kernel
+Kernel invoked
+After global relabel--------------------
+Excess total : 516
+Total kernel time: 24.323072 ms
+The maximum flow value of this flow network as calculated by the parallel implementation is 516, 516
+
+Command failed: ./maxflow -v 2 -s 0 -t 1 -f /disk_182a/andrew/maximum_flow/source_sink_pairs/bipartite2/ucforum_super.txt -a 1
+Error:
+Loading from DIMACS file: /disk_182a/andrew/maximum_flow/source_sink_pairs/bipartite2/ucforum_super.txt
+---------<< Graph Status >>---------
+Number of nodes: 1423
+Number of edges: 17018
+Average degree: 11.96
+Standard deviation of degree: 29.87
+Maximum degree: 899 (Node 1421)
+Minimum degree: 1 (Node 1420)
+Source node: 1421, Sink node: 1422
+Only support thread-centric push-relabel algorithm for now
+
+Command succeeded: ./maxflow -v 2 -s 0 -t 1 -f /disk_182a/andrew/maximum_flow/source_sink_pairs/bipartite2/movielens-u-i_super.txt -a 0
+Output:
+Loading from DIMACS file: /disk_182a/andrew/maximum_flow/source_sink_pairs/bipartite2/movielens-u-i_super.txt
+---------<< Graph Status >>---------
+Number of nodes: 11612
+Number of edges: 134186
+Average degree: 11.56
+Standard deviation of degree: 89.82
+Maximum degree: 7600 (Node 11611)
+Minimum degree: 1 (Node 11609)
+Source node: 11610, Sink node: 11611
+Using thread-centric push-relabel algorithm
+V: 11612, E: 134186
+Initializing cpu_avq
+Starting preflow
+Excess_total: 4009
+Starting push_relabel
+Inside push_relabel
+GPU Device: NVIDIA GeForce RTX 3090
+Number of blocks: 82
+Number of threads per block: 1024
+Shared memory size: 12288
+cpu_excess_flow[source]: 0, cpu_excess_flow[sink]: 0
+Invoking kernel
+Kernel invoked
+After global relabel--------------------
+Excess total : 2836
+Total kernel time: 212.111359 ms
+The maximum flow value of this flow network as calculated by the parallel implementation is 2836, 2836
+
+Command failed: ./maxflow -v 2 -s 0 -t 1 -f /disk_182a/andrew/maximum_flow/source_sink_pairs/bipartite2/movielens-u-i_super.txt -a 1
+Error:
+Loading from DIMACS file: /disk_182a/andrew/maximum_flow/source_sink_pairs/bipartite2/movielens-u-i_super.txt
+---------<< Graph Status >>---------
+Number of nodes: 11612
+Number of edges: 134186
+Average degree: 11.56
+Standard deviation of degree: 89.82
+Maximum degree: 7600 (Node 11611)
+Minimum degree: 1 (Node 11609)
+Source node: 11610, Sink node: 11611
+Only support thread-centric push-relabel algorithm for now
+
+Command succeeded: ./maxflow -v 2 -s 0 -t 1 -f /disk_182a/andrew/maximum_flow/source_sink_pairs/bipartite2/youtube_super.txt -a 0
+Output:
+Loading from DIMACS file: /disk_182a/andrew/maximum_flow/source_sink_pairs/bipartite2/youtube_super.txt
+---------<< Graph Status >>---------
+Number of nodes: 124327
+Number of edges: 835368
+Average degree: 6.72
+Standard deviation of degree: 282.51
+Maximum degree: 94238 (Node 124325)
+Minimum degree: 1 (Node 124324)
+Source node: 124325, Sink node: 124326
+Using thread-centric push-relabel algorithm
+V: 124327, E: 835368
+Initializing cpu_avq
+Starting preflow
+Excess_total: 94238
+Starting push_relabel
+Inside push_relabel
+GPU Device: NVIDIA GeForce RTX 3090
+Number of blocks: 82
+Number of threads per block: 1024
+Shared memory size: 12288
+cpu_excess_flow[source]: 0, cpu_excess_flow[sink]: 0
+Invoking kernel
+Kernel invoked
+After global relabel--------------------
+Excess total : 25624
+Total kernel time: 110586.507812 ms
+The maximum flow value of this flow network as calculated by the parallel implementation is 25624, 25624
+
+Command failed: ./maxflow -v 2 -s 0 -t 1 -f /disk_182a/andrew/maximum_flow/source_sink_pairs/bipartite2/youtube_super.txt -a 1
+Error:
+Loading from DIMACS file: /disk_182a/andrew/maximum_flow/source_sink_pairs/bipartite2/youtube_super.txt
+---------<< Graph Status >>---------
+Number of nodes: 124327
+Number of edges: 835368
+Average degree: 6.72
+Standard deviation of degree: 282.51
+Maximum degree: 94238 (Node 124325)
+Minimum degree: 1 (Node 124324)
+Source node: 124325, Sink node: 124326
+Only support thread-centric push-relabel algorithm for now
+
+Command succeeded: ./maxflow -v 2 -s 0 -t 1 -f /disk_182a/andrew/maximum_flow/source_sink_pairs/bipartite2/corporate-leadership_super.txt -a 0
+Output:
+Loading from DIMACS file: /disk_182a/andrew/maximum_flow/source_sink_pairs/bipartite2/corporate-leadership_super.txt
+---------<< Graph Status >>---------
+Number of nodes: 46
+Number of edges: 284
+Average degree: 6.17
+Standard deviation of degree: 4.22
+Maximum degree: 23 (Node 45)
+Minimum degree: 2 (Node 43)
+Source node: 44, Sink node: 45
+Using thread-centric push-relabel algorithm
+V: 46, E: 284
+Initializing cpu_avq
+Starting preflow
+Excess_total: 20
+Starting push_relabel
+Inside push_relabel
+GPU Device: NVIDIA GeForce RTX 3090
+Number of blocks: 82
+Number of threads per block: 1024
+Shared memory size: 12288
+cpu_excess_flow[source]: 0, cpu_excess_flow[sink]: 0
+Invoking kernel
+Kernel invoked
+After global relabel--------------------
+Excess total : 20
+Total kernel time: 1.084192 ms
+The maximum flow value of this flow network as calculated by the parallel implementation is 20, 20
+
+Command failed: ./maxflow -v 2 -s 0 -t 1 -f /disk_182a/andrew/maximum_flow/source_sink_pairs/bipartite2/corporate-leadership_super.txt -a 1
+Error:
+Loading from DIMACS file: /disk_182a/andrew/maximum_flow/source_sink_pairs/bipartite2/corporate-leadership_super.txt
+---------<< Graph Status >>---------
+Number of nodes: 46
+Number of edges: 284
+Average degree: 6.17
+Standard deviation of degree: 4.22
+Maximum degree: 23 (Node 45)
+Minimum degree: 2 (Node 43)
+Source node: 44, Sink node: 45
+Only support thread-centric push-relabel algorithm for now
+
+Command succeeded: ./maxflow -v 2 -s 0 -t 1 -f /disk_182a/andrew/maximum_flow/source_sink_pairs/bipartite2/unicode_super.txt -a 0
+Output:
+Loading from DIMACS file: /disk_182a/andrew/maximum_flow/source_sink_pairs/bipartite2/unicode_super.txt
+---------<< Graph Status >>---------
+Number of nodes: 870
+Number of edges: 4244
+Average degree: 4.88
+Standard deviation of degree: 23.29
+Maximum degree: 613 (Node 869)
+Minimum degree: 1 (Node 867)
+Source node: 868, Sink node: 869
+Using thread-centric push-relabel algorithm
+V: 870, E: 4244
+Initializing cpu_avq
+Starting preflow
+Excess_total: 254
+Starting push_relabel
+Inside push_relabel
+GPU Device: NVIDIA GeForce RTX 3090
+Number of blocks: 82
+Number of threads per block: 1024
+Shared memory size: 12288
+cpu_excess_flow[source]: 0, cpu_excess_flow[sink]: 0
+Invoking kernel
+Kernel invoked
+After global relabel--------------------
+Excess total : 188
+Total kernel time: 12.134400 ms
+The maximum flow value of this flow network as calculated by the parallel implementation is 188, 188
+
+Command failed: ./maxflow -v 2 -s 0 -t 1 -f /disk_182a/andrew/maximum_flow/source_sink_pairs/bipartite2/unicode_super.txt -a 1
+Error:
+Loading from DIMACS file: /disk_182a/andrew/maximum_flow/source_sink_pairs/bipartite2/unicode_super.txt
+---------<< Graph Status >>---------
+Number of nodes: 870
+Number of edges: 4244
+Average degree: 4.88
+Standard deviation of degree: 23.29
+Maximum degree: 613 (Node 869)
+Minimum degree: 1 (Node 867)
+Source node: 868, Sink node: 869
+Only support thread-centric push-relabel algorithm for now
+
+Command succeeded: ./maxflow -v 2 -s 0 -t 1 -f /disk_182a/andrew/maximum_flow/source_sink_pairs/bipartite2/dbpedia-location_super.txt -a 0
+Output:
+Loading from DIMACS file: /disk_182a/andrew/maximum_flow/source_sink_pairs/bipartite2/dbpedia-location_super.txt
+---------<< Graph Status >>---------
+Number of nodes: 225476
+Number of edges: 1038364
+Average degree: 4.61
+Standard deviation of degree: 380.86
+Maximum degree: 172079 (Node 225474)
+Minimum degree: 1 (Node 225473)
+Source node: 225474, Sink node: 225475
+Using thread-centric push-relabel algorithm
+V: 225476, E: 1038364
+Initializing cpu_avq
+Starting preflow
+Excess_total: 172079
+Starting push_relabel
+Inside push_relabel
+GPU Device: NVIDIA GeForce RTX 3090
+Number of blocks: 82
+Number of threads per block: 1024
+Shared memory size: 12288
+cpu_excess_flow[source]: 0, cpu_excess_flow[sink]: 0
+Invoking kernel
+Kernel invoked
+After global relabel--------------------
+Excess total : 50595
+Total kernel time: 437772.031250 ms
+The maximum flow value of this flow network as calculated by the parallel implementation is 50595, 50595
+
+Command failed: ./maxflow -v 2 -s 0 -t 1 -f /disk_182a/andrew/maximum_flow/source_sink_pairs/bipartite2/dbpedia-location_super.txt -a 1
+Error:
+Loading from DIMACS file: /disk_182a/andrew/maximum_flow/source_sink_pairs/bipartite2/dbpedia-location_super.txt
+---------<< Graph Status >>---------
+Number of nodes: 225476
+Number of edges: 1038364
+Average degree: 4.61
+Standard deviation of degree: 380.86
+Maximum degree: 172079 (Node 225474)
+Minimum degree: 1 (Node 225473)
+Source node: 225474, Sink node: 225475
+Only support thread-centric push-relabel algorithm for now
+
+Command succeeded: ./maxflow -v 2 -s 0 -t 1 -f /disk_182a/andrew/maximum_flow/source_sink_pairs/bipartite2/movielens-u-t_super.txt -a 0
+Output:
+Loading from DIMACS file: /disk_182a/andrew/maximum_flow/source_sink_pairs/bipartite2/movielens-u-t_super.txt
+---------<< Graph Status >>---------
+Number of nodes: 20539
+Number of edges: 128592
+Average degree: 6.26
+Standard deviation of degree: 121.84
+Maximum degree: 16527 (Node 20538)
+Minimum degree: 1 (Node 20536)
+Source node: 20537, Sink node: 20538
+Using thread-centric push-relabel algorithm
+V: 20539, E: 128592
+Initializing cpu_avq
+Starting preflow
+Excess_total: 4009
+Starting push_relabel
+Inside push_relabel
+GPU Device: NVIDIA GeForce RTX 3090
+Number of blocks: 82
+Number of threads per block: 1024
+Shared memory size: 12288
+cpu_excess_flow[source]: 0, cpu_excess_flow[sink]: 0
+Invoking kernel
+Kernel invoked
+After global relabel--------------------
+Excess total : 3258
+Total kernel time: 472.094727 ms
+The maximum flow value of this flow network as calculated by the parallel implementation is 3258, 3258
+
+Command failed: ./maxflow -v 2 -s 0 -t 1 -f /disk_182a/andrew/maximum_flow/source_sink_pairs/bipartite2/movielens-u-t_super.txt -a 1
+Error:
+Loading from DIMACS file: /disk_182a/andrew/maximum_flow/source_sink_pairs/bipartite2/movielens-u-t_super.txt
+---------<< Graph Status >>---------
+Number of nodes: 20539
+Number of edges: 128592
+Average degree: 6.26
+Standard deviation of degree: 121.84
+Maximum degree: 16527 (Node 20538)
+Minimum degree: 1 (Node 20536)
+Source node: 20537, Sink node: 20538
+Only support thread-centric push-relabel algorithm for now
+
+Command succeeded: ./maxflow -v 2 -s 0 -t 1 -f /disk_182a/andrew/maximum_flow/source_sink_pairs/bipartite2/movielens-t-i_super.txt -a 0
+Output:
+Loading from DIMACS file: /disk_182a/andrew/maximum_flow/source_sink_pairs/bipartite2/movielens-t-i_super.txt
+---------<< Graph Status >>---------
+Number of nodes: 24131
+Number of edges: 190564
+Average degree: 7.90
+Standard deviation of degree: 118.06
+Maximum degree: 16528 (Node 24129)
+Minimum degree: 1 (Node 24128)
+Source node: 24129, Sink node: 24130
+Using thread-centric push-relabel algorithm
+V: 24131, E: 190564
+Initializing cpu_avq
+Starting preflow
+Excess_total: 16528
+Starting push_relabel
+Inside push_relabel
+GPU Device: NVIDIA GeForce RTX 3090
+Number of blocks: 82
+Number of threads per block: 1024
+Shared memory size: 12288
+cpu_excess_flow[source]: 0, cpu_excess_flow[sink]: 0
+Invoking kernel
+Kernel invoked
+After global relabel--------------------
+Excess total : 5882
+Total kernel time: 510.614777 ms
+The maximum flow value of this flow network as calculated by the parallel implementation is 5882, 5882
+
+Command failed: ./maxflow -v 2 -s 0 -t 1 -f /disk_182a/andrew/maximum_flow/source_sink_pairs/bipartite2/movielens-t-i_super.txt -a 1
+Error:
+Loading from DIMACS file: /disk_182a/andrew/maximum_flow/source_sink_pairs/bipartite2/movielens-t-i_super.txt
+---------<< Graph Status >>---------
+Number of nodes: 24131
+Number of edges: 190564
+Average degree: 7.90
+Standard deviation of degree: 118.06
+Maximum degree: 16528 (Node 24129)
+Minimum degree: 1 (Node 24128)
+Source node: 24129, Sink node: 24130
+Only support thread-centric push-relabel algorithm for now
+
+Command succeeded: ./maxflow -v 2 -s 0 -t 1 -f /disk_182a/andrew/maximum_flow/source_sink_pairs/bipartite2/marvel_super.txt -a 0
+Output:
+Loading from DIMACS file: /disk_182a/andrew/maximum_flow/source_sink_pairs/bipartite2/marvel_super.txt
+---------<< Graph Status >>---------
+Number of nodes: 19430
+Number of edges: 232178
+Average degree: 11.95
+Standard deviation of degree: 109.53
+Maximum degree: 12941 (Node 19429)
+Minimum degree: 1 (Node 19427)
+Source node: 19428, Sink node: 19429
+Using thread-centric push-relabel algorithm
+V: 19430, E: 232178
+Initializing cpu_avq
+Starting preflow
+Excess_total: 6486
+Starting push_relabel
+Inside push_relabel
+GPU Device: NVIDIA GeForce RTX 3090
+Number of blocks: 82
+Number of threads per block: 1024
+Shared memory size: 12288
+cpu_excess_flow[source]: 0, cpu_excess_flow[sink]: 0
+Invoking kernel
+Kernel invoked
+After global relabel--------------------
+Excess total : 5057
+Total kernel time: 266.019897 ms
+The maximum flow value of this flow network as calculated by the parallel implementation is 5057, 5057
+
+Command failed: ./maxflow -v 2 -s 0 -t 1 -f /disk_182a/andrew/maximum_flow/source_sink_pairs/bipartite2/marvel_super.txt -a 1
+Error:
+Loading from DIMACS file: /disk_182a/andrew/maximum_flow/source_sink_pairs/bipartite2/marvel_super.txt
+---------<< Graph Status >>---------
+Number of nodes: 19430
+Number of edges: 232178
+Average degree: 11.95
+Standard deviation of degree: 109.53
+Maximum degree: 12941 (Node 19429)
+Minimum degree: 1 (Node 19427)
+Source node: 19428, Sink node: 19429
+Only support thread-centric push-relabel algorithm for now
+
+Command succeeded: ./maxflow -v 2 -s 0 -t 1 -f /disk_182a/andrew/maximum_flow/source_sink_pairs/bipartite2/stackoverflow_super.txt -a 0
+Output:
+Loading from DIMACS file: /disk_182a/andrew/maximum_flow/source_sink_pairs/bipartite2/stackoverflow_super.txt
+---------<< Graph Status >>---------
+Number of nodes: 641874
+Number of edges: 3887628
+Average degree: 6.06
+Standard deviation of degree: 691.56
+Maximum degree: 545195 (Node 641872)
+Minimum degree: 1 (Node 641871)
+Source node: 641872, Sink node: 641873
+Using thread-centric push-relabel algorithm
+V: 641874, E: 3887628
+Initializing cpu_avq
+Starting preflow
+Excess_total: 545195
+Starting push_relabel
+Inside push_relabel
+GPU Device: NVIDIA GeForce RTX 3090
+Number of blocks: 82
+Number of threads per block: 1024
+Shared memory size: 12288
+cpu_excess_flow[source]: 0, cpu_excess_flow[sink]: 0
+Invoking kernel
+Kernel invoked
+After global relabel--------------------
+Excess total : 90537
+Total kernel time: 638602.875000 ms
+The maximum flow value of this flow network as calculated by the parallel implementation is 90537, 90537
+
+Command failed: ./maxflow -v 2 -s 0 -t 1 -f /disk_182a/andrew/maximum_flow/source_sink_pairs/bipartite2/stackoverflow_super.txt -a 1
+Error:
+Loading from DIMACS file: /disk_182a/andrew/maximum_flow/source_sink_pairs/bipartite2/stackoverflow_super.txt
+---------<< Graph Status >>---------
+Number of nodes: 641874
+Number of edges: 3887628
+Average degree: 6.06
+Standard deviation of degree: 691.56
+Maximum degree: 545195 (Node 641872)
+Minimum degree: 1 (Node 641871)
+Source node: 641872, Sink node: 641873
+Only support thread-centric push-relabel algorithm for now
+
+Command succeeded: ./maxflow -v 2 -s 0 -t 1 -f /disk_182a/andrew/maximum_flow/source_sink_pairs/bipartite2/bookcrossing_super.txt -a 0
+Output:
+Loading from DIMACS file: /disk_182a/andrew/maximum_flow/source_sink_pairs/bipartite2/bookcrossing_super.txt
+---------<< Graph Status >>---------
+Number of nodes: 445803
+Number of edges: 3191078
+Average degree: 7.16
+Standard deviation of degree: 535.74
+Maximum degree: 340522 (Node 445802)
+Minimum degree: 1 (Node 445800)
+Source node: 445801, Sink node: 445802
+Using thread-centric push-relabel algorithm
+V: 445803, E: 3191078
+Initializing cpu_avq
+Starting preflow
+Excess_total: 105278
+Starting push_relabel
+Inside push_relabel
+GPU Device: NVIDIA GeForce RTX 3090
+Number of blocks: 82
+Number of threads per block: 1024
+Shared memory size: 12288
+cpu_excess_flow[source]: 0, cpu_excess_flow[sink]: 0
+Invoking kernel
+Kernel invoked
+After global relabel--------------------
+Excess total : 75444
+Total kernel time: 120298.968750 ms
+The maximum flow value of this flow network as calculated by the parallel implementation is 75444, 75444
+
+Command failed: ./maxflow -v 2 -s 0 -t 1 -f /disk_182a/andrew/maximum_flow/source_sink_pairs/bipartite2/bookcrossing_super.txt -a 1
+Error:
+Loading from DIMACS file: /disk_182a/andrew/maximum_flow/source_sink_pairs/bipartite2/bookcrossing_super.txt
+---------<< Graph Status >>---------
+Number of nodes: 445803
+Number of edges: 3191078
+Average degree: 7.16
+Standard deviation of degree: 535.74
+Maximum degree: 340522 (Node 445802)
+Minimum degree: 1 (Node 445800)
+Source node: 445801, Sink node: 445802
+Only support thread-centric push-relabel algorithm for now
+
+Command succeeded: ./maxflow -v 2 -s 0 -t 1 -f /disk_182a/andrew/maximum_flow/source_sink_pairs/bipartite2/IMDB_actor_super.txt -a 0
+Output:
+Loading from DIMACS file: /disk_182a/andrew/maximum_flow/source_sink_pairs/bipartite2/IMDB_actor_super.txt
+---------<< Graph Status >>---------
+Number of nodes: 1199921
+Number of edges: 9964762
+Average degree: 8.30
+Standard deviation of degree: 864.02
+Maximum degree: 896301 (Node 1199920)
+Minimum degree: 1 (Node 1199918)
+Source node: 1199919, Sink node: 1199920
+Using thread-centric push-relabel algorithm
+V: 1199921, E: 9964762
+Initializing cpu_avq
+Starting preflow
+Excess_total: 303617
+Starting push_relabel
+Inside push_relabel
+GPU Device: NVIDIA GeForce RTX 3090
+Number of blocks: 82
+Number of threads per block: 1024
+Shared memory size: 12288
+cpu_excess_flow[source]: 0, cpu_excess_flow[sink]: 0
+Invoking kernel
+Kernel invoked
+After global relabel--------------------
+Excess total : 250516
+Total kernel time: 682462.062500 ms
+The maximum flow value of this flow network as calculated by the parallel implementation is 250516, 250516
+
+Command failed: ./maxflow -v 2 -s 0 -t 1 -f /disk_182a/andrew/maximum_flow/source_sink_pairs/bipartite2/IMDB_actor_super.txt -a 1
+Error:
+Loading from DIMACS file: /disk_182a/andrew/maximum_flow/source_sink_pairs/bipartite2/IMDB_actor_super.txt
+---------<< Graph Status >>---------
+Number of nodes: 1199921
+Number of edges: 9964762
+Average degree: 8.30
+Standard deviation of degree: 864.02
+Maximum degree: 896301 (Node 1199920)
+Minimum degree: 1 (Node 1199918)
+Source node: 1199919, Sink node: 1199920
+Only support thread-centric push-relabel algorithm for now
+

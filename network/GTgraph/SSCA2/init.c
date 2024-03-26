@@ -153,7 +153,7 @@ void getParamsFromFile(char* configfile) {
 			MinWeight = (WEIGHT_T) val;
 		} else if (strcmp(var,"ProbUnidirectional")==0) {
 			ProbUnidirectional = (double) val;
-		} else if (strcmp(var,"ProbInterClEdges")==0) {
+		} else if (strcmp(var,"ProbInterCliqueEdges")==0) {
 			ProbIntercliqueEdges = (double) val;
 		} else if (strcmp(var,"MaxParallelEdges")==0) {
 			MaxParallelEdges = (LONG_T) val;

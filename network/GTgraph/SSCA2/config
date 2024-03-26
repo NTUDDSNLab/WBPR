@@ -6,7 +6,7 @@ SCALE 21
 
 MaxParallelEdges 3
 
-ProbIntercliqueEdges 0.5
+ProbInterCliqueEdges 0.5
 
 ProbUnidirectional 0.2
 

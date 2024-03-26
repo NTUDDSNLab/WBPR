@@ -51,9 +51,9 @@ extern int SORT_TYPE;
 extern int WRITE_TO_FILE;
 
 /* Default output file */ 
-extern char OUTFILE[30];
+extern char OUTFILE[30000];
 
 /* Default log file, for printing auxiliary information */
-extern char LOGFILE[30];
+extern char LOGFILE[30000];
 
 #endif

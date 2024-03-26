@@ -62,6 +62,7 @@ typedef struct {
 #define MAX_DEGREE 20
 #define VERY_BIG 1000000
 
+// The Range control the maximum degree of the graph in ExponentialLine and DExponentialLine
 int Range[] = {1000000, 500000, 250000, 125000, 62500, 31250,
 		 15625, 7812, 3906, 1953, 976, 488, 244, 122,
 		 61, 31, 15, 7, 4, 2};

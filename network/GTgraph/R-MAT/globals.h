@@ -41,9 +41,9 @@ extern int WRITE_TO_FILE;
 extern int STORE_IN_MEMORY;
 
 /* Default output file */ 
-extern char OUTFILE[30];
+extern char OUTFILE[30000];
 
 /* Default log file, for printing auxiliary information */
-extern char LOGFILE[30];
+extern char LOGFILE[30000];
 
 #endif

@@ -1,5 +1,16 @@
-CC = g++
+CC = g++ 
 NVCC = nvcc
+
+CC_FLAG = -O3
+NVCC_FLAG = -O3 --cudart shared
+
+# Profiling flags
+# CC_FLAG += -DWORKLOAD
+CC_FLAG += -UWORKLOAD
+# NVCC_FLAG += -DWORKLOAD
+NVCC_FLAG += -UWORKLOAD
+
+
 
 # run make all to create ./maxflow executable
 all : maxflow
@@ -8,37 +19,37 @@ all : maxflow
 debug : maxflowdbg
 
 maxflow : obj/graph_s.o obj/io_par.o obj/main.o obj/preflow.o obj/push_relabel_kernel.o obj/push_relabel.o obj/global_relabel.o obj/graph.o obj/mmio.o
-	$(NVCC) obj/graph_s.o obj/io_par.o obj/main.o obj/preflow.o obj/push_relabel_kernel.o obj/push_relabel.o obj/global_relabel.o obj/graph.o obj/mmio.o -o maxflow
+	$(NVCC) $(NVCC_FLAG) obj/graph_s.o obj/io_par.o obj/main.o obj/preflow.o obj/push_relabel_kernel.o obj/push_relabel.o obj/global_relabel.o obj/graph.o obj/mmio.o -o maxflow
 
 maxflowdbg : obj/graph_s.o obj/io_par.o obj/main.o obj/preflow.o obj/push_relabel_kernel.o obj/push_relabel.o obj/global_relabel.o
-	$(NVCC) obj/graph_s.o obj/io_par.o obj/main.o obj/preflow.o obj/push_relabel_kernel.o obj/push_relabel.o obj/global_relabel.o -g -G -o maxflowdbg
+	$(NVCC) $(NVCC_FLAG) obj/graph_s.o obj/io_par.o obj/main.o obj/preflow.o obj/push_relabel_kernel.o obj/push_relabel.o obj/global_relabel.o -g -G -o maxflowdbg
 
 obj/main.o : src/main.cu obj
-	$(NVCC) -c src/main.cu -o obj/main.o
+	$(NVCC) $(NVCC_FLAG) -c src/main.cu -o obj/main.o
 
 obj/graph_s.o : src/graph_s.cpp obj
-	$(CC) -c src/graph_s.cpp -o obj/graph_s.o
+	$(CC) $(CC_FLAG) -c src/graph_s.cpp -o obj/graph_s.o
 
 obj/io_par.o : src/io_par.cu obj
-	$(NVCC) -c src/io_par.cu -o obj/io_par.o
+	$(NVCC) $(NVCC_FLAG) -c src/io_par.cu -o obj/io_par.o
 
 obj/graph.o : src/graph.cpp obj
-	$(CC) -c src/graph.cpp -o obj/graph.o
+	$(CC) $(CC_FLAG) -c src/graph.cpp -o obj/graph.o
 
 obj/mmio.o : src/mmio.c obj
-	$(CC) -c src/mmio.c -o obj/mmio.o
+	$(CC) $(CC_FLAG) -c src/mmio.c -o obj/mmio.o
 
 obj/preflow.o : src/preflow.cu obj
-	$(NVCC) -c src/preflow.cu -o obj/preflow.o 
+	$(NVCC) $(NVCC_FLAG) -c src/preflow.cu -o obj/preflow.o 
 
 obj/push_relabel.o : src/push_relabel.cu obj
-	$(NVCC) -c src/push_relabel.cu -o obj/push_relabel.o 
+	$(NVCC) $(NVCC_FLAG) -c src/push_relabel.cu -o obj/push_relabel.o 
 
 obj/push_relabel_kernel.o : src/push_relabel_kernel.cu obj
-	$(NVCC) -c src/push_relabel_kernel.cu -o obj/push_relabel_kernel.o 
+	$(NVCC) $(NVCC_FLAG) -c src/push_relabel_kernel.cu -o obj/push_relabel_kernel.o 
 
 obj/global_relabel.o : src/global_relabel.cu obj
-	$(NVCC) -c src/global_relabel.cu -o obj/global_relabel.o
+	$(NVCC) $(NVCC_FLAG) -c src/global_relabel.cu -o obj/global_relabel.o
 
 obj :
 	mkdir obj

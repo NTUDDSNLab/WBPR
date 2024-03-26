@@ -13,6 +13,8 @@ int main(int argc, char** argv)
 	/* init.c */
  	parseUserInput(argc, argv);
 	
+	printf("Finished parsing user input\n");
+
 	/* graph.c */
 	graphGen(&G);
 
