@@ -327,10 +327,8 @@ void ResidualGraph::buildFromCSRGraph(const CSRGraph &graph) {
   offsets = (int *)malloc(sizeof(int) * (num_nodes + 1));
   destinations = (int *)malloc(sizeof(int) * num_edges);
   capacities = (int *)malloc(sizeof(int) * num_edges);
-  // BCSR: forward_flows[2*i]: cf(u, v), 
-  // forward_flows[2*i + 1]: idx of backward edge of (v, u)
-  forward_flows = (int *)malloc(sizeof(int)  * num_edges);
-  backward_idx = (int *)malloc(sizeof(int) * num_edges); 
+  forward_flows = (int *)malloc(sizeof(int) * num_edges);
+  backward_idx = (int *)malloc(sizeof(int) * num_edges);
 
   heights = (int *)malloc(sizeof(int) * num_nodes);
   excesses = (int *)malloc(sizeof(int) * num_nodes);
@@ -356,7 +354,6 @@ void ResidualGraph::buildFromCSRGraph(const CSRGraph &graph) {
       int v = destinations[i];
       for (int j = offsets[v]; j < offsets[v + 1]; ++j) {
         if (destinations[j] == u) {
-          //forward_flows[2*i+1] = j; // The index of the backward edge of (v, u)
           backward_idx[i] = j;
           break;
         }

@@ -10,7 +10,9 @@
     - `CUDA >= 11.6`
     - `nvcc >= 11.6` 
 - Important Files/Directories
-    - `maxflow-cuda/`: contains all source code of parallel push-relabel algorithm using bidirectional CSR (BCSR), including thread-centric and vertex-centric approach.
+    - `maxflow-cuda/`: contains all source code of parallel push-relabel algorithm using reversed CSR (RCSR), including thread-centric(TC) and vertex-centric(VC) approach.
+    - `maxflow-bcsr`: contain TC, VC push-relabel algorithms upon bidirectional CSR (BCSR). Backward edges of a vertex are continuously appended to the end of the its forward edges.
+    - `(TODO) maxflow-bcsr2`: the optimized version of BCSR, where the backward edge is placed right after a forward edges, namely, flow[2i] stores the forward edge value, and flow[2i+1] stores the corresponding backward edge.
     - `maxflow-serial/`: contains all source code of serial version of push-relabel algorithm on CPU.
     - `network/`: contains the network generator.
         - `DIMACS`: the first DIMACS implementation challenge [source](http://archive.dimacs.rutgers.edu/pub/netflow/)

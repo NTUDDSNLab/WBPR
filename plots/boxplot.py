@@ -4,6 +4,41 @@ import matplotlib.patches as patches
 import pandas as pd
 import argparse
 
+
+filenames = [
+    "corporate-leadership",
+    "unicode",
+    "ucforum",
+    "movielens-u-i",
+    "marvel",
+    "movielens-u-t",
+    "movielens-t-i",
+    "youtube",
+    "dbpedia-location",
+    "bookcrossing",
+    "stackoverflow",
+    "IMDB",
+    "dblp-author"
+]
+
+# filenames = [
+#     'amazon0302', 
+#     'roadNet-CA',
+#     'roadNet-PA',
+#     'web-BerkStan',
+#     'web-Google',
+#     'cit-Patents',
+#     'ca-HepPh',
+#     'soc-LiveJournal1',
+#     'soc-pokec',
+#     'com-youtube',
+#     'com-orkut',
+#     'Washington-RLG2-512-512-20.txt',
+#     'genrmfa'
+# ]
+
+
+
 # Function to read and parse the file
 def read_and_parse_file(filepath):
     data = []
@@ -20,7 +55,7 @@ def read_and_parse_file(filepath):
                 if algorithm == '0':
                     algorithm = 'TC'
                 else:
-                    algorithm = 'VC'
+                    algorithm = 'TLPNS'
             else:
                 stats = line.strip().split(', ')
                 stats_dict = {stat.split(': ')[0]: float(stat.split(': ')[1]) for stat in stats}
@@ -55,25 +90,11 @@ def plot_data(df, output_path):
 def boxplot_test(df, output_path):
 
     # Define colors for each 'Algorithm' type
-    colors = {'TC': '#ee9b00', 'VC': '#0081a7'}
+    colors = {'TC': '#ee9b00', 'TLPNS': '#0081a7'}
 
     # Ordered the filenames
-    filenames = [
-        "corporate-leadership",
-        "unicode",
-        "ucforum",
-        "movielens-u-i",
-        "marvel",
-        "movielens-u-t",
-        "movielens-t-i",
-        "youtube",
-        "dbpedia-location",
-        "bookcrossing",
-        "stackoverflow",
-        "IMDB",
-        "dblp-author"
-    ]
-
+    # print(df['Filename'].unique())
+    print(df.head())
 
     # Change the subplot layout
     

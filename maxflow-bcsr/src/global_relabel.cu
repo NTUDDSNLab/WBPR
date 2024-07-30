@@ -24,6 +24,15 @@ void global_relabel(int V, int E, int source, int sink, int *cpu_height, int *cp
                 cpu_excess_flow[u] -= flow;
                 cpu_excess_flow[v] += flow;
                 cpu_fflows[i] -= flow;
+
+                // Find the reverse edge
+                for (int j = cpu_offsets[v]; j < cpu_offsets[v + 1]; j++) {
+                    if (cpu_destinations[j] == u) {
+                        cpu_fflows[j] += flow;
+                        break;
+                    }
+                }
+
             }
 
         }

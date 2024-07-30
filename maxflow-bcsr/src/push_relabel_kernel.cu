@@ -12,7 +12,7 @@ __global__ void copyFromStaticToArray(unsigned long long* tempArray, int N) {
 
 
 __global__ void push_relabel_kernel(int V, int source, int sink, int *gpu_height, int *gpu_excess_flow, 
-                                    int *gpu_offsets,int *gpu_destinations, int *gpu_capacities, int *gpu_fflows, int* gpu_bidx)
+                                    int *gpu_offsets,int *gpu_destinations, int *gpu_capacities, int *gpu_fflows)
 {
     // u'th node is operated on by the u'th thread
     grid_group grid = this_grid();
@@ -104,15 +104,14 @@ __global__ void push_relabel_kernel(int V, int source, int sink, int *gpu_height
 
 
                         /* Push flow to residual graph */
-                        // int backward_index = -1;
-                        int backward_index = gpu_bidx[v_index]; // BCSR
-                        // for (int j = gpu_offsets[v_dash]; j < gpu_offsets[v_dash + 1]; j++) {
-                        //     // printf("[%d] finds %d\n", v_dash, gpu_destinations[j]);
-                        //     if (gpu_destinations[j] == u) {
-                        //         backward_index = j;
-                        //         break;
-                        //     }
-                        // }
+                        int backward_index = -1;
+                        for (int j = gpu_offsets[v_dash]; j < gpu_offsets[v_dash + 1]; j++) {
+                            // printf("[%d] finds %d\n", v_dash, gpu_destinations[j]);
+                            if (gpu_destinations[j] == u) {
+                                backward_index = j;
+                                break;
+                            }
+                        }
 
 
                         /* Note: Use binary search to find the backward edge (v_dash, u)*/

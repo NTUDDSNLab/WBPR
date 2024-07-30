@@ -5,10 +5,10 @@ CC_FLAG = -O3
 NVCC_FLAG = -O3 --cudart shared
 
 # Profiling flags
-# CC_FLAG += -DWORKLOAD
-CC_FLAG += -UWORKLOAD
-# NVCC_FLAG += -DWORKLOAD
-NVCC_FLAG += -UWORKLOAD
+CC_FLAG += -DWORKLOAD
+# CC_FLAG += -UWORKLOAD
+NVCC_FLAG += -DWORKLOAD
+# NVCC_FLAG += -UWORKLOAD
 
 # run make all to create ./maxflow executable
 all : maxflow

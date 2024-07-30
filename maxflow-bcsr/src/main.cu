@@ -100,9 +100,6 @@ int main(int argc, char **argv)
 
         printf("Using thread-centric push-relabel algorithm\n");
     } else if (algo_type == 1) {
-        // FIXME: Add support for vertex-centric push-relabel algorithm
-        printf("Only support thread-centric push-relabel algorithm for now\n");
-        exit(1);
         printf("Using vertex-centric push-relabel algorithm\n");
     } else {
         printf("Invalid algorithm type\n");
@@ -126,7 +123,6 @@ int main(int argc, char **argv)
     int *gpu_offsets;
     int *gpu_capcities;
     int *gpu_fflows; // Forward and backward flows
-    int *gpu_bidx; // BCSR
     int *cpu_avq, *gpu_avq;
     int cycle = csr_graph.num_nodes;
     int *gpu_cycle;
@@ -156,8 +152,7 @@ int main(int argc, char **argv)
     CHECK(cudaMalloc((void**)&gpu_destinations,E*sizeof(int)));
     CHECK(cudaMalloc((void**)&gpu_offsets, (V+1)*sizeof(int)));
     CHECK(cudaMalloc((void**)&gpu_capcities, E*sizeof(int)));
-    CHECK(cudaMalloc((void**)&gpu_fflows, E*sizeof(int))); // BCSR
-    CHECK(cudaMalloc((void**)&gpu_bidx, E*sizeof(int))); // BCSR
+    CHECK(cudaMalloc((void**)&gpu_fflows, E*sizeof(int)));
     CHECK(cudaMalloc((void**)&gpu_avq, V*sizeof(int)));
     CHECK(cudaMalloc((void**)&gpu_cycle, sizeof(int)));
 
@@ -171,7 +166,7 @@ int main(int argc, char **argv)
 
     // invoking the preflow function to initialise values in host
     preflow(V,source,sink,cpu_height,cpu_excess_flow, 
-            (res_graph.offsets), (res_graph.destinations), (res_graph.capacities), (res_graph.forward_flows), (res_graph.backward_idx),
+            (res_graph.offsets), (res_graph.destinations), (res_graph.capacities), (res_graph.forward_flows),
             Excess_total);
     
     printf("Excess_total: %d\n",*Excess_total);
@@ -185,8 +180,7 @@ int main(int argc, char **argv)
     CHECK(cudaMemcpy(gpu_offsets, res_graph.offsets, (res_graph.num_nodes + 1)*sizeof(int), cudaMemcpyHostToDevice));
     CHECK(cudaMemcpy(gpu_destinations, res_graph.destinations, res_graph.num_edges*sizeof(int), cudaMemcpyHostToDevice));
     CHECK(cudaMemcpy(gpu_capcities, res_graph.capacities, res_graph.num_edges*sizeof(int), cudaMemcpyHostToDevice));
-    CHECK(cudaMemcpy(gpu_fflows, res_graph.forward_flows, res_graph.num_edges*sizeof(int), cudaMemcpyHostToDevice)); // BCSR
-    CHECK(cudaMemcpy(gpu_bidx, res_graph.backward_idx, res_graph.num_edges*sizeof(int), cudaMemcpyHostToDevice)); // BCSR
+    CHECK(cudaMemcpy(gpu_fflows, res_graph.forward_flows, res_graph.num_edges*sizeof(int), cudaMemcpyHostToDevice));
     CHECK(cudaMemcpy(gpu_avq, cpu_avq, res_graph.num_nodes*sizeof(int), cudaMemcpyHostToDevice));
     CHECK(cudaMemcpy(gpu_cycle, &cycle, sizeof(int), cudaMemcpyHostToDevice));
     //cudaMemcpy(gpu_adjmtx,cpu_adjmtx,V*V*sizeof(int),cudaMemcpyHostToDevice);
@@ -196,10 +190,10 @@ int main(int argc, char **argv)
 
     // push_relabel()
     push_relabel(algo_type, V,E,source,sink,cpu_height,cpu_excess_flow, 
-                res_graph.offsets, res_graph.destinations, res_graph.capacities, res_graph.forward_flows, res_graph.backward_idx, 
+                res_graph.offsets, res_graph.destinations, res_graph.capacities, res_graph.forward_flows, 
                 Excess_total,
                 gpu_height, gpu_excess_flow,
-                gpu_offsets, gpu_destinations, gpu_capcities, gpu_fflows, gpu_bidx, gpu_avq, gpu_cycle);
+                gpu_offsets, gpu_destinations, gpu_capcities, gpu_fflows, gpu_avq, gpu_cycle);
     
 
     // print values from both implementations

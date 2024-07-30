@@ -42,12 +42,12 @@ __global__ void copyFromStaticToArray(unsigned long long* tempArray, int N);
 // function prototypes for parallel implementation
 
 void preflow(int V, int source, int sink, int *cpu_height, int *cpu_excess_flow, 
-             int *offsets, int *destinations, int* capacities, int* forward_flows, int* backward_idx, int *Excess_total);
+             int *offsets, int *destinations, int* capacities, int* forward_flows, int *Excess_total);
 void push_relabel(int algo_type, int V, int E, int source, int sink, int *cpu_height, int *cpu_excess_flow, 
-                int *cpu_offsets, int *cpu_destinations, int* cpu_capacities, int* cpu_fflows, int* cpu_bidx,
+                int *cpu_offsets, int *cpu_destinations, int* cpu_capacities, int* cpu_fflows,
                 int *Excess_total, 
                 int *gpu_height, int *gpu_excess_flow, 
-                int *gpu_offsets, int* gpu_destinations, int* gpu_capacities, int* gpu_fflows, int* gpu_bidx,
+                int *gpu_offsets, int* gpu_destinations, int* gpu_capacities, int* gpu_fflows,
                 int* avq, int* gpu_cycle);
 void global_relabel(int V, int E, int source, int sink, int *cpu_height, int *cpu_excess_flow, 
                 int *cpu_offsets, int *cpu_destinations, int* cpu_capacities, int* cpu_fflows,
@@ -64,7 +64,7 @@ bool checkEnd(int V, int E, int source, int sink, int* cpu_excess_flow);
 // prototype for the push relabel kernel
 
 __global__ void push_relabel_kernel(int V, int source, int sink, int *gpu_height, int *gpu_excess_flow, 
-                                    int *gpu_offsets,int *gpu_destinations, int *gpu_capacities, int *gpu_fflows, int* gpu_bidx);
+                                    int *gpu_offsets,int *gpu_destinations, int *gpu_capacities, int *gpu_fflows);
 
 __global__ void coop_push_relabel_kernel(int V, int source, int sink, int *gpu_height, int *gpu_excess_flow, 
                                     int *gpu_offsets,int *gpu_destinations, int *gpu_capacities, int *gpu_fflows,  

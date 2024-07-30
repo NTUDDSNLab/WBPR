@@ -25,7 +25,6 @@ void global_relabel_gpu(int V, int E, int source, int sink,
                 cpu_excess_flow[u] -= flow;
                 cpu_excess_flow[v] += flow;
                 cpu_fflows[i] -= flow;
-                // cpu_fflows[cpu_fflows[i + 1]] += flow; // BCSR: cpu_fflows[2*i + 1] is the reverse edge of i
             }
 
         }
