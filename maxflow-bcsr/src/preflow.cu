@@ -1,7 +1,7 @@
 #include"../include/parallel_graph.cuh"
 
 void preflow(int V, int source, int sink, int *cpu_height, int *cpu_excess_flow, 
-             int *offsets, int *destinations, int* capacities, int* forward_flows, int* backward_idx, int *Excess_total)
+             int *offsets, int *destinations, int* capacities, int* forward_flows, int *Excess_total)
 {
     // initialising height values and excess flow, Excess_total values
     for(int i = 0; i < V; i++)
@@ -21,14 +21,14 @@ void preflow(int V, int source, int sink, int *cpu_height, int *cpu_excess_flow,
         
         if (capacities[i] > 0)  {
             forward_flows[i] = 0;
-            forward_flows[backward_idx[i]] = capacities[i];
+
             // Find (i, source) edge and set its flow to capacity
-            // for(int j = offsets[neighborID]; j < offsets[neighborID + 1]; j++) {
-            //     if (destinations[j] == source) {
-            //         forward_flows[j] = capacities[i];
-            //         break;
-            //     }
-            // }
+            for(int j = offsets[neighborID]; j < offsets[neighborID + 1]; j++) {
+                if (destinations[j] == source) {
+                    forward_flows[j] = capacities[i];
+                    break;
+                }
+            }
             cpu_excess_flow[neighborID] = capacities[i];
             *Excess_total += cpu_excess_flow[neighborID];
         } else {

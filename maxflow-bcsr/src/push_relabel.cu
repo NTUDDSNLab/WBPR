@@ -33,10 +33,10 @@ void printExcessFlow(int V, int *excess_flow)
 
 
 void push_relabel(int algo_type, int V, int E, int source, int sink, int *cpu_height, int *cpu_excess_flow, 
-                int *cpu_offsets, int *cpu_destinations, int* cpu_capacities, int* cpu_fflows, int* cpu_bidx,
+                int *cpu_offsets, int *cpu_destinations, int* cpu_capacities, int* cpu_fflows,
                 int *Excess_total, 
                 int *gpu_height, int *gpu_excess_flow, 
-                int *gpu_offsets, int* gpu_destinations, int* gpu_capacities, int* gpu_fflows, int* gpu_bidx,
+                int *gpu_offsets, int* gpu_destinations, int* gpu_capacities, int* gpu_fflows,
                 int* gpu_avq, int* gpu_cycle)
 {
     /* Instead of checking for overflowing vertices(as in the sequential push relabel),
@@ -75,6 +75,8 @@ void push_relabel(int algo_type, int V, int E, int source, int sink, int *cpu_he
     size_t sharedMemSize = 3 * block_size.x * sizeof(int);
 
 #ifdef WORKLOAD
+    int max_iter = 1;
+    int cur_iter = 0;
     // Caculate the total number of warps
     int num_warps = (block_size.x * num_blocks.x) / 32;
     
@@ -98,7 +100,7 @@ void push_relabel(int algo_type, int V, int E, int source, int sink, int *cpu_he
     printf("Shared memory size: %lu\n", sharedMemSize);
 
     void* original_kernel_args[] = {&V, &source, &sink, &gpu_height, &gpu_excess_flow, 
-                        &gpu_offsets, &gpu_destinations, &gpu_capacities, &gpu_fflows, &gpu_bidx};
+                        &gpu_offsets, &gpu_destinations, &gpu_capacities, &gpu_fflows};
 
 
     void* kernel_args[] = {&V, &source, &sink, &gpu_height, &gpu_excess_flow, 
@@ -120,7 +122,7 @@ void push_relabel(int algo_type, int V, int E, int source, int sink, int *cpu_he
         // copying height values to CUDA device global memory
         CHECK(cudaMemcpy(gpu_height,cpu_height,V*sizeof(int),cudaMemcpyHostToDevice));
         CHECK(cudaMemcpy(gpu_excess_flow, cpu_excess_flow, V*sizeof(int), cudaMemcpyHostToDevice));
-        CHECK(cudaMemcpy(gpu_fflows, cpu_fflows, E*sizeof(int), cudaMemcpyHostToDevice)); // BCSR
+        CHECK(cudaMemcpy(gpu_fflows, cpu_fflows, E*sizeof(int), cudaMemcpyHostToDevice));
         CHECK(cudaMemset(gpu_cycle, V, sizeof(int))); // Reset the gpu_cycle to V
 
 
@@ -153,7 +155,7 @@ void push_relabel(int algo_type, int V, int E, int source, int sink, int *cpu_he
         // copying height, excess flow and residual flow values from device to host memory
         CHECK(cudaMemcpy(cpu_height,gpu_height,V*sizeof(int),cudaMemcpyDeviceToHost));
         CHECK(cudaMemcpy(cpu_excess_flow,gpu_excess_flow,V*sizeof(int),cudaMemcpyDeviceToHost));
-        CHECK(cudaMemcpy(cpu_fflows,gpu_fflows, E*sizeof(int),cudaMemcpyDeviceToHost)); // BCSR
+        CHECK(cudaMemcpy(cpu_fflows,gpu_fflows, E*sizeof(int),cudaMemcpyDeviceToHost));
 
 #ifdef WORKLOAD
 
@@ -162,9 +164,13 @@ void push_relabel(int algo_type, int V, int E, int source, int sink, int *cpu_he
         cudaDeviceSynchronize();
 
         CHECK(cudaMemcpy(tempWarpExecution, gpu_warpExecutionTime, num_warps*sizeof(unsigned long long), cudaMemcpyDeviceToHost));
-        for (int i = 0; i < num_warps; i++) {
-            cpuWarpExecution[i] += tempWarpExecution[i];
+        
+        if (cur_iter < max_iter) {
+            for (int i = 0; i < num_warps; i++) {
+                cpuWarpExecution[i] += tempWarpExecution[i];
+            }
         }
+        cur_iter++;
 #endif // WORKLOAD
 
 

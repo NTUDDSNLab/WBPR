@@ -12,3 +12,4 @@ network/GTgraph/SSCA2/log
 maxflow-cuda/profiles
 maxflow-csr/profiles/*
 maxflow-bcsr/profiles/*
+maxflow-bcsr/maxflow
