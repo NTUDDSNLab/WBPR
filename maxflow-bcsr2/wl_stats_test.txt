@@ -1,4 +1,0 @@
-./maxflow -v 2 -s 0 -t 1 -f dataset/DIMACC_format/test/test_graph.txt -a 0:
-	Min: 167.0, Lower Quartile: 257.75, Median: 282.0, Upper Quartile: 306.0, Max: 10247.0
-./maxflow -v 2 -s 0 -t 1 -f dataset/DIMACC_format/test/test_graph.txt -a 1:
-	Min: 859.0, Lower Quartile: 1066.75, Median: 1115.0, Upper Quartile: 1160.0, Max: 14270.0
