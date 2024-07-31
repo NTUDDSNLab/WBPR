@@ -1,2 +1,0 @@
-./maxflow -v 2 -s 0 -t 1 -f dataset/DIMACC_format/test/test_graph.txt -a 0: 0.021440 ms
-./maxflow -v 2 -s 0 -t 1 -f dataset/DIMACC_format/test/test_graph.txt -a 1: 0.031648 ms
