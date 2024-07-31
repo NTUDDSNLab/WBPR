@@ -13,3 +13,4 @@ maxflow-cuda/profiles
 maxflow-csr/profiles/*
 maxflow-bcsr/profiles/*
 maxflow-bcsr/maxflow
+profile/*

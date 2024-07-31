@@ -1,4 +1,0 @@
-./maxflow -v 2 -s 0 -t 1 -f /disk_182a/andrew/maximum_flow/source_sink_pairs/SNAP/p2p-Gnutella04_super_cap1.txt -a 0: 71.513405 ms
-./maxflow -v 2 -s 0 -t 1 -f /disk_182a/andrew/maximum_flow/source_sink_pairs/SNAP/p2p-Gnutella04_super_cap1.txt -a 1: 209.219727 ms
-./maxflow -v 2 -s 0 -t 1 -f /disk_182a/andrew/maximum_flow/source_sink_pairs/SNAP/ca-HepTh_cap1.txt -a 0: 61.407234 ms
-./maxflow -v 2 -s 0 -t 1 -f /disk_182a/andrew/maximum_flow/source_sink_pairs/SNAP/ca-HepTh_cap1.txt -a 1: 49.818623 ms

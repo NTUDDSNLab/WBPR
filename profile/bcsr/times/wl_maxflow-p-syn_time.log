@@ -1,4 +1,0 @@
-./maxflow -v 2 -s 0 -t 1 -f /disk_182b/PunchShadow/euro-par24/maxflow-p-syn/genrmfa_128_b_128.txt -a 0: 132482.187500 ms
-./maxflow -v 2 -s 0 -t 1 -f /disk_182b/PunchShadow/euro-par24/maxflow-p-syn/genrmfa_128_b_128.txt -a 1: 99410.351562 ms
-./maxflow -v 2 -s 0 -t 1 -f /disk_182b/PunchShadow/euro-par24/maxflow-p-syn/Washington-RLG2-512-512-20.txt -a 0: 2900.396973 ms
-./maxflow -v 2 -s 0 -t 1 -f /disk_182b/PunchShadow/euro-par24/maxflow-p-syn/Washington-RLG2-512-512-20.txt -a 1: 2503.233643 ms

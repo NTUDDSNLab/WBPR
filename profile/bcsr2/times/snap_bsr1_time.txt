@@ -1,3 +1,0 @@
-./maxflow -v 2 -s 0 -t 1 -f /disk_182a/andrew/maximum_flow/source_sink_pairs/SNAP/roadNet_PA_caprandom.txt -a 0: 14894.660156 ms
-./maxflow -v 2 -s 0 -t 1 -f /disk_182a/andrew/maximum_flow/source_sink_pairs/SNAP/roadNet_CA_caprandom.txt -a 0: 71938.554688 ms
-./maxflow -v 2 -s 0 -t 1 -f /disk_182a/andrew/maximum_flow/source_sink_pairs/SNAP/soc-LiveJournal1_caprandom.txt -a 0: 490724.500000 ms
