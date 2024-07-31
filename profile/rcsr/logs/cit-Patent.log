@@ -1,0 +1,56 @@
+Command succeeded: ./maxflow -v 2 -s 0 -t 1 -f /disk_182a/PunchShadow/maxflow_dataset/single_case/cit-Patents_cap1.txt -a 0
+Output:
+Loading from DIMACS file: /disk_182a/PunchShadow/maxflow_dataset/single_case/cit-Patents_cap1.txt
+---------<< Graph Status >>---------
+Number of nodes: 3774770
+Number of edges: 16518988
+Average degree: 4.38
+Standard deviation of degree: 7.78
+Maximum degree: 770 (Node 3569341)
+Minimum degree: 0 (Node 0)
+Source node: 3774768, Sink node: 3774769
+Using thread-centric push-relabel algorithm
+Starting preflow
+Excess_total: 20
+Starting push_relabel
+Inside push_relabel
+GPU Device: NVIDIA GeForce RTX 3090
+Number of blocks: 82
+Number of threads per block: 1024
+Shared memory size: 12288
+cpu_excess_flow[source]: 0, cpu_excess_flow[sink]: 0
+Invoking kernel
+Kernel invoked
+After global relabel--------------------
+Excess total : 20
+Total kernel time: 80223.875000 ms
+The maximum flow value of this flow network as calculated by the parallel implementation is 20, 20
+
+Command succeeded: ./maxflow -v 2 -s 0 -t 1 -f /disk_182a/PunchShadow/maxflow_dataset/single_case/cit-Patents_cap1.txt -a 1
+Output:
+Loading from DIMACS file: /disk_182a/PunchShadow/maxflow_dataset/single_case/cit-Patents_cap1.txt
+---------<< Graph Status >>---------
+Number of nodes: 3774770
+Number of edges: 16518988
+Average degree: 4.38
+Standard deviation of degree: 7.78
+Maximum degree: 770 (Node 3569341)
+Minimum degree: 0 (Node 0)
+Source node: 3774768, Sink node: 3774769
+Using vertex-centric push-relabel algorithm
+Starting preflow
+Excess_total: 20
+Starting push_relabel
+Inside push_relabel
+GPU Device: NVIDIA GeForce RTX 3090
+Number of blocks: 82
+Number of threads per block: 1024
+Shared memory size: 12288
+cpu_excess_flow[source]: 0, cpu_excess_flow[sink]: 0
+Invoking kernel
+Kernel invoked
+After global relabel--------------------
+Excess total : 20
+Total kernel time: 4878.628906 ms
+The maximum flow value of this flow network as calculated by the parallel implementation is 20, 20
+

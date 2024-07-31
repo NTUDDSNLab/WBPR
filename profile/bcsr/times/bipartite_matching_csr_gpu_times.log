@@ -1,0 +1,13 @@
+./maxflow -v 2 -s 0 -t 1 -f /disk_182a/andrew/maximum_flow/source_sink_pairs/bipartite2/ucforum_super.txt -a 0: 28.246078 ms
+./maxflow -v 2 -s 0 -t 1 -f /disk_182a/andrew/maximum_flow/source_sink_pairs/bipartite2/movielens-u-i_super.txt -a 0: 248.266846 ms
+./maxflow -v 2 -s 0 -t 1 -f /disk_182a/andrew/maximum_flow/source_sink_pairs/bipartite2/youtube_super.txt -a 0: 111619.359375 ms
+./maxflow -v 2 -s 0 -t 1 -f /disk_182a/andrew/maximum_flow/source_sink_pairs/bipartite2/corporate-leadership_super.txt -a 0: 1.110144 ms
+./maxflow -v 2 -s 0 -t 1 -f /disk_182a/andrew/maximum_flow/source_sink_pairs/bipartite2/unicode_super.txt -a 0: 13.911201 ms
+./maxflow -v 2 -s 0 -t 1 -f /disk_182a/andrew/maximum_flow/source_sink_pairs/bipartite2/dbpedia-location_super.txt -a 0: 410991.375000 ms
+./maxflow -v 2 -s 0 -t 1 -f /disk_182a/andrew/maximum_flow/source_sink_pairs/bipartite2/movielens-u-t_super.txt -a 0: 565.347290 ms
+./maxflow -v 2 -s 0 -t 1 -f /disk_182a/andrew/maximum_flow/source_sink_pairs/bipartite2/movielens-t-i_super.txt -a 0: 567.121521 ms
+./maxflow -v 2 -s 0 -t 1 -f /disk_182a/andrew/maximum_flow/source_sink_pairs/bipartite2/marvel_super.txt -a 0: 329.734344 ms
+./maxflow -v 2 -s 0 -t 1 -f /disk_182a/andrew/maximum_flow/source_sink_pairs/bipartite2/stackoverflow_super.txt -a 0: 635938.062500 ms
+./maxflow -v 2 -s 0 -t 1 -f /disk_182a/andrew/maximum_flow/source_sink_pairs/bipartite2/bookcrossing_super.txt -a 0: 129283.226562 ms
+./maxflow -v 2 -s 0 -t 1 -f /disk_182a/andrew/maximum_flow/source_sink_pairs/bipartite2/IMDB_actor_super.txt -a 0: 335064.312500 ms
+./maxflow -v 2 -s 0 -t 1 -f /disk_182a/andrew/maximum_flow/source_sink_pairs/bipartite2/dblp-author_super.txt -a 0: 1122359.250000 ms

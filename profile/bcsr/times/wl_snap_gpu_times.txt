@@ -1,0 +1,13 @@
+./maxflow -v 2 -s 0 -t 1 -f /disk_182a/andrew/maximum_flow/source_sink_pairs/SNAP/cap1/soc-pokec_cap1.txt -a 0: 87239.132812 ms
+./maxflow -v 2 -s 0 -t 1 -f /disk_182a/andrew/maximum_flow/source_sink_pairs/SNAP/cap1/p2p-Gnutella04_super_cap1.txt -a 0: 101.378044 ms
+./maxflow -v 2 -s 0 -t 1 -f /disk_182a/andrew/maximum_flow/source_sink_pairs/SNAP/cap1/ca-HepTh_cap1.txt -a 0: 64.789345 ms
+./maxflow -v 2 -s 0 -t 1 -f /disk_182a/andrew/maximum_flow/source_sink_pairs/SNAP/cap1/amazon0302_cap1.txt -a 0: 2506.779297 ms
+./maxflow -v 2 -s 0 -t 1 -f /disk_182a/andrew/maximum_flow/source_sink_pairs/SNAP/cap1/web-BerkStan_cap1.txt -a 0: 23298.503906 ms
+./maxflow -v 2 -s 0 -t 1 -f /disk_182a/andrew/maximum_flow/source_sink_pairs/SNAP/cap1/web-Google_cap1.txt -a 0: 12938.622070 ms
+./maxflow -v 2 -s 0 -t 1 -f /disk_182a/andrew/maximum_flow/source_sink_pairs/SNAP/cap1/cit-Patents_cap1.txt -a 0: 244218.031250 ms
+./maxflow -v 2 -s 0 -t 1 -f /disk_182a/andrew/maximum_flow/source_sink_pairs/SNAP/cap1/roadNet_CA_cap1.txt -a 0: 72730.570312 ms
+./maxflow -v 2 -s 0 -t 1 -f /disk_182a/andrew/maximum_flow/source_sink_pairs/SNAP/cap1/com-orkut_cap1.txt -a 0: 388456.625000 ms
+./maxflow -v 2 -s 0 -t 1 -f /disk_182a/andrew/maximum_flow/source_sink_pairs/SNAP/cap1/soc-LiveJournal1_cap1.txt -a 0: 567737.125000 ms
+./maxflow -v 2 -s 0 -t 1 -f /disk_182a/andrew/maximum_flow/source_sink_pairs/SNAP/cap1/com-youtube_cap1.txt -a 0: 111868.437500 ms
+./maxflow -v 2 -s 0 -t 1 -f /disk_182a/andrew/maximum_flow/source_sink_pairs/SNAP/cap1/roadNet_PA_cap1.txt -a 0: 15616.363281 ms
+./maxflow -v 2 -s 0 -t 1 -f /disk_182a/andrew/maximum_flow/source_sink_pairs/SNAP/cap1/ca-HepPh_cap1.txt -a 0: 330.039825 ms

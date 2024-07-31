@@ -1,0 +1,52 @@
+./maxflow -v 2 -s 0 -t 1 -f /disk_182a/andrew/maximum_flow/source_sink_pairs/bipartite2/ucforum_super.txt -a 0:
+	Min: 62015.0, Lower Quartile: 86630.5, Median: 94082.0, Upper Quartile: 101800.75, Max: 52697582.0, Avg: 291372.1318597561
+./maxflow -v 2 -s 0 -t 1 -f /disk_182a/andrew/maximum_flow/source_sink_pairs/bipartite2/ucforum_super.txt -a 1:
+	Min: 516344.0, Lower Quartile: 623856.5, Median: 652265.0, Upper Quartile: 674900.5, Max: 14593047.0, Avg: 1551692.602515244
+./maxflow -v 2 -s 0 -t 1 -f /disk_182a/andrew/maximum_flow/source_sink_pairs/bipartite2/movielens-u-i_super.txt -a 0:
+	Min: 490293.0, Lower Quartile: 714641.75, Median: 774469.5, Upper Quartile: 837596.25, Max: 521984313.0, Avg: 10294760.295731707
+./maxflow -v 2 -s 0 -t 1 -f /disk_182a/andrew/maximum_flow/source_sink_pairs/bipartite2/movielens-u-i_super.txt -a 1:
+	Min: 4339682.0, Lower Quartile: 5250570.25, Median: 5504514.5, Upper Quartile: 106722645.25, Max: 122198805.0, Avg: 41114686.87385671
+./maxflow -v 2 -s 0 -t 1 -f /disk_182a/andrew/maximum_flow/source_sink_pairs/bipartite2/youtube_super.txt -a 0:
+	Min: 126343637.0, Lower Quartile: 707505240.75, Median: 814367265.5, Upper Quartile: 1667624301.5, Max: 349940439026.0, Avg: 2177034307.834985
+./maxflow -v 2 -s 0 -t 1 -f /disk_182a/andrew/maximum_flow/source_sink_pairs/bipartite2/youtube_super.txt -a 1:
+	Min: 5544983162.0, Lower Quartile: 5829780214.5, Median: 5918196127.5, Upper Quartile: 5997132896.75, Max: 7637094299.0, Avg: 6056660613.212652
+./maxflow -v 2 -s 0 -t 1 -f /disk_182a/andrew/maximum_flow/source_sink_pairs/bipartite2/corporate-leadership_super.txt -a 0:
+	Min: 1959.0, Lower Quartile: 2782.0, Median: 3057.0, Upper Quartile: 3258.0, Max: 187211.0, Avg: 3037.0884146341464
+./maxflow -v 2 -s 0 -t 1 -f /disk_182a/andrew/maximum_flow/source_sink_pairs/bipartite2/corporate-leadership_super.txt -a 1:
+	Min: 8920.0, Lower Quartile: 11058.0, Median: 11549.0, Upper Quartile: 11929.25, Max: 145205.0, Avg: 11708.419588414634
+./maxflow -v 2 -s 0 -t 1 -f /disk_182a/andrew/maximum_flow/source_sink_pairs/bipartite2/unicode_super.txt -a 0:
+	Min: 37162.0, Lower Quartile: 52855.5, Median: 57520.0, Upper Quartile: 62182.25, Max: 27041946.0, Avg: 76215.93521341463
+./maxflow -v 2 -s 0 -t 1 -f /disk_182a/andrew/maximum_flow/source_sink_pairs/bipartite2/unicode_super.txt -a 1:
+	Min: 315338.0, Lower Quartile: 379870.75, Median: 395552.0, Upper Quartile: 408526.0, Max: 7039908.0, Avg: 430694.32278963417
+./maxflow -v 2 -s 0 -t 1 -f /disk_182a/andrew/maximum_flow/source_sink_pairs/bipartite2/dbpedia-location_super.txt -a 0:
+	Min: 449919069.0, Lower Quartile: 2902956113.5, Median: 4469624620.5, Upper Quartile: 5745043499.0, Max: 984546772066.0, Avg: 6739572384.718369
+./maxflow -v 2 -s 0 -t 1 -f /disk_182a/andrew/maximum_flow/source_sink_pairs/bipartite2/dbpedia-location_super.txt -a 1:
+	Min: 14695884860.0, Lower Quartile: 15336291410.0, Median: 15544628885.5, Upper Quartile: 15914570460.25, Max: 17956027480.0, Avg: 15865561218.960747
+./maxflow -v 2 -s 0 -t 1 -f /disk_182a/andrew/maximum_flow/source_sink_pairs/bipartite2/movielens-u-t_super.txt -a 0:
+	Min: 867481.0, Lower Quartile: 1270031.75, Median: 1415372.5, Upper Quartile: 1495205.0, Max: 1227840228.0, Avg: 13658143.00152439
+./maxflow -v 2 -s 0 -t 1 -f /disk_182a/andrew/maximum_flow/source_sink_pairs/bipartite2/movielens-u-t_super.txt -a 1:
+	Min: 7422883.0, Lower Quartile: 9050557.5, Median: 9464124.5, Upper Quartile: 10099307.5, Max: 223788997.0, Avg: 46739688.38643292
+./maxflow -v 2 -s 0 -t 1 -f /disk_182a/andrew/maximum_flow/source_sink_pairs/bipartite2/movielens-t-i_super.txt -a 0:
+	Min: 1059528.0, Lower Quartile: 1536695.5, Median: 1666044.5, Upper Quartile: 88544633.25, Max: 1210522609.0, Avg: 55180103.88147866
+./maxflow -v 2 -s 0 -t 1 -f /disk_182a/andrew/maximum_flow/source_sink_pairs/bipartite2/movielens-t-i_super.txt -a 1:
+	Min: 205890635.0, Lower Quartile: 406627977.25, Median: 411978339.5, Upper Quartile: 433691900.25, Max: 468321112.0, Avg: 405552606.0945122
+./maxflow -v 2 -s 0 -t 1 -f /disk_182a/andrew/maximum_flow/source_sink_pairs/bipartite2/marvel_super.txt -a 0:
+	Min: 852374.0, Lower Quartile: 1200653.5, Median: 1337578.5, Upper Quartile: 1412035.25, Max: 605235453.0, Avg: 17371390.85289634
+./maxflow -v 2 -s 0 -t 1 -f /disk_182a/andrew/maximum_flow/source_sink_pairs/bipartite2/marvel_super.txt -a 1:
+	Min: 7201153.0, Lower Quartile: 8870116.25, Median: 9363184.5, Upper Quartile: 170361913.5, Max: 198185570.0, Avg: 77452050.82393293
+./maxflow -v 2 -s 0 -t 1 -f /disk_182a/andrew/maximum_flow/source_sink_pairs/bipartite2/stackoverflow_super.txt -a 0:
+	Min: 59230341014.0, Lower Quartile: 112787567100.5, Median: 144935033781.5, Upper Quartile: 184374773704.5, Max: 1756234739156.0, Avg: 161780746409.16348
+./maxflow -v 2 -s 0 -t 1 -f /disk_182a/andrew/maximum_flow/source_sink_pairs/bipartite2/stackoverflow_super.txt -a 1:
+	Min: 236432661093.0, Lower Quartile: 241201047144.75, Median: 242768814612.5, Upper Quartile: 244949323927.25, Max: 253729607055.0, Avg: 243366756952.02097
+./maxflow -v 2 -s 0 -t 1 -f /disk_182a/andrew/maximum_flow/source_sink_pairs/bipartite2/bookcrossing_super.txt -a 0:
+	Min: 4738853896.0, Lower Quartile: 10881470059.25, Median: 15059491852.0, Upper Quartile: 22799459565.5, Max: 390571359737.0, Avg: 19763943277.33689
+./maxflow -v 2 -s 0 -t 1 -f /disk_182a/andrew/maximum_flow/source_sink_pairs/bipartite2/bookcrossing_super.txt -a 1:
+	Min: 25487856702.0, Lower Quartile: 30962050423.75, Median: 31424645080.5, Upper Quartile: 31801885786.75, Max: 32966551969.0, Avg: 31171062803.940166
+./maxflow -v 2 -s 0 -t 1 -f /disk_182a/andrew/maximum_flow/source_sink_pairs/bipartite2/IMDB_actor_super.txt -a 0:
+	Min: 24077799172.0, Lower Quartile: 101397375369.25, Median: 135205311723.5, Upper Quartile: 177585047065.5, Max: 851721655065.0, Avg: 147046378170.47028
+./maxflow -v 2 -s 0 -t 1 -f /disk_182a/andrew/maximum_flow/source_sink_pairs/bipartite2/IMDB_actor_super.txt -a 1:
+	Min: 111935526490.0, Lower Quartile: 137548425300.5, Median: 139954063612.0, Upper Quartile: 141809874053.25, Max: 149308248371.0, Avg: 137260555809.45007
+./maxflow -v 2 -s 0 -t 1 -f /disk_182a/andrew/maximum_flow/source_sink_pairs/bipartite2/dblp-author_super.txt -a 0:
+	Min: 524589842623.0, Lower Quartile: 534797080396.75, Median: 542338013829.5, Upper Quartile: 553407309192.0, Max: 613526339073.0, Avg: 546408724547.875
+./maxflow -v 2 -s 0 -t 1 -f /disk_182a/andrew/maximum_flow/source_sink_pairs/bipartite2/dblp-author_super.txt -a 1:
+	Min: 522176649715.0, Lower Quartile: 533713908715.75, Median: 540064201681.0, Upper Quartile: 548470805541.25, Max: 651095225527.0, Avg: 546936377573.68024

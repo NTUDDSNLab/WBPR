@@ -1,0 +1,2 @@
+./maxflow -v 2 -s 0 -t 1 -f /disk_182a/PunchShadow/maxflow_dataset/single_case/cit-Patents_cap1.txt -a 0: 80223.875000 ms
+./maxflow -v 2 -s 0 -t 1 -f /disk_182a/PunchShadow/maxflow_dataset/single_case/cit-Patents_cap1.txt -a 1: 4878.628906 ms

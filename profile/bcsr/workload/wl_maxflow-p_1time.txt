@@ -1,0 +1,52 @@
+./maxflow -v 2 -s 0 -t 1 -f /disk_182b/PunchShadow/euro-par24/maxflow-p/com-youtube_cap1.txt -a 0:
+	Min: 5377736377.0, Lower Quartile: 5884481445.5, Median: 6118113536.0, Upper Quartile: 6370828716.25, Max: 26610539812.0, Avg: 6154320375.76372
+./maxflow -v 2 -s 0 -t 1 -f /disk_182b/PunchShadow/euro-par24/maxflow-p/com-youtube_cap1.txt -a 1:
+	Min: 5688088657.0, Lower Quartile: 6226974479.25, Median: 6475403304.5, Upper Quartile: 6733653597.5, Max: 42034518967.0, Avg: 6567614159.806784
+./maxflow -v 2 -s 0 -t 1 -f /disk_182b/PunchShadow/euro-par24/maxflow-p/genrmfa_128_b_128.txt -a 0:
+	Min: 61987931165.0, Lower Quartile: 65344563593.75, Median: 66201266306.5, Upper Quartile: 66989354498.25, Max: 69298053774.0, Avg: 66121915138.55831
+./maxflow -v 2 -s 0 -t 1 -f /disk_182b/PunchShadow/euro-par24/maxflow-p/genrmfa_128_b_128.txt -a 1:
+	Min: 63342077960.0, Lower Quartile: 69729259091.5, Median: 72279284229.0, Upper Quartile: 75225247570.5, Max: 82054904406.0, Avg: 72430489123.91577
+./maxflow -v 2 -s 0 -t 1 -f /disk_182b/PunchShadow/euro-par24/maxflow-p/cit-Patents_cap1.txt -a 0:
+	Min: 127443537311.0, Lower Quartile: 131579432790.75, Median: 133083017040.0, Upper Quartile: 135393293626.25, Max: 142056169151.0, Avg: 133531110924.55183
+./maxflow -v 2 -s 0 -t 1 -f /disk_182b/PunchShadow/euro-par24/maxflow-p/cit-Patents_cap1.txt -a 1:
+	Min: 3786408672.0, Lower Quartile: 3906215579.0, Median: 3950509873.5, Upper Quartile: 4016748334.25, Max: 4721931936.0, Avg: 3964337714.828125
+./maxflow -v 2 -s 0 -t 1 -f /disk_182b/PunchShadow/euro-par24/maxflow-p/soc-pokec_cap1.txt -a 0:
+	Min: 14535506835.0, Lower Quartile: 16565747255.0, Median: 17065271137.0, Upper Quartile: 17536309481.75, Max: 25602040640.0, Avg: 17015629729.664253
+./maxflow -v 2 -s 0 -t 1 -f /disk_182b/PunchShadow/euro-par24/maxflow-p/soc-pokec_cap1.txt -a 1:
+	Min: 13343705354.0, Lower Quartile: 14903038758.5, Median: 15861149912.0, Upper Quartile: 16503087087.5, Max: 36707877406.0, Avg: 15755095711.344513
+./maxflow -v 2 -s 0 -t 1 -f /disk_182b/PunchShadow/euro-par24/maxflow-p/web-Google_cap1.txt -a 0:
+	Min: 3194334856.0, Lower Quartile: 3463718884.0, Median: 3632222608.0, Upper Quartile: 3861228786.0, Max: 4263737854.0, Avg: 3659183944.5605946
+./maxflow -v 2 -s 0 -t 1 -f /disk_182b/PunchShadow/euro-par24/maxflow-p/web-Google_cap1.txt -a 1:
+	Min: 3445483738.0, Lower Quartile: 3763238643.25, Median: 3956179266.0, Upper Quartile: 4164040856.0, Max: 8705207491.0, Avg: 3971403451.3761435
+./maxflow -v 2 -s 0 -t 1 -f /disk_182b/PunchShadow/euro-par24/maxflow-p/com-orkut_cap1.txt -a 0:
+	Min: 85264983861.0, Lower Quartile: 87677916102.25, Median: 89137565356.5, Upper Quartile: 90809219234.75, Max: 95820830319.0, Avg: 89280699798.05716
+./maxflow -v 2 -s 0 -t 1 -f /disk_182b/PunchShadow/euro-par24/maxflow-p/com-orkut_cap1.txt -a 1:
+	Min: 85843090462.0, Lower Quartile: 88418519112.5, Median: 89769706097.0, Upper Quartile: 91828669064.75, Max: 137071185540.0, Avg: 90336477922.22409
+./maxflow -v 2 -s 0 -t 1 -f /disk_182b/PunchShadow/euro-par24/maxflow-p/roadNet-PA_cap1.txt -a 0:
+	Min: 4773219199.0, Lower Quartile: 5487574766.5, Median: 5627116752.0, Upper Quartile: 5770583570.0, Max: 6222765301.0, Avg: 5617383289.495808
+./maxflow -v 2 -s 0 -t 1 -f /disk_182b/PunchShadow/euro-par24/maxflow-p/roadNet-PA_cap1.txt -a 1:
+	Min: 5109316735.0, Lower Quartile: 5850805978.5, Median: 5997517914.5, Upper Quartile: 6145076360.75, Max: 10031074261.0, Avg: 6003955730.889863
+./maxflow -v 2 -s 0 -t 1 -f /disk_182b/PunchShadow/euro-par24/maxflow-p/amazon0302_cap1.txt -a 0:
+	Min: 292888519.0, Lower Quartile: 331676670.5, Median: 344364978.5, Upper Quartile: 359581234.5, Max: 864433171.0, Avg: 356139679.58765244
+./maxflow -v 2 -s 0 -t 1 -f /disk_182b/PunchShadow/euro-par24/maxflow-p/amazon0302_cap1.txt -a 1:
+	Min: 382229246.0, Lower Quartile: 434428476.5, Median: 447917513.5, Upper Quartile: 462802244.25, Max: 1528594342.0, Avg: 461894049.2480945
+./maxflow -v 2 -s 0 -t 1 -f /disk_182b/PunchShadow/euro-par24/maxflow-p/web-BerkStan_cap1.txt -a 0:
+	Min: 2000854028.0, Lower Quartile: 2166027509.25, Median: 2231575080.5, Upper Quartile: 2320035407.0, Max: 3168265968.0, Avg: 2272265253.122332
+./maxflow -v 2 -s 0 -t 1 -f /disk_182b/PunchShadow/euro-par24/maxflow-p/web-BerkStan_cap1.txt -a 1:
+	Min: 2219103014.0, Lower Quartile: 2412415163.0, Median: 2481401152.0, Upper Quartile: 2571514087.25, Max: 8771502296.0, Avg: 2523927703.7358994
+./maxflow -v 2 -s 0 -t 1 -f /disk_182b/PunchShadow/euro-par24/maxflow-p/soc-LiveJournal1_cap1.txt -a 0:
+	Min: 212854971103.0, Lower Quartile: 218173659332.25, Median: 220876436894.0, Upper Quartile: 223987544081.25, Max: 259263055086.0, Avg: 221321276780.7965
+./maxflow -v 2 -s 0 -t 1 -f /disk_182b/PunchShadow/euro-par24/maxflow-p/soc-LiveJournal1_cap1.txt -a 1:
+	Min: 212549321279.0, Lower Quartile: 218417183051.75, Median: 220969270865.0, Upper Quartile: 224516893148.5, Max: 304044073107.0, Avg: 221724302751.7378
+./maxflow -v 2 -s 0 -t 1 -f /disk_182b/PunchShadow/euro-par24/maxflow-p/Washington-RLG2-512-512-20.txt -a 0:
+	Min: 386726245.0, Lower Quartile: 444032761.5, Median: 462818102.5, Upper Quartile: 484854669.75, Max: 2031692160.0, Avg: 557319546.4786586
+./maxflow -v 2 -s 0 -t 1 -f /disk_182b/PunchShadow/euro-par24/maxflow-p/Washington-RLG2-512-512-20.txt -a 1:
+	Min: 489550968.0, Lower Quartile: 582752905.25, Median: 655780409.5, Upper Quartile: 1829888229.25, Max: 2292474262.0, Avg: 1019374849.5346799
+./maxflow -v 2 -s 0 -t 1 -f /disk_182b/PunchShadow/euro-par24/maxflow-p/roadNet-CA_cap1.txt -a 0:
+	Min: 33986833697.0, Lower Quartile: 35044464816.25, Median: 35645176395.5, Upper Quartile: 36755038975.75, Max: 40686957087.0, Avg: 35968002034.60366
+./maxflow -v 2 -s 0 -t 1 -f /disk_182b/PunchShadow/euro-par24/maxflow-p/roadNet-CA_cap1.txt -a 1:
+	Min: 34574969115.0, Lower Quartile: 35824506908.0, Median: 36407437255.5, Upper Quartile: 37451499287.75, Max: 48114622610.0, Avg: 36688216694.941315
+./maxflow -v 2 -s 0 -t 1 -f /disk_182b/PunchShadow/euro-par24/maxflow-p/ca-HepPh_cap1.txt -a 0:
+	Min: 484769.0, Lower Quartile: 823899.0, Median: 871799.5, Upper Quartile: 925283.25, Max: 11706722.0, Avg: 1845006.331554878
+./maxflow -v 2 -s 0 -t 1 -f /disk_182b/PunchShadow/euro-par24/maxflow-p/ca-HepPh_cap1.txt -a 1:
+	Min: 5049253.0, Lower Quartile: 6011412.5, Median: 6245537.5, Upper Quartile: 6470459.75, Max: 90641336.0, Avg: 6986314.361280488

@@ -1,0 +1,8 @@
+./maxflow -v 2 -s 0 -t 1 -f /disk_182b/PunchShadow/euro-par24/maxflow-p-syn/genrmfa_128_b_128.txt -a 0:
+	Min: 140761019853.0, Lower Quartile: 148254959924.0, Median: 150121190077.5, Upper Quartile: 151970720937.0, Max: 159264786853.0, Avg: 150170775831.33347
+./maxflow -v 2 -s 0 -t 1 -f /disk_182b/PunchShadow/euro-par24/maxflow-p-syn/genrmfa_128_b_128.txt -a 1:
+	Min: 268365000318.0, Lower Quartile: 294164438130.0, Median: 301950362204.0, Upper Quartile: 312206889602.75, Max: 363853552088.0, Avg: 304547954386.2748
+./maxflow -v 2 -s 0 -t 1 -f /disk_182b/PunchShadow/euro-par24/maxflow-p-syn/Washington-RLG2-512-512-20.txt -a 0:
+	Min: 969836808.0, Lower Quartile: 1103644414.75, Median: 1146542664.0, Upper Quartile: 1197380714.75, Max: 2986785628.0, Avg: 1264113785.191692
+./maxflow -v 2 -s 0 -t 1 -f /disk_182b/PunchShadow/euro-par24/maxflow-p-syn/Washington-RLG2-512-512-20.txt -a 1:
+	Min: 1471885343.0, Lower Quartile: 1762794324.5, Median: 1977177505.5, Upper Quartile: 5484883249.75, Max: 6917189300.0, Avg: 3075436968.2644815
