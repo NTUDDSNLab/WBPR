@@ -5,3 +5,4 @@ dataset
 network/GTgraph/R-MAT/log
 network/GTgraph/SSCA2/log
 profile/*
+maxflow-bcsr/maxflow

@@ -16,7 +16,11 @@ namespace cg = cooperative_groups;
 #define number_of_edges E
 #define threads_per_block 256
 #define numBlocksPerSM 1
+#define numSM 82
 #define numThreadsPerBlock 1024
+#define WARP_SIZE 32
+#define numWarpsPerBlock (numThreadsPerBlock / 32)
+#define totalWarps (numWarpsPerBlock * numBlocksPerSM * numSM)
 #define number_of_blocks_nodes ((number_of_nodes/threads_per_block) + 1)
 #define number_of_blocks_edges ((number_of_edges/threads_per_block) + 1)
 #define INF INT_MAX
@@ -27,8 +31,48 @@ namespace cg = cooperative_groups;
 #ifdef WORKLOAD
 #define enoughArraySize 1000000
 __device__ unsigned long long warpExecutionTime[enoughArraySize] = {0}; // Enough space for all warps in RTX 3090
-__global__ void copyFromStaticToArray(unsigned long long* tempArray, int N);
+
 #endif /* WORKLOAD */
+
+#ifdef TIME_BREAKDOWN
+
+
+/* Record outgoing edge scanning and backward edge searching */
+__device__ unsigned long long scanTime[totalWarps];
+__device__ unsigned long long backwardTime[totalWarps];
+
+/* Annotation Macro : type: scan or backward */
+#define ANNOTATE_START(type) \
+    unsigned long long start_##type; \
+    if (threadIdx.x % WARP_SIZE == 0) { \
+        asm volatile("mov.u64 %0, %%clock64;" : "=l"(start_##type)); \
+    }
+
+#define ANNOTATE_END(type) \
+    unsigned long long end_##type; \
+    unsigned long long time_##type = 0; \
+    unsigned int warp_id_##type = threadIdx.x / WARP_SIZE + (blockIdx.x * numWarpsPerBlock); \
+    if (threadIdx.x % WARP_SIZE == 0) { \
+        asm volatile("mov.u64 %0, %%clock64;" : "=l"(end_##type)); \
+        time_##type = end_##type - start_##type; \
+        type##Time[warp_id_##type] += time_##type; \
+    }
+
+void InitializeTimeBreakdown();
+
+inline __device__ void InitializeTimeBreakdownDevice();
+
+__global__ void printDeviceTime();
+
+void FinializeTimeBreakdown();
+
+__global__ void copyScanToHost(unsigned long long* des,int N);
+
+__global__ void copyBackwardToHost(unsigned long long* des, int N);
+
+
+void report_breakdown_data(float totalExeTime);
+#endif /* TIME_BREAKDOWN */
 
 
 
@@ -76,6 +120,7 @@ __global__ void global_relabel_gpu_kernel(int V, int E, int source, int sink,
                 int *gpu_height, int *gpu_excess_flow, int *gpu_offsets, int *gpu_destinations, int* gpu_capacities, int* gpu_fflows,
                 int *gpu_status, int *gpu_queue, int* gpu_queue_size, int *gpu_level, int *gpu_Excess_total, bool* terminate);
 
+__global__ void copyFromStaticToArray(unsigned long long* tempArray, int N);
 
 /* Global variables */
 __device__ unsigned int avq_size;

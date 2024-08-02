@@ -9,6 +9,42 @@ __global__ void copyFromStaticToArray(unsigned long long* tempArray, int N) {
 }
 #endif // WORKLOAD
 
+#ifdef TIME_BREAKDOWN
+__global__ void copyScanToHost(unsigned long long* des, int N) {
+    int idx = blockIdx.x * blockDim.x + threadIdx.x;
+    for (int i = idx; i < N; i += blockDim.x * gridDim.x) {
+        des[i] = scanTime[i];
+    }
+}
+
+__global__ void copyBackwardToHost(unsigned long long* des, int N) {
+    int idx = blockIdx.x * blockDim.x + threadIdx.x;
+    for (int i = idx; i < N; i += blockDim.x * gridDim.x) {
+        des[i] = backwardTime[i];
+    }
+}
+
+__global__ void printDeviceTime() {
+    unsigned int laneId = threadIdx.x % 32;
+    unsigned int warpId = threadIdx.x / WARP_SIZE + (blockIdx.x * numWarpsPerBlock);;
+
+    if (laneId == 0) {
+        printf("Warp %d: scan time = %llu, backward time = %llu\n", warpId, scanTime[warpId], backwardTime[warpId]);
+    }
+}
+
+
+inline __device__ void InitializeTimeBreakdownDevice() {
+
+    unsigned int warpId = threadIdx.x / 32 + (blockIdx.x * numWarpsPerBlock);
+    unsigned int laneId = threadIdx.x % 32;
+
+    if (laneId == 0) {
+        scanTime[warpId] = 0;
+        backwardTime[warpId] = 0;
+    }
+}
+#endif // TIME_BREAKDOWN
 
 
 __global__ void push_relabel_kernel(int V, int source, int sink, int *gpu_height, int *gpu_excess_flow, 
@@ -20,6 +56,10 @@ __global__ void push_relabel_kernel(int V, int source, int sink, int *gpu_height
 
     // cycle value is set to KERNEL_CYCLES as required 
     int cycle = (KERNEL_CYCLES);  
+
+#ifdef TIME_BREAKDOWN
+    InitializeTimeBreakdownDevice();
+#endif // TIME_BREAKDOWN
 
 #ifdef WORKLOAD
     unsigned long long start, end;
@@ -406,12 +446,17 @@ __global__ void coop_push_relabel_kernel(int V, int source, int sink, int *gpu_h
         for (int i = tileIdx; i < avq_size; i += numTilesPerGrid) {
             int u = avq[i];
 
+            #ifdef TIME_BREAKDOWN
+            ANNOTATE_START(scan)
+            #endif // TIME_BREAKDOWN
             minV = tiled_search_neighbor<tileSize>(tile, i, sheight, svid, svidx, &v_index, V, source, sink, gpu_height, gpu_excess_flow, gpu_offsets, gpu_destinations, gpu_capacities, gpu_fflows, avq); 
+            #ifdef TIME_BREAKDOWN
+            ANNOTATE_END(scan)
+            #endif // TIME_BREAKDOWN
             // minV = iterative_search_neighbor<tileSize>(tile, i, sheight, svid, svidx, &vinReverse, &v_index, V, source, sink, gpu_height, gpu_excess_flow, gpu_offsets, gpu_destinations, gpu_capacities, gpu_fflows, gpu_bflows, gpu_roffsets, gpu_rdestinations, gpu_flow_idx, avq);
             // Each thread print its minV
             // printf("[%d] sync, u: %d, minV: %d\n", threadIdx.x, u, minV);
             tile.sync();
-            
             
             /* Let delegated thread to push or relabel */
             if (tile.thread_rank() == 0) {
@@ -428,6 +473,9 @@ __global__ void coop_push_relabel_kernel(int V, int source, int sink, int *gpu_h
                         int d;
                         
                         /* Find flow[(minV, u)] in CSR */
+                        #ifdef TIME_BREAKDOWN
+                        ANNOTATE_START(backward)
+                        #endif // TIME_BREAKDOWN
                         int backward_index = -1;
                         for (int j = gpu_offsets[minV]; j < gpu_offsets[minV + 1]; j++) {
                             if (gpu_destinations[j] == u) {
@@ -435,6 +483,9 @@ __global__ void coop_push_relabel_kernel(int V, int source, int sink, int *gpu_h
                                 break;
                             }
                         }
+                        #ifdef TIME_BREAKDOWN
+                        ANNOTATE_END(backward)
+                        #endif // TIME_BREAKDOWN
 
                         if (backward_index == -1) {
                             printf("Cannot find the backward edge of (%d, %d) \n", minV, u);
@@ -470,7 +521,6 @@ __global__ void coop_push_relabel_kernel(int V, int source, int sink, int *gpu_h
             warpExecutionTime[idx / 32] += (end - start);
         }
 #endif // WORKLOAD
-        
         grid.sync();
         cycle = cycle - 1;
     }

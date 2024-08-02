@@ -4,6 +4,10 @@
 #include "../include/utils.cuh"
 #include <unistd.h>
 
+int V;
+int E;
+
+
 int main(int argc, char **argv)
 {
     CSRGraph csr_graph;
@@ -88,8 +92,8 @@ int main(int argc, char **argv)
     }
 
     
-    int V = csr_graph.num_nodes;
-    int E = csr_graph.num_edges;
+    V = csr_graph.num_nodes;
+    E = csr_graph.num_edges;
     source = csr_graph.source_node;
     sink = csr_graph.sink_node;
 

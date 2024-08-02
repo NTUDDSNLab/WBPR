@@ -1,6 +1,105 @@
 #include"../include/parallel_graph.cuh"
 #include "../include/utils.cuh"
 
+#ifdef TIME_BREAKDOWN
+void InitializeTimeBreakdown() {
+    /* Initialize the time breakdown data */
+    // Allocate device memory for scan time and backward time
+    CHECK(cudaMalloc((void**)&scanTime, totalWarps*sizeof(unsigned long long)));
+    CHECK(cudaMalloc((void**)&backwardTime, totalWarps*sizeof(unsigned long long)));
+}
+
+void FinializeTimeBreakdown() {
+    /* Free the time breakdown data */
+}
+
+
+void report_breakdown_data(float totalExeTime) {
+    /* Print the breakdown information to stdout */
+    
+    unsigned long long *scanTimeHost = (unsigned long long*)malloc(totalWarps*sizeof(unsigned long long));
+    unsigned long long *backwardTimeHost = (unsigned long long*)malloc(totalWarps*sizeof(unsigned long long));
+
+    unsigned long long *tempDeviceArray;
+    CHECK(cudaMalloc((void**)&tempDeviceArray, totalWarps*sizeof(unsigned long long)));
+
+    CHECK(cudaMemset(tempDeviceArray, 0, totalWarps * sizeof(unsigned long long)));
+
+    if (scanTimeHost == NULL || backwardTimeHost == NULL) {
+        fprintf(stderr, "Failed to allocate host memory\n");
+        return;
+    }
+
+    // Launch kernel using copyFromDeviceToHost() 
+    copyScanToHost<<<numSM, numThreadsPerBlock>>>(tempDeviceArray, totalWarps);
+    cudaError_t cudaStatus = cudaGetLastError();
+    if (cudaStatus != cudaSuccess) {
+        fprintf(stderr, "cudaLaunchCooperativeKernel failed: %s\n", cudaGetErrorString(cudaStatus));
+        // Handle the error, for example, by cleaning up resources and exiting
+        exit(1);
+    }
+    
+    CHECK(cudaDeviceSynchronize());
+    CHECK(cudaMemcpy(scanTimeHost, tempDeviceArray, totalWarps*sizeof(unsigned long long), cudaMemcpyDeviceToHost));
+    copyBackwardToHost<<<numSM, numThreadsPerBlock>>>(tempDeviceArray, totalWarps);
+    CHECK(cudaDeviceSynchronize());
+    CHECK(cudaMemcpy(backwardTimeHost, tempDeviceArray, totalWarps*sizeof(unsigned long long), cudaMemcpyDeviceToHost));
+
+    // CHECK(cudaMemcpyFromSymbol(scanTimeHost, scanTime, totalWarps*sizeof(unsigned long long)));
+    // CHECK(cudaMemcpyFromSymbol(backwardTimeHost, backwardTime, totalWarps*sizeof(unsigned long long)));
+    unsigned long long totalScanTime = 0;
+    unsigned long long totalBackwardTime = 0;
+
+    CHECK(cudaDeviceSynchronize());
+
+
+    // Calculate the maximum, std, mean, median, and min of scan time and backward time
+    unsigned long long maxScanTime = 0;
+    unsigned long long maxBackwardTime = 0;
+    unsigned long long minScanTime = scanTimeHost[0];
+    unsigned long long minBackwardTime = backwardTimeHost[0];
+    float averageScanTime = 0;
+    float averageBackwardTime = 0;
+
+    for (int i = 0; i < totalWarps; i++) {
+        if (scanTimeHost[i] > maxScanTime) {
+            maxScanTime = scanTimeHost[i];
+        }
+        if (backwardTimeHost[i] > maxBackwardTime) {
+            maxBackwardTime = backwardTimeHost[i];
+        }
+        if (scanTimeHost[i] < minScanTime) {
+            minScanTime = scanTimeHost[i];
+        }
+        if (backwardTimeHost[i] < minBackwardTime) {
+            minBackwardTime = backwardTimeHost[i];
+        }
+        totalScanTime += scanTimeHost[i];
+        totalBackwardTime += backwardTimeHost[i];
+    }
+
+    averageScanTime = totalScanTime / totalWarps / 1000000;
+    averageBackwardTime = totalBackwardTime / totalWarps / 100000;
+
+    // Print averge time
+    printf("Total execution time: %.6f ms\n", totalExeTime);
+    printf("Average scan time: %.6f ms\n", averageScanTime);
+    printf("Max scan time: %llu\n", maxScanTime/1000000);
+    printf("Average backward time: %.6f ms\n", averageBackwardTime);
+    printf("Max backward time: %llu\n", maxBackwardTime/100000);
+    printf("Average other time: %.6f ms\n", totalExeTime - averageScanTime - averageBackwardTime);
+   
+
+
+    free(scanTimeHost);
+    free(backwardTimeHost);
+    CHECK(cudaFree(tempDeviceArray));
+}
+#endif /* TIME_BREAKDOWN */
+
+
+
+
 bool compare_excess_flow(int *new_excess_flow, int *old_excess_flow, int V)
 {
     for(int i = 0; i < V; i++)
@@ -92,12 +191,18 @@ void push_relabel(int algo_type, int V, int E, int source, int sink, int *cpu_he
     }
 #endif // WORKLOAD
 
+#ifdef TIME_BREAKDOWN
+    InitializeTimeBreakdown();
+#endif /* TIME_BREAKDOWN */
+
     // Print the configuration
     // Print GPU device name
     printf("GPU Device: %s\n", deviceProp.name);
     printf("Number of blocks: %d\n", num_blocks.x);
     printf("Number of threads per block: %d\n", block_size.x);
+    printf("Total warps: %d\n", totalWarps);
     printf("Shared memory size: %lu\n", sharedMemSize);
+
 
     void* original_kernel_args[] = {&V, &source, &sink, &gpu_height, &gpu_excess_flow, 
                         &gpu_offsets, &gpu_destinations, &gpu_capacities, &gpu_fflows};
@@ -113,8 +218,8 @@ void push_relabel(int algo_type, int V, int E, int source, int sink, int *cpu_he
     {
         mark[i] = false;
     }
-    for (int i = 0; i < 3; i++)
-    // while((cpu_excess_flow[source] + cpu_excess_flow[sink]) < *Excess_total)
+    // for (int i = 0; i < 3; i++)
+    while((cpu_excess_flow[source] + cpu_excess_flow[sink]) < *Excess_total)
     {
         printf("cpu_excess_flow[source]: %d, cpu_excess_flow[sink]: %d\n",cpu_excess_flow[source], cpu_excess_flow[sink]);
 
@@ -144,7 +249,7 @@ void push_relabel(int algo_type, int V, int E, int source, int sink, int *cpu_he
             exit(1);
         }
         
-        cudaDeviceSynchronize();
+        CHECK(cudaDeviceSynchronize());
         timer.stop();
         totalMilliseconds += timer.elapsed();
 
@@ -223,6 +328,15 @@ void push_relabel(int algo_type, int V, int E, int source, int sink, int *cpu_he
     free(tempWarpExecution);
 
 #endif // WORKLOAD
+
+#ifdef TIME_BREAKDOWN
+    // launch kernel to print device scanTime and backwardTime
+    // printDeviceTime<<<num_blocks, block_size>>>();
+    cudaDeviceSynchronize();
+    
+    report_breakdown_data(totalMilliseconds);
+    FinializeTimeBreakdown();
+#endif /* TIME_BREAKDOWN */
 
 
 }
