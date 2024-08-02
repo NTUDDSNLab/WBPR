@@ -168,7 +168,7 @@ void CSRGraph::buildFromDIMACSFile(const std::string &filename) {
           char p;
           std::string format;
           iss >> p >> format >> num_nodes >> num_edges;
-          num_edges = num_edges * 2;  // Add backward edges for the residual graph
+          num_edges = num_edges * 2;  // BCSR: Add backward edges for the residual graph
           destinations.reserve(num_edges);
           capacities.reserve(num_edges);
           offsets.resize(num_nodes + 1, 0);
