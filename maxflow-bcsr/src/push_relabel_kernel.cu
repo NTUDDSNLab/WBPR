@@ -389,6 +389,45 @@ tiled_search_neighbor(cg::thread_block_tile<tileSize> tile, int pos, int *sheigh
     return minV;
 }
 
+template <unsigned int tileSize>
+inline __device__ int
+tiled_find_backward(cg::thread_block_tile<tileSize> tile, int pos, int *sheight, int *svid, int* svidx, int *v_index, int  V, int source, int sink, int *gpu_height, int *gpu_excess_flow, 
+                    int *gpu_offsets,int *gpu_destinations, int *gpu_capacities, int *gpu_fflows,
+                    int* avq, int u, int minV)
+{
+    int backward_index = -1;
+    svid[threadIdx.x] = -1;
+    int start = gpu_offsets[minV];
+    int end = gpu_offsets[minV + 1];
+    for (int i = start + tile.thread_rank(); i < end; i += tile.size()) {
+        if (gpu_destinations[i] == u) {
+            backward_index = i;
+            svid[threadIdx.x] = i;
+            break;
+        }
+    }
+    tile.sync();
+
+    // Parallel Reduction to find svid[threadIdx.x] = i
+    for (unsigned int s = tile.size()/2; s > 0; s >>= 1) {
+        if (tile.thread_rank() < s) {
+            if (svid[threadIdx.x] < svid[threadIdx.x + s]) {
+                svid[threadIdx.x] = svid[threadIdx.x + s];
+            }
+        }
+        tile.sync();
+    }
+    tile.sync();
+
+    // Only the first thread in the tile has the correct backward_index
+    if (tile.thread_rank() == 0) {
+        backward_index = svid[threadIdx.x];
+    }
+
+    return backward_index;
+}
+
+
 
 __global__ void coop_push_relabel_kernel(int V, int source, int sink, int *gpu_height, int *gpu_excess_flow, 
                                     int *gpu_offsets,int *gpu_destinations, int *gpu_capacities, int *gpu_fflows,
@@ -455,8 +494,50 @@ __global__ void coop_push_relabel_kernel(int V, int source, int sink, int *gpu_h
             #endif // TIME_BREAKDOWN
             // minV = iterative_search_neighbor<tileSize>(tile, i, sheight, svid, svidx, &vinReverse, &v_index, V, source, sink, gpu_height, gpu_excess_flow, gpu_offsets, gpu_destinations, gpu_capacities, gpu_fflows, gpu_bflows, gpu_roffsets, gpu_rdestinations, gpu_flow_idx, avq);
             // Each thread print its minV
-            // printf("[%d] sync, u: %d, minV: %d\n", threadIdx.x, u, minV);
+            
+            
+            // Broadcast the minV to all the threads in the tile
+            minV = __shfl_sync(0xFFFFFFFF, minV, 0, tile.size());
+            //printf("[%d] sync, u: %d, minV: %d\n", tileIdx, u, minV);
+            
             tile.sync();
+            int backward_index = -1;
+            // Use a tile to find the backward edge
+            // 
+            // if (minV != -1) {
+            //     if (gpu_height[u] > gpu_height[minV]) {
+            //         // Find backward index (minV, u) using a tile
+            //         backward_index = tiled_find_backward<tileSize>(tile, i, sheight, svid, svidx, &v_index, V, source, sink, gpu_height, gpu_excess_flow, gpu_offsets, gpu_destinations, gpu_capacities, gpu_fflows, avq, u, minV);
+                    
+            //         // Push operation
+            //         if (tile.thread_rank() == 0) {
+            //             int d;
+            //             if (gpu_excess_flow[u] > gpu_fflows[v_index]) {
+            //                 d = gpu_fflows[v_index];
+            //             } else {
+            //                 d = gpu_excess_flow[u];
+            //             }
+            //             atomicAdd(&gpu_fflows[backward_index], d);
+            //             atomicSub(&gpu_fflows[v_index], d);
+
+            //             /* Update Excess Flow */
+            //             atomicAdd(&gpu_excess_flow[minV], d);
+            //             atomicSub(&gpu_excess_flow[u], d);
+            //         }
+                
+            //     } else {
+            //         // Relabel operation
+            //         gpu_height[u] = gpu_height[minV] + 1;
+            //     }
+
+            // } else {
+            //     if (tile.thread_rank() == 0) {
+            //         gpu_height[u] = V;
+            //     }
+            // }
+            // tile.sync();
+
+            // -------<< Old one >>-------
             
             /* Let delegated thread to push or relabel */
             if (tile.thread_rank() == 0) {
@@ -476,7 +557,7 @@ __global__ void coop_push_relabel_kernel(int V, int source, int sink, int *gpu_h
                         #ifdef TIME_BREAKDOWN
                         ANNOTATE_START(backward)
                         #endif // TIME_BREAKDOWN
-                        int backward_index = -1;
+                        
                         for (int j = gpu_offsets[minV]; j < gpu_offsets[minV + 1]; j++) {
                             if (gpu_destinations[j] == u) {
                                 backward_index = j;
