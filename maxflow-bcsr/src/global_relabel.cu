@@ -45,7 +45,7 @@ void global_relabel(int V, int E, int source, int sink, int *cpu_height, int *cp
     std::list<int> Queue;
 
     // declaring variables to iterate over nodes for the backwards bfs and to store current tree level
-    int x,y,current;
+    int x,current;
     
     // initialisation of the scanned array with false, before performing backwards bfs
     for(int i = 0; i < V; i++)

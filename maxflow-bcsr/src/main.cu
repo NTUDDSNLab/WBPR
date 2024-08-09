@@ -7,6 +7,13 @@
 int V;
 int E;
 
+#ifdef TIME_BREAKDOWN
+__managed__ unsigned long long duration[numThreadsPerBlock * numSM * PROFILE_NUM] = {0};
+__managed__ unsigned long long totalDuration0 = 0;
+__managed__ unsigned long long totalDuration1 = 0;
+#endif /* TIME_BREAKDOWN */
+
+
 
 int main(int argc, char **argv)
 {
@@ -151,7 +158,7 @@ int main(int argc, char **argv)
 
 
     // allocating CUDA device global memory
-    CHECK(cudaMalloc((void**)&gpu_height, V*sizeof(int)));
+    cudaMalloc((void**)&gpu_height, V*sizeof(int));
     CHECK(cudaMalloc((void**)&gpu_excess_flow, V*sizeof(int)));
     CHECK(cudaMalloc((void**)&gpu_destinations,E*sizeof(int)));
     CHECK(cudaMalloc((void**)&gpu_offsets, (V+1)*sizeof(int)));

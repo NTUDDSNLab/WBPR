@@ -166,9 +166,9 @@ int check(int V, int E, int source, int sink)
 
     for(int i = 0; i < E; i++)
     {
-        fscanf(fp,"%s",buf1);
-        fscanf(fp,"%s",buf2);
-        fscanf(fp,"%s",buf3);
+        // fscanf(fp,"%s",buf1);
+        // fscanf(fp,"%s",buf2);
+        // fscanf(fp,"%s",buf3);
 
         e1 = atoi(buf1);
         e2 = atoi(buf2);

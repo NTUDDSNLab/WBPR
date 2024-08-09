@@ -1,8 +1,15 @@
 CC = g++ -std=c++11
 NVCC = nvcc -std=c++11
 
-CC_FLAG = -O3
-NVCC_FLAG = -O3 --cudart=shared
+CC_FLAG = -O3 -lineinfo
+NVCC_FLAG = -O3 --cudart=shared -lineinfo
+
+# Configuration Flags
+CC_FLAG += -DTILE_FIND_BACKWARD
+# CC_FLAG += -UTILE_FIND_FORWARD
+NVCC_FLAG += -DTILE_FIND_BACKWARD
+# NVCC_FLAG += -UTILE_FIND_FORWARD
+
 
 # Workload Profiling Flags
 # CC_FLAG += -DWORKLOAD
@@ -11,10 +18,10 @@ CC_FLAG += -UWORKLOAD
 NVCC_FLAG += -UWORKLOAD
 
 # Time Breakdown Flags
-# CC_FLAG += -DTIME_BREAKDOWN
-CC_FLAG += -UTIME_BREAKDOWN
-# NVCC_FLAG += -DTIME_BREAKDOWN
-NVCC_FLAG += -UTIME_BREAKDOWN
+CC_FLAG += -DTIME_BREAKDOWN
+# CC_FLAG += -UTIME_BREAKDOWN
+NVCC_FLAG += -DTIME_BREAKDOWN
+# NVCC_FLAG += -UTIME_BREAKDOWN
 
 
 # run make all to create ./maxflow executable
