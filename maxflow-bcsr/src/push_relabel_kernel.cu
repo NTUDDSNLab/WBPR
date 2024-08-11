@@ -43,6 +43,24 @@ __device__ unsigned long long ANNOTATE_END(unsigned long long *tb_duration, int 
     return end;
 }
 
+// FIXME: ANNOTATE_THREAD function have some bugs
+__device__ unsigned long long ANNOTATE_START_THREAD() {
+    unsigned long long start;
+    asm volatile("mov.u64 %0, %%clock64;" : "=l"(start));
+    return start;
+}
+
+__device__ unsigned long long ANNOTATE_END_THREAD(unsigned long long *tb_duration, int types, unsigned long long start)
+{
+    unsigned long long end, elapsed;
+    unsigned int tid = threadIdx.x + blockIdx.x * blockDim.x;
+    asm volatile("mov.u64 %0, %%clock64;" : "=l"(end));
+    elapsed = end - start;
+    atomicAdd(&(tb_duration[tid]), elapsed);
+    return end;
+}
+
+
 __device__ void printBreakDownDevice(unsigned long long *tb_duration) {
     unsigned int laneId = get_laneid();
     unsigned int tid = threadIdx.x + blockIdx.x * blockDim.x;
@@ -113,6 +131,10 @@ __global__ void push_relabel_kernel(int V, int source, int sink, int *gpu_height
 
                 // For all (u, v) belonging to E_f (residual graph edgelist)
                 // Find (u, v) in both CSR format and revesred CSR format
+                #ifdef TIME_BREAKDOWN
+                unsigned long long start;
+                start = ANNOTATE_START_THREAD();
+                #endif // TIME_BREAKDOWN
                 for (int i = gpu_offsets[u]; i < gpu_offsets[u + 1]; i++) {
                     v = gpu_destinations[i];
                     if (gpu_fflows[i] > 0) {
@@ -125,6 +147,9 @@ __global__ void push_relabel_kernel(int V, int source, int sink, int *gpu_height
                         }
                     }
                 }
+                #ifdef TIME_BREAKDOWN
+                ANNOTATE_END_THREAD(tb_duration, 0, start);
+                #endif // TIME_BREAKDOWN
                 // // Find (u, v) in reversed CSR format
                 // for (int i = gpu_roffsets[u]; i < gpu_roffsets[u + 1]; i++) {
                 //     v = gpu_rdestinations[i];
@@ -144,6 +169,9 @@ __global__ void push_relabel_kernel(int V, int source, int sink, int *gpu_height
                 // }
 
                 /* Push operation */
+                #ifdef TIME_BREAKDOWN
+                start = ANNOTATE_START_THREAD();
+                #endif // TIME_BREAKDOWN
                 if (v_dash == -1) {
                     /* If there is no connected neighbors */
                     gpu_height[u] = V;
@@ -212,6 +240,9 @@ __global__ void push_relabel_kernel(int V, int source, int sink, int *gpu_height
                         // printf("[RELABEL] u: %d, h_dash: %d\n", u, h_dash);
                     } 
                 }
+                #ifdef TIME_BREAKDOWN
+                ANNOTATE_END_THREAD(tb_duration, 1, start);
+                #endif // TIME_BREAKDOWN
             }
         }
 
@@ -638,7 +669,7 @@ __global__ void coop_push_relabel_kernel(int V, int source, int sink, int *gpu_h
         cycle = cycle - 1;
     }
 #ifdef TIME_BREAKDOWN
-    printBreakDownDevice(tb_duration);
+    // printBreakDownDevice(tb_duration);
 #endif // TIME_BREAKDOWN
 }
 

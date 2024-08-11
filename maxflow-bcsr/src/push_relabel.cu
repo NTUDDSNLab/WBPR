@@ -2,7 +2,73 @@
 #include "../include/utils.cuh"
 
 #ifdef TIME_BREAKDOWN
+// The array to accumulate the maximum time of each type
+unsigned long long acc_max[PROFILE_NUM] = {0};
 
+/* Reset tb_duration */
+void initTimeBreakdown(unsigned long long *tb_duration) {
+    CUDA_SAFECALL(cudaMemset(tb_duration, 0, PROFILE_NUM * numThreadsPerBlock * numSM * sizeof(unsigned long long)));
+}
+
+/* Calculate time breakdown per iteration */
+void calculateTimeBreakdownPerIteration(
+    unsigned long long *tb_duration, unsigned long long *acc_max, int group_size) 
+{
+    for (int i = 0; i < PROFILE_NUM; i++) {
+        unsigned long long total = 0;
+        unsigned long long cur_max = 0;
+        unsigned int num_active_warps = 0;
+
+        for (int j = 0; j < numThreadsPerBlock * numBlocksPerSM * numSM; j+= group_size) {
+            unsigned long long time = tb_duration[i * numThreadsPerBlock * numSM + j];
+            if (time == 0) {
+                continue;
+            }
+            num_active_warps++;
+            total += time;
+            if (time > cur_max) {
+                cur_max = time;
+            }
+        }
+        acc_max[i] += cur_max;
+    }
+}
+
+void reportBreakdownData(float totalExeTime)
+{
+    /* Format */
+    std::string pad(100, '-');
+    std::string pad2(33, ' ');
+    std::string pad3(100, '*');
+    printf("%s\n", pad.c_str());
+    printf("%s Time Breakdown %s\n", pad2.c_str(), pad2.c_str());
+    printf("%s\n", pad.c_str());
+    /* Get GPU frequency */
+    int GPUfreqKHz;
+    cudaError_t cudaStatus = cudaDeviceGetAttribute(&GPUfreqKHz, cudaDevAttrClockRate, 0);
+    if (cudaStatus != cudaSuccess) {
+        printf("Failed to get GPU clock rate: %s\n", cudaGetErrorString(cudaStatus));
+        exit(1);
+    }
+    unsigned int GPUfreqMHz = GPUfreqKHz / 1000;
+    printf("GPU Operating Frequency: %u MHz\n", GPUfreqMHz);
+
+    /* Caculate the portion between the maximum time of each time and the totalExeTime. */
+    float portion[PROFILE_NUM + 1] = {0};
+    float acc_portion = 0;
+    for (int i = 0; i < PROFILE_NUM; i++) {
+        portion[i] = (float)acc_max[i] / GPUfreqMHz / 1000 / (float)totalExeTime;
+        acc_portion += portion[i];
+    }
+    portion[PROFILE_NUM] = 1 - acc_portion;
+    /* Print the time breakdown */
+    printf("Kernel execution time: %.6f ms\n", totalExeTime);
+    printf("Neighbor searching time: %.3f ms(%.3f%%) \nBackward finding time: %.3f ms(%.3f%%) \nOther time: %.3f ms(%.3f%%)\n",
+           portion[0] * totalExeTime, portion[0] * 100,
+           portion[1] * totalExeTime, portion[1] * 100,
+           portion[2] * totalExeTime, portion[2] * 100);
+
+}
 
 /* Report time breakdown, called at the end of the kernel */
 void report_breakdown_data(unsigned long long *tb_duration, float totalExeTime) {
@@ -31,8 +97,6 @@ void report_breakdown_data(unsigned long long *tb_duration, float totalExeTime) 
         unsigned int GPUfreqMHz = GPUfreqKHz / 1000;
         printf("GPU Operating Frequency: %u MHz\n", GPUfreqMHz);
 
-
-        // FIXME: The type2 is not correctly implemented
         for (int j = 0; j < numThreadsPerBlock * numBlocksPerSM * numSM; j+= WARP_SIZE) {
             unsigned long long time = tb_duration[i * numThreadsPerBlock * numSM + j];
             if (time == 0) {
@@ -261,6 +325,20 @@ void push_relabel(int algo_type, int V, int E, int source, int sink, int *cpu_he
         cur_iter++;
 #endif // WORKLOAD
 
+#ifdef TIME_BREAKDOWN
+        /* Calculate time breakdown */
+        if (algo_type == 0) {
+            // Thread-centric approach
+            calculateTimeBreakdownPerIteration(tb_duration, acc_max, 1);
+        } else {
+            // Vertex-centric approach
+            calculateTimeBreakdownPerIteration(tb_duration, acc_max, WARP_SIZE);
+        }
+
+        // // Reset tb_duration
+        initTimeBreakdown(tb_duration);
+
+#endif /* TIME_BREAKDOWN */
 
         printf("Before global relabel--------------------\n");
         printf("Excess total: %d\n",*Excess_total);
@@ -273,12 +351,6 @@ void push_relabel(int algo_type, int V, int E, int source, int sink, int *cpu_he
         printf("After global relabel--------------------\n");
         // //print(V,cpu_height,cpu_excess_flow,cpu_rflowmtx,cpu_adjmtx);
         printf("Excess total : %d\n",*Excess_total);
-        
-        #ifdef TIME_BREAKDOWN
-        // Print the time of kernel time
-        printf("[%d iteration] Kernel time: %.6f ms\n", iter, timer.elapsed());
-        report_breakdown_data(tb_duration, timer.elapsed());
-        #endif /* TIME_BREAKDOWN */
         iter++;
 
     }
@@ -301,15 +373,15 @@ void push_relabel(int algo_type, int V, int E, int source, int sink, int *cpu_he
     free(tempWarpExecution);
 
 #endif // WORKLOAD
-
+    
 #ifdef TIME_BREAKDOWN
     // launch kernel to print device scanTime and backwardTime
     // printDeviceTime<<<num_blocks, block_size>>>();
     // cudaDeviceSynchronize();
     
-    // report_breakdown_data(totalMilliseconds);
+    // report_breakdown_data(tb_duration, totalMilliseconds);
     // FinializeTimeBreakdown();
-
+    reportBreakdownData(totalMilliseconds);
     cudaFree(tb_duration);
 #endif /* TIME_BREAKDOWN */
 

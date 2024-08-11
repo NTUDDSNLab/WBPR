@@ -17,7 +17,7 @@ namespace cg = cooperative_groups;
 #define number_of_edges E
 #define threads_per_block 256
 #define numBlocksPerSM 1
-#define numSM 1
+#define numSM 82
 #define numThreadsPerBlock 1024
 #define WARP_SIZE 32
 #define numWarpsPerBlock (numThreadsPerBlock / 32)

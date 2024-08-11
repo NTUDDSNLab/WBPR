@@ -1,8 +1,8 @@
 CC = g++ -std=c++11
 NVCC = nvcc -std=c++11
 
-CC_FLAG = -O3 -lineinfo
-NVCC_FLAG = -O3 --cudart=shared -lineinfo
+CC_FLAG = -O3
+NVCC_FLAG = -O3 --cudart=shared
 
 # Configuration Flags
 CC_FLAG += -DTILE_FIND_BACKWARD
