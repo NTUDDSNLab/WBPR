@@ -28,7 +28,6 @@ __device__ unsigned long long ANNOTATE_START() {
 __device__ unsigned long long ANNOTATE_END(unsigned long long *tb_duration, int types, unsigned long long start) {
     // global thread ID
     unsigned int tid = threadIdx.x + blockIdx.x * blockDim.x;
-    unsigned int totalThreads = blockDim.x * gridDim.x;
     unsigned long long end, elapsed;
     unsigned mask = __activemask();
     const int first_laneid = __ffs(mask) - 1;
@@ -56,7 +55,7 @@ __device__ unsigned long long ANNOTATE_END_THREAD(unsigned long long *tb_duratio
     unsigned int tid = threadIdx.x + blockIdx.x * blockDim.x;
     asm volatile("mov.u64 %0, %%clock64;" : "=l"(end));
     elapsed = end - start;
-    atomicAdd(&(tb_duration[tid]), elapsed);
+    atomicAdd(&(tb_duration[tid + totalThreads * types]), elapsed);
     return end;
 }
 
@@ -67,7 +66,6 @@ __device__ void printBreakDownDevice(unsigned long long *tb_duration) {
     unsigned int global_warp_id = get_global_warp_id();
     unsigned mask = __activemask();
     const int first_laneid = __ffs(mask) - 1;
-    unsigned int totalThreads = blockDim.x * gridDim.x;
 
     if (laneId == 0) {
         printf("Warp %d: tb_duration[%d]: %llu, tb_duration[%d]: %llu\n", 
@@ -97,6 +95,10 @@ __global__ void push_relabel_kernel(int V, int source, int sink, int *gpu_height
 
 #ifdef TIME_BREAKDOWN
     // InitializeTimeBreakdownDevice();
+    unsigned long long kernel_start, kernel_end;
+    if (idx == 0) {
+        kernel_start = clock64();
+    }
 #endif // TIME_BREAKDOWN
 
 #ifdef WORKLOAD
@@ -133,7 +135,7 @@ __global__ void push_relabel_kernel(int V, int source, int sink, int *gpu_height
                 // Find (u, v) in both CSR format and revesred CSR format
                 #ifdef TIME_BREAKDOWN
                 unsigned long long start;
-                start = ANNOTATE_START_THREAD();
+                start = ANNOTATE_START();
                 #endif // TIME_BREAKDOWN
                 for (int i = gpu_offsets[u]; i < gpu_offsets[u + 1]; i++) {
                     v = gpu_destinations[i];
@@ -148,7 +150,7 @@ __global__ void push_relabel_kernel(int V, int source, int sink, int *gpu_height
                     }
                 }
                 #ifdef TIME_BREAKDOWN
-                ANNOTATE_END_THREAD(tb_duration, 0, start);
+                ANNOTATE_END(tb_duration, 0, start);
                 #endif // TIME_BREAKDOWN
                 // // Find (u, v) in reversed CSR format
                 // for (int i = gpu_roffsets[u]; i < gpu_roffsets[u + 1]; i++) {
@@ -170,7 +172,7 @@ __global__ void push_relabel_kernel(int V, int source, int sink, int *gpu_height
 
                 /* Push operation */
                 #ifdef TIME_BREAKDOWN
-                start = ANNOTATE_START_THREAD();
+                start = ANNOTATE_START();
                 #endif // TIME_BREAKDOWN
                 if (v_dash == -1) {
                     /* If there is no connected neighbors */
@@ -241,7 +243,7 @@ __global__ void push_relabel_kernel(int V, int source, int sink, int *gpu_height
                     } 
                 }
                 #ifdef TIME_BREAKDOWN
-                ANNOTATE_END_THREAD(tb_duration, 1, start);
+                ANNOTATE_END(tb_duration, 1, start);
                 #endif // TIME_BREAKDOWN
             }
         }
@@ -258,7 +260,14 @@ __global__ void push_relabel_kernel(int V, int source, int sink, int *gpu_height
         cycle = cycle - 1;
         grid.sync();
     }
+
     grid.sync();
+    #ifdef TIME_BREAKDOWN
+    if (idx == 0) {
+        kernel_end = clock64();
+        printf("Inside Kernel Execution Time: %llu ms\n", (kernel_end - kernel_start) / 2520 / 1000);
+    }
+#endif // TIME_BREAKDOWN
 }
 
 inline __device__ void
@@ -530,6 +539,7 @@ __global__ void coop_push_relabel_kernel(int V, int source, int sink, int *gpu_h
 
 #ifdef WORKLOAD
         unsigned long long start, end;
+        unsigned int idx = (blockIdx.x*blockDim.x) + threadIdx.x;
         if (idx % 32 == 0) {
             start = clock64();
         }

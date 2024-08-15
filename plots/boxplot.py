@@ -98,9 +98,9 @@ def boxplot_test(df, output_path):
 
     # Change the subplot layout
     
-    fig, ax = plt.subplots(figsize=(14, 6), dpi=200)
+    fig, ax = plt.subplots(figsize=(14, 2.5), dpi=200)
     plt.subplots_adjust(hspace=0.5)
-    plt.ylabel('Workload distribution (normalized to average)', fontsize=15)
+    plt.ylabel('Workload distribution\n(normalized to average)', fontsize=10)
     plt.grid(axis = 'y', color = 'grey', linestyle = '--')
     
 
@@ -133,13 +133,13 @@ def boxplot_test(df, output_path):
             
             position += 1
             # ax.legend()
-        ax.text(position - 1.5, -0.03, "B"+str(count) , ha='center', va='top', transform=ax.get_xaxis_transform(), size=14)
+        ax.text(position - 1.5, -0.03, "B"+str(count) , ha='center', va='top', transform=ax.get_xaxis_transform(), size=10)
         
         # Create custom patches for the legend
         legend_patches = [patches.Patch(color=color, label=(algorithm+"+BCSR")) for algorithm, color in colors.items()]
 
         # Adding the legend to the plot
-        ax.legend(handles=legend_patches, title="Algorithms", fontsize=13, title_fontsize=13, loc='upper right')
+        ax.legend(handles=legend_patches, title="Algorithms", fontsize=8, title_fontsize=9, loc='upper right')
 
         # ax.axvline(x=position - 0.5, color='black', linestyle='--')
         count += 1

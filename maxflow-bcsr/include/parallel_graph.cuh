@@ -20,6 +20,7 @@ namespace cg = cooperative_groups;
 #define numSM 82
 #define numThreadsPerBlock 1024
 #define WARP_SIZE 32
+#define totalThreads (numThreadsPerBlock * numBlocksPerSM * numSM)
 #define numWarpsPerBlock (numThreadsPerBlock / 32)
 #define totalWarps (numWarpsPerBlock * numBlocksPerSM * numSM)
 #define number_of_blocks_nodes ((number_of_nodes/threads_per_block) + 1)

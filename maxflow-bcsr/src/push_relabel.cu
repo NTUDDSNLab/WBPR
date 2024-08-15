@@ -20,7 +20,7 @@ void calculateTimeBreakdownPerIteration(
         unsigned int num_active_warps = 0;
 
         for (int j = 0; j < numThreadsPerBlock * numBlocksPerSM * numSM; j+= group_size) {
-            unsigned long long time = tb_duration[i * numThreadsPerBlock * numSM + j];
+            unsigned long long time = tb_duration[i * totalThreads + j];
             if (time == 0) {
                 continue;
             }
@@ -335,7 +335,7 @@ void push_relabel(int algo_type, int V, int E, int source, int sink, int *cpu_he
             calculateTimeBreakdownPerIteration(tb_duration, acc_max, WARP_SIZE);
         }
 
-        // // Reset tb_duration
+        // Reset tb_duration
         initTimeBreakdown(tb_duration);
 
 #endif /* TIME_BREAKDOWN */
@@ -375,12 +375,6 @@ void push_relabel(int algo_type, int V, int E, int source, int sink, int *cpu_he
 #endif // WORKLOAD
     
 #ifdef TIME_BREAKDOWN
-    // launch kernel to print device scanTime and backwardTime
-    // printDeviceTime<<<num_blocks, block_size>>>();
-    // cudaDeviceSynchronize();
-    
-    // report_breakdown_data(tb_duration, totalMilliseconds);
-    // FinializeTimeBreakdown();
     reportBreakdownData(totalMilliseconds);
     cudaFree(tb_duration);
 #endif /* TIME_BREAKDOWN */

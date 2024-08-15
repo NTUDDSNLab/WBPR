@@ -4,5 +4,6 @@ network/DIMACS/washington/gengraph
 dataset
 network/GTgraph/R-MAT/log
 network/GTgraph/SSCA2/log
-profile/*
+profiles/*
+plots/*
 maxflow-bcsr/maxflow

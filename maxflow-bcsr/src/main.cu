@@ -8,7 +8,7 @@ int V;
 int E;
 
 #ifdef TIME_BREAKDOWN
-__managed__ unsigned long long duration[numThreadsPerBlock * numSM * PROFILE_NUM] = {0};
+__managed__ unsigned long long duration[totalThreads * PROFILE_NUM] = {0};
 __managed__ unsigned long long totalDuration0 = 0;
 __managed__ unsigned long long totalDuration1 = 0;
 #endif /* TIME_BREAKDOWN */
