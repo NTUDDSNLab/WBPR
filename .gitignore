@@ -1,8 +1,4 @@
-maxflow-cuda/obj/*.o
-maxflow-cuda/maxflow
-maxflow-serial/maxflow-serial
-maxflow-serial/*.o
-maxflow-cuda/*.txt
+maxflow-csr/maxflow
 *.o
 network/DIMACS/washington/gengraph
 .vscode
@@ -13,4 +9,5 @@ maxflow-cuda/profiles
 maxflow-csr/profiles/*
 maxflow-bcsr/profiles/*
 maxflow-bcsr/maxflow
-profile/*
+profiles/*
+plots/*.png
