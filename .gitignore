@@ -7,3 +7,6 @@ network/GTgraph/SSCA2/log
 profiles/*
 plots/*
 maxflow-bcsr/maxflow
+bipartite_data
+maxflow-csr/
+snap_cap1_data

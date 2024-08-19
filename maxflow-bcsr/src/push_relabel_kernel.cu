@@ -394,51 +394,42 @@ tiled_search_neighbor(cg::thread_block_tile<tileSize> tile, int pos, int *sheigh
         if (i * tileSize + idx < degree) {
             v_pos = gpu_offsets[u] + i * tileSize + idx;
             v = gpu_destinations[v_pos];
-            if ((gpu_fflows[v_pos] > 0) && (v != source)) {
+            if ((gpu_fflows[v_pos] > 0) && (v != source) && (sheight[threadIdx.x] > gpu_height[v])) {
                 sheight[threadIdx.x] = gpu_height[v];
                 svid[threadIdx.x] = v;
                 svidx[threadIdx.x] = v_pos;
-            } else {
-                sheight[threadIdx.x] = INF;
-                svid[threadIdx.x] = -1;
-                svidx[threadIdx.x] = -1;
-            }
-        } else {
-            sheight[threadIdx.x] = INF;
-            svid[threadIdx.x] = -1;
-            svidx[threadIdx.x] = -1;
-        }
+            } 
+        } 
         tile.sync();
+    }
+    tile.sync();
 
-        // Parallel reduction to find min
-        for (unsigned int s = tile.size()/2; s > 0; s >>= 1) {
-            if (idx < s) {
-                if ((sheight[threadIdx.x] > sheight[threadIdx.x + s])) {
-                    sheight[threadIdx.x] = sheight[threadIdx.x + s];
-                    svid[threadIdx.x] = svid[threadIdx.x + s];
-                    svidx[threadIdx.x] = svidx[threadIdx.x + s];
-                }
-            }
-            tile.sync();
-        }
-
-        tile.sync();
-
-
-        /* Use delegated thread to update the minimum height a tile finding in an iteration */
-        if (idx == 0) {
-            if (minH > sheight[threadIdx.x]) { // The address of the first thread in the tile
-                minH = sheight[threadIdx.x];
-                minV = svid[threadIdx.x];
-                *v_index = svidx[threadIdx.x];
+    // Parallel reduction to find min
+    for (unsigned int s = tile.size()/2; s > 0; s >>= 1) {
+        if (idx < s) {
+            if ((sheight[threadIdx.x] > sheight[threadIdx.x + s])) {
+                sheight[threadIdx.x] = sheight[threadIdx.x + s];
+                svid[threadIdx.x] = svid[threadIdx.x + s];
+                svidx[threadIdx.x] = svidx[threadIdx.x + s];
             }
         }
-        tile.sync();  
-        svid[threadIdx.x] = -1;
-        sheight[threadIdx.x] = INF;
         tile.sync();
     }
 
+    tile.sync();
+
+
+    /* Use delegated thread to update the minimum height a tile finding in an iteration */
+    if (idx == 0) {
+        if (minH > sheight[threadIdx.x]) { // The address of the first thread in the tile
+            minH = sheight[threadIdx.x];
+            minV = svid[threadIdx.x];
+            *v_index = svidx[threadIdx.x];
+        }
+    }
+    tile.sync();  
+    svid[threadIdx.x] = -1;
+    sheight[threadIdx.x] = INF;
     tile.sync();
 
 
