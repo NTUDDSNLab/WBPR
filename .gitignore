@@ -11,3 +11,5 @@ maxflow-bcsr/profiles/*
 maxflow-bcsr/maxflow
 profiles/*
 plots/*.png
+bipartite_data
+snap_cap1_data

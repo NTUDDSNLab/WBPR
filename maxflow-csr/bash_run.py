@@ -5,13 +5,15 @@ import sys
 import re
 import numpy as np
 
-def execute_command(command):
+def execute_command(command, timeout=1800):
     """Executes a single shell command and returns its output and error."""
     try:
         output = subprocess.check_output(command, stderr=subprocess.STDOUT, shell=True, universal_newlines=True)
         return True, output
     except subprocess.CalledProcessError as e:
         return False, e.output
+    except subprocess.TimeoutExpired:
+        return False, "Command timed out."
 
 def batch_execute(commands, log_file, times_file, stats_file=None):
     """Executes a list of commands in sequence, logs the output, and captures execution times."""
@@ -51,7 +53,10 @@ def batch_execute(commands, log_file, times_file, stats_file=None):
                         stats_file.write(f"{command}:\n\t{stats}\n")
 
         else:
-            log_file.write(f"Command failed: {command}\nError:\n{output}\n")
+            if "Command timed out" in output:
+                log_file.write(f"{command}: Timed Out\n")
+            else:
+                log_file.write(f"Command failed: {command}\nError:\n{output}\n")
 
 
 def generate_commands(directory):

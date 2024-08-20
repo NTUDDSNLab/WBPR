@@ -181,8 +181,12 @@ void push_relabel(int algo_type, int V, int E, int source, int sink, int *cpu_he
         // perform the global_relabel routine on host
         // printf("Before global relabel, Excess total : %d\n",*Excess_total);
 
-        global_relabel(V, E, source,sink,cpu_height,cpu_excess_flow,
-                      cpu_offsets,cpu_destinations, cpu_capacities, cpu_fflows, cpu_bflows,
+        // global_relabel(V, E, source,sink,cpu_height,cpu_excess_flow,
+        //               cpu_offsets,cpu_destinations, cpu_capacities, cpu_fflows, cpu_bflows,
+        //               Excess_total, mark, scanned);
+        global_relabel_gpu(V, E, source,sink,cpu_height,cpu_excess_flow,
+                      cpu_offsets,cpu_destinations, cpu_capacities, cpu_fflows,
+                      gpu_height, gpu_excess_flow, gpu_offsets, gpu_destinations, gpu_capacities, gpu_fflows,
                       Excess_total, mark, scanned);
 
         printf("After global relabel--------------------\n");
