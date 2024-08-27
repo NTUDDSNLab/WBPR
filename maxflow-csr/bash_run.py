@@ -4,7 +4,33 @@ import os
 import sys
 import re
 import numpy as np
+from functools import wraps
+import errno
+import os
+import signal
+import time
 
+
+def timeout(seconds=10, error_message=os.strerror(errno.ETIME)):
+    def decorator(func):
+        def _handle_timeout(signum, frame):
+            raise TimeoutError(error_message)
+
+        def wrapper(*args, **kwargs):
+            signal.signal(signal.SIGALRM, _handle_timeout)
+            signal.alarm(seconds)
+            try:
+                result = func(*args, **kwargs)
+            finally:
+                signal.alarm(0)
+            return result
+
+        return wraps(func)(wrapper)
+
+    return decorator
+
+# Set timeout to 30 minutes (1800 seconds)
+@timeout(1800)
 def execute_command(command, timeout=1800):
     """Executes a single shell command and returns its output and error."""
     try:
@@ -12,7 +38,10 @@ def execute_command(command, timeout=1800):
         return True, output
     except subprocess.CalledProcessError as e:
         return False, e.output
-    except subprocess.TimeoutExpired:
+    except TimeoutError:
+        print(f"[Timeout] {command}!!!")
+        # Terminate subprocess
+        subprocess.run(["pkill", "-f", "maxflow"])
         return False, "Command timed out."
 
 def batch_execute(commands, log_file, times_file, stats_file=None):
@@ -54,7 +83,8 @@ def batch_execute(commands, log_file, times_file, stats_file=None):
 
         else:
             if "Command timed out" in output:
-                log_file.write(f"{command}: Timed Out\n")
+                log_file.write(f"Command Timed Out: {command}\nOutput:\n{output}\n")
+                times_file.write(f"{command}: Timed Out\n")
             else:
                 log_file.write(f"Command failed: {command}\nError:\n{output}\n")
 
