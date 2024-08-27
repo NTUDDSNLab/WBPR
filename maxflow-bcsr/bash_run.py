@@ -5,6 +5,16 @@ import sys
 import re
 import numpy as np
 
+def parse_breakdown_times(output):
+    execution_times = {
+        "Kernel execution time": f"{float(re.search(r'Kernel execution time:\s+([\d\.]+)\s+ms', output).group(1)):.2f} ms",
+        "Neighbor searching time": f"{float(re.search(r'Neighbor searching time:\s+([\d\.]+)\s+ms', output).group(1)):.2f} ms",
+        "Backward finding time": f"{float(re.search(r'Backward finding time:\s+([\d\.]+)\s+ms', output).group(1)):.2f} ms",
+        "Other time": f"{float(re.search(r'Other time:\s+([\d\.]+)\s+ms', output).group(1)):.2f} ms",
+    }
+    return execution_times
+
+
 def execute_command(command):
     """Executes a single shell command and returns its output and error."""
     try:
@@ -13,7 +23,7 @@ def execute_command(command):
     except subprocess.CalledProcessError as e:
         return False, e.output
 
-def batch_execute(commands, log_file, times_file, stats_file=None):
+def batch_execute(commands, log_file, times_file, stats_file=None, breakdown_file=None):
     """Executes a list of commands in sequence, logs the output, and captures execution times."""
     time_regex = re.compile(r"Total kernel time: ([\d.]+) ms")
 
@@ -50,6 +60,13 @@ def batch_execute(commands, log_file, times_file, stats_file=None):
                         stats = f"Min: {min_time}, Lower Quartile: {lower_quartile}, Median: {median}, Upper Quartile: {upper_quartile}, Max: {max_time}, Avg: {avg_time}"
                         stats_file.write(f"{command}:\n\t{stats}\n")
 
+            # Extract and process execution time breakdown
+            if breakdown_file is not None:
+                execution_times = parse_breakdown_times(output)
+                breakdown_file.write(f"{command}:\n")
+                for key, value in execution_times.items():
+                    breakdown_file.write(f"\t{key}: {value}\n")
+                    
         else:
             log_file.write(f"Command failed: {command}\nError:\n{output}\n")
 
@@ -74,12 +91,15 @@ if __name__ == "__main__":
     parser.add_argument("--dir", help="Path to the directory where the input files to execute.", required=True)
     parser.add_argument("--times", help="Path to the file where execution times will be logged.", required=True)
     parser.add_argument("--stats", help="Path to the file where execution time statistics will be logged.", default=None)
+    parser.add_argument("--breakdown", help="Path to the file where execution time breakdown will be logged.", default=None)
     args = parser.parse_args()
 
+    # Open log files
     if args.log == "stdout":
         log_file = sys.stdout
     else:
         log_file = open(args.log, "w")
+
 
     times_file = open(args.times, "w")
 
@@ -88,9 +108,14 @@ if __name__ == "__main__":
     else:
         stats_file = None
 
+    if args.breakdown is not None:
+        breakdown_file = open(args.breakdown, "w")
+    else:
+        breakdown_file = None
+
     commands = generate_commands(args.dir)
 
-    batch_execute(commands, log_file, times_file, stats_file)
+    batch_execute(commands, log_file, times_file, stats_file, breakdown_file)
 
     if args.log != "stdout":
         log_file.close()
