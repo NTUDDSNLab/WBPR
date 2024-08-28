@@ -1,6 +1,134 @@
 #include"../include/parallel_graph.cuh"
 #include "../include/utils.cuh"
 
+#ifdef TIME_BREAKDOWN
+// The array to accumulate the maximum time of each type
+unsigned long long acc_max[PROFILE_NUM] = {0};
+
+/* Reset tb_duration */
+void initTimeBreakdown(unsigned long long *tb_duration) {
+    CUDA_SAFECALL(cudaMemset(tb_duration, 0, PROFILE_NUM * numThreadsPerBlock * numSM * sizeof(unsigned long long)));
+}
+
+/* Calculate time breakdown per iteration */
+void calculateTimeBreakdownPerIteration(
+    unsigned long long *tb_duration, unsigned long long *acc_max, int group_size) 
+{
+    for (int i = 0; i < PROFILE_NUM; i++) {
+        unsigned long long total = 0;
+        unsigned long long cur_max = 0;
+        unsigned int num_active_warps = 0;
+
+        for (int j = 0; j < numThreadsPerBlock * numBlocksPerSM * numSM; j+= group_size) {
+            unsigned long long time = tb_duration[i * totalThreads + j];
+            if (time == 0) {
+                continue;
+            }
+            num_active_warps++;
+            total += time;
+            if (time > cur_max) {
+                cur_max = time;
+            }
+        }
+        acc_max[i] += cur_max;
+    }
+}
+
+void reportBreakdownData(float totalExeTime)
+{
+    /* Format */
+    std::string pad(100, '-');
+    std::string pad2(33, ' ');
+    std::string pad3(100, '*');
+    printf("%s\n", pad.c_str());
+    printf("%s Time Breakdown %s\n", pad2.c_str(), pad2.c_str());
+    printf("%s\n", pad.c_str());
+    /* Get GPU frequency */
+    int GPUfreqKHz;
+    cudaError_t cudaStatus = cudaDeviceGetAttribute(&GPUfreqKHz, cudaDevAttrClockRate, 0);
+    if (cudaStatus != cudaSuccess) {
+        printf("Failed to get GPU clock rate: %s\n", cudaGetErrorString(cudaStatus));
+        exit(1);
+    }
+    unsigned int GPUfreqMHz = GPUfreqKHz / 1000;
+    printf("GPU Operating Frequency: %u MHz\n", GPUfreqMHz);
+
+    /* Caculate the portion between the maximum time of each time and the totalExeTime. */
+    float portion[PROFILE_NUM + 1] = {0};
+    float acc_portion = 0;
+    for (int i = 0; i < PROFILE_NUM; i++) {
+        portion[i] = (float)acc_max[i] / GPUfreqMHz / 1000 / (float)totalExeTime;
+        acc_portion += portion[i];
+    }
+    portion[PROFILE_NUM] = 1 - acc_portion;
+    /* Print the time breakdown */
+    printf("Kernel execution time: %.6f ms\n", totalExeTime);
+    printf("Neighbor searching time: %.3f ms(%.3f%%) \nBackward finding time: %.3f ms(%.3f%%) \nOther time: %.3f ms(%.3f%%)\n",
+           portion[0] * totalExeTime, portion[0] * 100,
+           portion[1] * totalExeTime, portion[1] * 100,
+           portion[2] * totalExeTime, portion[2] * 100);
+
+}
+
+/* Report time breakdown, called at the end of the kernel */
+void report_breakdown_data(unsigned long long *tb_duration, float totalExeTime) {
+
+    /* Format */
+    std::string pad(100, '-');
+    std::string pad2(33, ' ');
+    std::string pad3(100, '*');
+    printf("%s\n", pad.c_str());
+    printf("%s Time Breakdown %s\n", pad2.c_str(), pad2.c_str());
+    printf("%s\n", pad.c_str());
+
+    /* Find average, min, max executing time in duration[] of each types */
+    for (int i = 0; i < PROFILE_NUM; i++) {
+        unsigned long long total = 0;
+        unsigned long long max = 0;
+        unsigned long long min = tb_duration[i * numThreadsPerBlock * numSM];
+        unsigned int num_active_warps = 0;
+        /* Get GPU frequency */
+        int GPUfreqKHz;
+        cudaError_t cudaStatus = cudaDeviceGetAttribute(&GPUfreqKHz, cudaDevAttrClockRate, 0);
+        if (cudaStatus != cudaSuccess) {
+            printf("Failed to get GPU clock rate: %s\n", cudaGetErrorString(cudaStatus));
+            exit(1);
+        }
+        unsigned int GPUfreqMHz = GPUfreqKHz / 1000;
+        printf("GPU Operating Frequency: %u MHz\n", GPUfreqMHz);
+
+        for (int j = 0; j < numThreadsPerBlock * numBlocksPerSM * numSM; j+= WARP_SIZE) {
+            unsigned long long time = tb_duration[i * numThreadsPerBlock * numSM + j];
+            if (time == 0) {
+                // printf("!!!!!!!!!!! ZERO time: gw: %d, laneId: %d \n", (j/WARP_SIZE), (j%WARP_SIZE));
+                continue;
+            }
+            num_active_warps++;
+            total += time;
+            if (time > max) {
+                max = time;
+            }
+            if (time < min) {
+                min = time;
+            }
+        }
+        float average = 0;
+        if (num_active_warps > 0) {
+            average = total / (num_active_warps) / GPUfreqMHz / 1000;
+        } 
+        printf("Kernel execution time: %.6f ms\n", totalExeTime);
+        printf("Average(type-%d) time: %.6f ms\n", i, average);
+        printf("Max(type-%d) time: %.6f ms\n", i, (float)(max / GPUfreqMHz / 1000));
+        printf("Min(type-%d) time: %.6f ms\n", i, (float)(min / GPUfreqMHz / 1000));
+        printf("%s\n", pad3.c_str());
+    }
+}
+
+#endif /* TIME_BREAKDOWN */
+
+
+
+
 bool compare_excess_flow(int *new_excess_flow, int *old_excess_flow, int V)
 {
     for(int i = 0; i < V; i++)
@@ -73,8 +201,8 @@ void push_relabel(int algo_type, int V, int E, int source, int sink, int *cpu_he
     // dim3 num_blocks(1);
     // dim3 block_size(64);
 
-    // Calculate the usage of shared memory
-    size_t sharedMemSize = 3 * block_size.x * sizeof(int);
+    // Calculate the usage of shared memory: sheight, svid, svidx, and sVinReverse
+    size_t sharedMemSize = 4 * block_size.x * sizeof(int);
 
 #ifdef WORKLOAD
     // Caculate the total number of warps
@@ -92,6 +220,15 @@ void push_relabel(int algo_type, int V, int E, int source, int sink, int *cpu_he
     }
 #endif // WORKLOAD
 
+#ifdef TIME_BREAKDOWN
+
+    /* Initialize */
+    unsigned long long *tb_duration;
+    CHECK(cudaMallocManaged(&tb_duration, PROFILE_NUM * numThreadsPerBlock * numSM * sizeof(unsigned long long)));
+    CHECK(cudaMemset(tb_duration, 0, PROFILE_NUM * numThreadsPerBlock * numSM * sizeof(unsigned long long)));
+
+#endif /* TIME_BREAKDOWN */
+
     // Print the configuration
     // Print GPU device name
     printf("GPU Device: %s\n", deviceProp.name);
@@ -99,6 +236,17 @@ void push_relabel(int algo_type, int V, int E, int source, int sink, int *cpu_he
     printf("Number of threads per block: %d\n", block_size.x);
     printf("Shared memory size: %lu\n", sharedMemSize);
 
+#ifdef TIME_BREAKDOWN
+    void* original_kernel_args[] = {&V, &source, &sink, &gpu_height, &gpu_excess_flow, 
+                        &gpu_offsets, &gpu_destinations, &gpu_capacities, &gpu_fflows, &gpu_bflows, 
+                        &gpu_roffsets, &gpu_rdestinations, &gpu_flow_idx, &tb_duration};
+
+
+    void* kernel_args[] = {&V, &source, &sink, &gpu_height, &gpu_excess_flow, 
+                        &gpu_offsets, &gpu_destinations, &gpu_capacities, &gpu_fflows, &gpu_bflows, 
+                        &gpu_roffsets, &gpu_rdestinations, &gpu_flow_idx, 
+                        &gpu_avq, &gpu_cycle, &tb_duration};
+#else /* !TIME_BREAKDOWN */
     void* original_kernel_args[] = {&V, &source, &sink, &gpu_height, &gpu_excess_flow, 
                         &gpu_offsets, &gpu_destinations, &gpu_capacities, &gpu_fflows, &gpu_bflows, 
                         &gpu_roffsets, &gpu_rdestinations, &gpu_flow_idx};
@@ -109,6 +257,7 @@ void push_relabel(int algo_type, int V, int E, int source, int sink, int *cpu_he
                         &gpu_roffsets, &gpu_rdestinations, &gpu_flow_idx, 
                         &gpu_avq, &gpu_cycle};
 
+#endif /* TIME_BREAKDOWN */
 
     // initialising mark values to false for all nodes
     for(int i = 0; i < V; i++)
@@ -173,6 +322,20 @@ void push_relabel(int algo_type, int V, int E, int source, int sink, int *cpu_he
         }
 #endif // WORKLOAD
 
+#ifdef TIME_BREAKDOWN
+        /* Calculate time breakdown */
+        if (algo_type == 0) {
+            // Thread-centric approach
+            calculateTimeBreakdownPerIteration(tb_duration, acc_max, 1);
+        } else {
+            // Vertex-centric approach
+            calculateTimeBreakdownPerIteration(tb_duration, acc_max, WARP_SIZE);
+        }
+
+        // Reset tb_duration
+        initTimeBreakdown(tb_duration);
+
+#endif /* TIME_BREAKDOWN */
 
 
         // printf("Before global relabel--------------------\n");
@@ -217,5 +380,9 @@ void push_relabel(int algo_type, int V, int E, int source, int sink, int *cpu_he
 
 #endif // WORKLOAD
 
+#ifdef TIME_BREAKDOWN
+    reportBreakdownData(totalMilliseconds);
+    cudaFree(tb_duration);
+#endif /* TIME_BREAKDOWN */
 
 }

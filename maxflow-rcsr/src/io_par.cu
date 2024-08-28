@@ -57,10 +57,7 @@ void readgraph(char* filename, int V, int E, int source, int sink, int *cpu_heig
     // getting edgelist input from file "edgelist.txt"
     for(int i = 0; i < E; i++)
     {
-        // reading from file
-        fscanf(fp,"%s",buf1);
-        fscanf(fp,"%s",buf2);
-        fscanf(fp,"%s",buf3);
+
 
         // storing as integers
         e1 = atoi(buf1);

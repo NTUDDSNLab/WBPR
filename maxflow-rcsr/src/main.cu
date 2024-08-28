@@ -4,6 +4,13 @@
 #include "../include/utils.cuh"
 #include <unistd.h>
 
+#ifdef TIME_BREAKDOWN
+__managed__ unsigned long long duration[totalThreads * PROFILE_NUM] = {0};
+__managed__ unsigned long long totalDuration0 = 0;
+__managed__ unsigned long long totalDuration1 = 0;
+#endif /* TIME_BREAKDOWN */
+
+
 int main(int argc, char **argv)
 {
     CSRGraph csr_graph;
