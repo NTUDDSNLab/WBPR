@@ -170,6 +170,7 @@ __global__ void push_relabel_kernel(int V, int source, int sink, int *gpu_height
                 }
                 #ifdef TIME_BREAKDOWN
                 ANNOTATE_END(tb_duration, 0, start);
+                start = ANNOTATE_START();
                 #endif // TIME_BREAKDOWN
                 /* Push operation */
                 if (v_dash == -1) {
