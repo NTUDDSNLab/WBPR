@@ -10,3 +10,4 @@ maxflow-bcsr/maxflow
 bipartite_data
 maxflow-csr/
 snap_cap1_data
+maxflow-rcsr/
