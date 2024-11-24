@@ -105,4 +105,13 @@ Options:
     --output OUTPUT  Path to the output image file.
     ```
 
-        
+## Citation
+If this project helps you well, please give us a star or cite our paper.
+```
+@article{hsieh2024engineering,
+  title={Engineering A Workload-balanced Push-Relabel Algorithm for Massive Graphs on GPUs},
+  author={Hsieh, Chou-Ying and Lin, Po-Chieh and Kuo, Sy-Yen},
+  journal={arXiv preprint arXiv:2404.00270},
+  year={2024}
+}
+``` 
