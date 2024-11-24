@@ -20,6 +20,16 @@
 
 ## 2. Setup & Experiments
 
+### (0) Choose the right branch
+Please choose the underlying CSR implementation
+```
+git checkout <branch_name>
+```
+branch_name:
+* `csr`: the original CSR implementation
+* `rcsr`: the reversed CSR implementation
+* `bcsr`: the bidirectional CSR implementation
+
 ### (1) Configure the Makefile
 Please uncomment the compiling flag of WORKLOAD in both CC_FLAGS and NVCC_FLAGS to record each warp's execution time and print out the result.
 ```
