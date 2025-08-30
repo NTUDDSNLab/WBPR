@@ -1,4 +1,4 @@
-# Engineering A Workload-balanced Push-relabel Algorithms for Extremely Large Graphs on GPUs
+# Accelerating Push-Relabel Algorithm on GPU via Two-Level Parallelism Paradigm and Efficient CSR Designs
 
 ## 1. Getting started Instructions.
 - Clone this project
