@@ -106,12 +106,14 @@ Options:
     ```
 
 ## Citation
-If this project helps you well, please give us a star or cite our paper.
+If this project has been helpful to you, please consider giving us a star or citing our paper.
 ```
-@article{hsieh2024engineering,
-  title={Engineering A Workload-balanced Push-Relabel Algorithm for Massive Graphs on GPUs},
+@inproceedings{hsieh2025accelerating,
+  title={Accelerating Push-Relabel Algorithm on GPU via Two-Level Parallelism Paradigm and Efficient CSR Designs},
   author={Hsieh, Chou-Ying and Lin, Po-Chieh and Kuo, Sy-Yen},
-  journal={arXiv preprint arXiv:2404.00270},
-  year={2024}
+  booktitle={2025 IEEE High Performance Extreme Computing Conference (HPEC)},
+  pages={1--7},
+  year={2025},
+  organization={IEEE}
 }
 ``` 
